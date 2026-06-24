@@ -1,114 +1,123 @@
 import 'package:dio/dio.dart';
-import '../../../../config/env.dart';
-import '../models/usuario_model.dart';
+import '../../../../core/network/dio_exception_mapper.dart';
+import '../../domain/entities/auth_token.dart';
+import '../../domain/entities/confirmar_pin_result.dart';
+import '../../domain/entities/verificacao_email_result.dart';
+import '../dtos/request/confirmar_pin_request_dto.dart';
+import '../dtos/request/enviar_pin_email_request_dto.dart';
+import '../dtos/request/login_request_dto.dart';
+import '../dtos/request/sign_up_request_dto.dart';
+import '../dtos/response/api_response_dto.dart';
+import '../dtos/response/auth_token_dto.dart';
+import '../dtos/response/confirmar_pin_response_dto.dart';
+import '../dtos/response/verificacao_email_response_dto.dart';
+import '../mappers/auth_mapper.dart';
 
 abstract class AuthRemoteDatasource {
-  Future<UsuarioModel> buscarUsuarioPorEmail(String email);
-  Future<UsuarioModel> login({required String email, required String senha});
-  Future<void> cadastrarSenha({required String email, required String senha});
+  Future<VerificacaoEmailResult> verificarEmail(String email);
+
+  Future<AuthToken> login(LoginRequestDto request);
+
+  Future<void> signUp(SignUpRequestDto request);
+
+  Future<void> redefinirSenha(SignUpRequestDto request);
+
+  Future<void> enviarPinEmail(EnviarPinEmailRequestDto request);
+
+  Future<ConfirmarPinResult> confirmarPin(ConfirmarPinRequestDto request);
 }
-
-// MOCK — substituir por [AuthRemoteDatasourceImpl] quando a API estiver implementada
-
-class AuthRemoteDatasourceMock implements AuthRemoteDatasource {
-  static final _usuarios = [
-    UsuarioModel(
-      id: '1',
-      email: 'duda@seara.com.br',
-      nome: 'Maria Eduarda',
-      primeiroAcesso: false,
-    ),
-    UsuarioModel(
-      id: '2',
-      email: 'filipi.santos@jbs.com.br',
-      nome: 'Filipi Santos',
-      primeiroAcesso: true,
-    ),
-    UsuarioModel(
-      id: '3',
-      email: 'breno.silva@seara.com.br',
-      nome: 'Breno Silva',
-      primeiroAcesso: false,
-    ),
-  ];
-
-  @override
-  Future<UsuarioModel> buscarUsuarioPorEmail(String email) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    try {
-      return _usuarios.firstWhere(
-        (u) => u.email.toLowerCase() == email.toLowerCase(),
-      );
-    } catch (_) {
-      throw Exception('Usuário não encontrado para o e-mail informado.');
-    }
-  }
-
-  @override
-  Future<UsuarioModel> login({
-    required String email,
-    required String senha,
-  }) async {
-    await Future.delayed(const Duration(milliseconds: 1000));
-    UsuarioModel usuario;
-    try {
-      usuario = _usuarios.firstWhere(
-        (u) => u.email.toLowerCase() == email.toLowerCase(),
-      );
-    } catch (_) {
-      throw Exception('E-mail ou senha inválidos.');
-    }
-    if (senha.length < 6) throw Exception('E-mail ou senha inválidos.');
-    return usuario.copyWith(
-      token: 'mock_jwt_token_${usuario.id}_${DateTime.now().millisecondsSinceEpoch}',
-    );
-  }
-
-  @override
-  Future<void> cadastrarSenha({
-    required String email,
-    required String senha,
-  }) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-  }
-}
-
-// IMPL REAL — trocar o Mock por esta classe quando a API estiver implementada
 
 class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
   final Dio dio;
+  final String authBaseUrl;
 
-  AuthRemoteDatasourceImpl({required this.dio});
+  AuthRemoteDatasourceImpl({
+    required this.dio,
+    required this.authBaseUrl,
+  });
 
   @override
-  Future<UsuarioModel> buscarUsuarioPorEmail(String email) async {
-    final response = await dio.post(
-      '${Env.authBaseUrl}/buscar-usuario',
-      data: {'email': email},
-    );
-    return UsuarioModel.fromJson(response.data as Map<String, dynamic>);
+  Future<VerificacaoEmailResult> verificarEmail(String email) async {
+    try {
+      final response = await dio.get(
+        '$authBaseUrl/primeiro-acesso/${Uri.encodeComponent(email)}',
+      );
+      final apiResponse = ApiResponseDto.fromJson(
+        response.data as Map<String, dynamic>,
+        VerificacaoEmailResponseDto.fromJson,
+      );
+      return AuthMapper.toVerificacaoEmailResult(
+        dto: apiResponse.response,
+        email: email,
+      );
+    } on DioException catch (e) {
+      throw mapDioException(e);
+    }
   }
 
   @override
-  Future<UsuarioModel> login({
-    required String email,
-    required String senha,
-  }) async {
-    final response = await dio.post(
-      '${Env.authBaseUrl}/login',
-      data: {'email': email, 'senha': senha},
-    );
-    return UsuarioModel.fromJson(response.data as Map<String, dynamic>);
+  Future<AuthToken> login(LoginRequestDto request) async {
+    try {
+      final response = await dio.post(
+        '$authBaseUrl/login',
+        data: request.toJson(),
+      );
+      final apiResponse = ApiResponseDto.fromJson(
+        response.data as Map<String, dynamic>,
+        AuthTokenDto.fromJson,
+      );
+      return AuthMapper.toAuthToken(apiResponse.response);
+    } on DioException catch (e) {
+      throw mapDioException(e);
+    }
   }
 
   @override
-  Future<void> cadastrarSenha({
-    required String email,
-    required String senha,
-  }) async {
-    await dio.post(
-      '${Env.authBaseUrl}/cadastrar-senha',
-      data: {'email': email, 'senha': senha},
-    );
+  Future<void> signUp(SignUpRequestDto request) async {
+    try {
+      await dio.post('$authBaseUrl/sign-up', data: request.toJson());
+    } on DioException catch (e) {
+      throw mapDioException(e);
+    }
+  }
+
+  @override
+  Future<void> redefinirSenha(SignUpRequestDto request) async {
+    try {
+      await dio.post('$authBaseUrl/redefinir-senha', data: request.toJson());
+    } on DioException catch (e) {
+      throw mapDioException(e);
+    }
+  }
+
+  @override
+  Future<void> enviarPinEmail(EnviarPinEmailRequestDto request) async {
+    try {
+      await dio.post('$authBaseUrl/pin/enviar', data: request.toJson());
+    } on DioException catch (e) {
+      throw mapDioException(e);
+    }
+  }
+
+  @override
+  Future<ConfirmarPinResult> confirmarPin(
+    ConfirmarPinRequestDto request,
+  ) async {
+    try {
+      final response = await dio.post(
+        '$authBaseUrl/pin/confirmar',
+        data: request.toJson(),
+      );
+      final apiResponse = ApiResponseDto.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => ConfirmarPinResponseDto.fromJson(
+          json,
+          tipoTokenFallback: request.tipoToken,
+        ),
+      );
+      return AuthMapper.toConfirmarPinResult(apiResponse.response);
+    } on DioException catch (e) {
+      throw mapDioException(e);
+    }
   }
 }

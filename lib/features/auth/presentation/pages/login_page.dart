@@ -14,6 +14,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
+  final _pinController = TextEditingController();
   final _novaSenhaController = TextEditingController();
   final _confirmaSenhaController = TextEditingController();
 
@@ -21,6 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _emailController.dispose();
     _senhaController.dispose();
+    _pinController.dispose();
     _novaSenhaController.dispose();
     _confirmaSenhaController.dispose();
     super.dispose();
@@ -66,10 +68,36 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildContent(BuildContext context, AuthState state) {
     if (state is AuthPrimeiroAcesso) {
+      return _PinForm(
+        email: state.email,
+        pinController: _pinController,
+        errorMessage: state.erro,
+      );
+    }
+
+    if (state is AuthCadastroSenha) {
       return _PrimeiroAcessoForm(
         email: state.email,
         novaSenhaController: _novaSenhaController,
         confirmaSenhaController: _confirmaSenhaController,
+        errorMessage: state.erro,
+      );
+    }
+
+    if (state is AuthRedefinirSenhaPin) {
+      return _RedefinirSenhaPinForm(
+        email: state.email,
+        pinController: _pinController,
+        errorMessage: state.erro,
+      );
+    }
+
+    if (state is AuthRedefinirSenhaNovaSenha) {
+      return _RedefinirSenhaForm(
+        email: state.email,
+        novaSenhaController: _novaSenhaController,
+        confirmaSenhaController: _confirmaSenhaController,
+        errorMessage: state.erro,
       );
     }
 
@@ -78,6 +106,7 @@ class _LoginPageState extends State<LoginPage> {
         email: state.email,
         emailController: _emailController,
         senhaController: _senhaController,
+        errorMessage: state.erro,
       );
     }
 
@@ -147,16 +176,18 @@ class _EmailForm extends StatelessWidget {
   }
 }
 
-// Caso usuario já tenha senha
+// Login com senha cadastrada
 class _SenhaForm extends StatelessWidget {
   final String email;
   final TextEditingController emailController;
   final TextEditingController senhaController;
+  final String? errorMessage;
 
   const _SenhaForm({
     required this.email,
     required this.emailController,
     required this.senhaController,
+    this.errorMessage,
   });
 
   @override
@@ -164,7 +195,9 @@ class _SenhaForm extends StatelessWidget {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         final isLoading = state is AuthLoading;
-        final errorMessage = state is AuthErro ? state.mensagem : null;
+        final erro = state is AuthEmailValidado
+            ? state.erro ?? errorMessage
+            : errorMessage;
 
         return Column(
           children: [
@@ -199,7 +232,7 @@ class _SenhaForm extends StatelessWidget {
               hintText: '********',
               controller: senhaController,
               isPassword: true,
-              errorText: errorMessage,
+              errorText: erro,
             ),
 
             const SizedBox(height: 40),
@@ -213,6 +246,19 @@ class _SenhaForm extends StatelessWidget {
               },
             ),
             const SizedBox(height: 12),
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () {
+                      context.read<AuthBloc>().add(
+                        AuthEsqueciSenhaRequested(email),
+                      );
+                    },
+              child: const Text(
+                'Esqueci minha senha',
+                style: TextStyle(color: AuthColors.primaryBlue),
+              ),
+            ),
             const SizedBox(height: 12),
             TextButton(
               onPressed: () {
@@ -234,16 +280,16 @@ class _SenhaForm extends StatelessWidget {
   }
 }
 
-// Primeiro acesso
-class _PrimeiroAcessoForm extends StatelessWidget {
+// Primeiro acesso — confirmação do PIN enviado por e-mail
+class _PinForm extends StatelessWidget {
   final String email;
-  final TextEditingController novaSenhaController;
-  final TextEditingController confirmaSenhaController;
+  final TextEditingController pinController;
+  final String? errorMessage;
 
-  const _PrimeiroAcessoForm({
+  const _PinForm({
     required this.email,
-    required this.novaSenhaController,
-    required this.confirmaSenhaController,
+    required this.pinController,
+    this.errorMessage,
   });
 
   @override
@@ -251,7 +297,89 @@ class _PrimeiroAcessoForm extends StatelessWidget {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         final isLoading = state is AuthLoading;
-        final errorMessage = state is AuthErro ? state.mensagem : null;
+        final erro = state is AuthPrimeiroAcesso
+            ? state.erro ?? errorMessage
+            : errorMessage;
+
+        return Column(
+          children: [
+            const AuthBrandTitle(),
+            const SizedBox(height: 32),
+            const Text(
+              'Primeiro acesso',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AuthColors.textDark,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Digite o código PIN enviado para o seu e-mail',
+              style: TextStyle(color: AuthColors.textGrey, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 40),
+            AppInput(
+              label: 'Código PIN',
+              hintText: '000000',
+              controller: pinController,
+              keyboardType: TextInputType.number,
+              errorText: erro,
+            ),
+            const SizedBox(height: 40),
+            AuthPrimaryButton(
+              label: 'Confirmar PIN',
+              isLoading: isLoading,
+              onPressed: () {
+                context.read<AuthBloc>().add(
+                  AuthPinSubmitted(
+                    email: email,
+                    pin: pinController.text,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () {
+                pinController.clear();
+                context.read<AuthBloc>().add(AuthBackToEmailRequested());
+              },
+              child: const Text(
+                'Usar outro e-mail',
+                style: TextStyle(color: AuthColors.primaryBlue),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// Primeiro acesso — cadastro de senha após PIN confirmado
+class _PrimeiroAcessoForm extends StatelessWidget {
+  final String email;
+  final TextEditingController novaSenhaController;
+  final TextEditingController confirmaSenhaController;
+  final String? errorMessage;
+
+  const _PrimeiroAcessoForm({
+    required this.email,
+    required this.novaSenhaController,
+    required this.confirmaSenhaController,
+    this.errorMessage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        final isLoading = state is AuthLoading;
+        final erro = state is AuthCadastroSenha
+            ? state.erro ?? errorMessage
+            : errorMessage;
 
         return Column(
           children: [
@@ -285,8 +413,7 @@ class _PrimeiroAcessoForm extends StatelessWidget {
               hintText: '********',
               controller: confirmaSenhaController,
               isPassword: true,
-              errorText:
-                  errorMessage,
+              errorText: erro,
             ),
 
             const SizedBox(height: 8),
@@ -304,6 +431,168 @@ class _PrimeiroAcessoForm extends StatelessWidget {
               onPressed: () {
                 context.read<AuthBloc>().add(
                   AuthCadastrarSenhaRequested(
+                    email: email,
+                    senha: novaSenhaController.text,
+                    confirmacaoSenha: confirmaSenhaController.text,
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// Redefinir senha — confirmação do PIN enviado por e-mail
+class _RedefinirSenhaPinForm extends StatelessWidget {
+  final String email;
+  final TextEditingController pinController;
+  final String? errorMessage;
+
+  const _RedefinirSenhaPinForm({
+    required this.email,
+    required this.pinController,
+    this.errorMessage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        final isLoading = state is AuthLoading;
+        final erro = state is AuthRedefinirSenhaPin
+            ? state.erro ?? errorMessage
+            : errorMessage;
+
+        return Column(
+          children: [
+            const AuthBrandTitle(),
+            const SizedBox(height: 32),
+            const Text(
+              'Redefinir senha',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AuthColors.textDark,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Digite o código PIN enviado para o seu e-mail',
+              style: TextStyle(color: AuthColors.textGrey, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 40),
+            AppInput(
+              label: 'Código PIN',
+              hintText: '000000',
+              controller: pinController,
+              keyboardType: TextInputType.number,
+              errorText: erro,
+            ),
+            const SizedBox(height: 40),
+            AuthPrimaryButton(
+              label: 'Confirmar PIN',
+              isLoading: isLoading,
+              onPressed: () {
+                context.read<AuthBloc>().add(
+                  AuthRedefinirSenhaPinSubmitted(
+                    email: email,
+                    pin: pinController.text,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () {
+                pinController.clear();
+                context.read<AuthBloc>().add(AuthBackToSenhaRequested(email));
+              },
+              child: const Text(
+                'Voltar para o login',
+                style: TextStyle(color: AuthColors.primaryBlue),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// Redefinir senha — nova senha após PIN confirmado
+class _RedefinirSenhaForm extends StatelessWidget {
+  final String email;
+  final TextEditingController novaSenhaController;
+  final TextEditingController confirmaSenhaController;
+  final String? errorMessage;
+
+  const _RedefinirSenhaForm({
+    required this.email,
+    required this.novaSenhaController,
+    required this.confirmaSenhaController,
+    this.errorMessage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        final isLoading = state is AuthLoading;
+        final erro = state is AuthRedefinirSenhaNovaSenha
+            ? state.erro ?? errorMessage
+            : errorMessage;
+
+        return Column(
+          children: [
+            const AuthBrandTitle(),
+            const SizedBox(height: 32),
+            const Text(
+              'Redefinir senha',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AuthColors.textDark,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Cadastre uma nova senha para acessar o aplicativo',
+              style: TextStyle(color: AuthColors.textGrey, fontSize: 14),
+            ),
+            const SizedBox(height: 40),
+            AppInput(
+              label: 'Nova senha',
+              hintText: '********',
+              controller: novaSenhaController,
+              isPassword: true,
+            ),
+            const SizedBox(height: 20),
+            AppInput(
+              label: 'Confirme a senha',
+              hintText: '********',
+              controller: confirmaSenhaController,
+              isPassword: true,
+              errorText: erro,
+            ),
+            const SizedBox(height: 8),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Mínimo de 6 caracteres',
+                style: TextStyle(fontSize: 12, color: AuthColors.textGrey),
+              ),
+            ),
+            const SizedBox(height: 40),
+            AuthPrimaryButton(
+              label: 'Redefinir senha',
+              isLoading: isLoading,
+              onPressed: () {
+                context.read<AuthBloc>().add(
+                  AuthRedefinirSenhaRequested(
                     email: email,
                     senha: novaSenhaController.text,
                     confirmacaoSenha: confirmaSenhaController.text,

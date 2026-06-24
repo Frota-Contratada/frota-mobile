@@ -2,46 +2,37 @@ import '../../domain/entities/usuario.dart';
 
 class UsuarioModel extends Usuario {
   const UsuarioModel({
-    required super.id,
-    required super.email,
+    super.id,
     required super.nome,
-    super.token,
-    super.primeiroAcesso,
+    required super.email,
+    super.cpf,
+    super.dataAtivacao,
+    super.dataDesativacao,
   });
 
   factory UsuarioModel.fromJson(Map<String, dynamic> json) {
     return UsuarioModel(
-      id: json['id'] as String,
-      email: json['email'] as String,
+      id: json['id'] as int?,
       nome: json['nome'] as String,
-      token: json['token'] as String?,
-      primeiroAcesso: json['primeiro_acesso'] as bool? ?? false,
+      email: json['email'] as String,
+      cpf: json['cpf'] as String?,
+      dataAtivacao: json['dataAtivacao'] != null
+          ? DateTime.parse(json['dataAtivacao'] as String)
+          : null,
+      dataDesativacao: json['dataDesativacao'] != null
+          ? DateTime.parse(json['dataDesativacao'] as String)
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'email': email,
       'nome': nome,
-      'token': token,
-      'primeiro_acesso': primeiroAcesso,
+      'email': email,
+      'cpf': cpf,
+      'dataAtivacao': dataAtivacao?.toIso8601String(),
+      'dataDesativacao': dataDesativacao?.toIso8601String(),
     };
-  }
-
-  UsuarioModel copyWith({
-    String? id,
-    String? email,
-    String? nome,
-    String? token,
-    bool? primeiroAcesso,
-  }) {
-    return UsuarioModel(
-      id: id ?? this.id,
-      email: email ?? this.email,
-      nome: nome ?? this.nome,
-      token: token ?? this.token,
-      primeiroAcesso: primeiroAcesso ?? this.primeiroAcesso,
-    );
   }
 }

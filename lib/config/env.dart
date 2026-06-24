@@ -1,8 +1,8 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class Env {
-  static const String baseUrl =
-      String.fromEnvironment('BASE_URL', defaultValue: 'https://api.frota.jbs.com.br');
+  static String get baseUrl =>
+      dotenv.env['BASE_URL'] ?? 'http://localhost:8080';
 
-  static const String apiVersion = '/api/v1';
-
-  static String get authBaseUrl => '$baseUrl$apiVersion/auth';
+  static String get authBaseUrl => '$baseUrl/autenticacao';
 }
