@@ -40,7 +40,11 @@ class _LoginPageState extends State<LoginPage> {
                 backgroundColor: Colors.green,
               ),
             );
-            Navigator.pushReplacementNamed(context, AppRoutes.home);
+            Navigator.pushReplacementNamed(
+              context,
+              AppRoutes.motoristaHome,
+              arguments: state.usuario,
+            );
           }
         },
         builder: (context, state) {
@@ -141,7 +145,7 @@ class _EmailForm extends StatelessWidget {
         const Text(
           'Entre na sua conta',
           style: TextStyle(
-            fontSize: 22,
+            fontSize: 20,
             fontWeight: FontWeight.w800,
             color: AuthColors.textDark,
           ),
@@ -206,7 +210,7 @@ class _SenhaForm extends StatelessWidget {
             const Text(
               'Entre na sua conta',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: AuthColors.textDark,
               ),
@@ -308,7 +312,7 @@ class _PinForm extends StatelessWidget {
             const Text(
               'Primeiro acesso',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: AuthColors.textDark,
               ),
@@ -388,7 +392,7 @@ class _PrimeiroAcessoForm extends StatelessWidget {
             const Text(
               'Primeiro acesso',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: AuthColors.textDark,
               ),
@@ -421,7 +425,7 @@ class _PrimeiroAcessoForm extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 'Mínimo de 6 caracteres',
-                style: TextStyle(fontSize: 12, color: AuthColors.textGrey),
+                style: TextStyle(fontSize: 11, color: AuthColors.textGrey),
               ),
             ),
             const SizedBox(height: 40),
@@ -473,7 +477,7 @@ class _RedefinirSenhaPinForm extends StatelessWidget {
             const Text(
               'Redefinir senha',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: AuthColors.textDark,
               ),
@@ -553,7 +557,7 @@ class _RedefinirSenhaForm extends StatelessWidget {
             const Text(
               'Redefinir senha',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: AuthColors.textDark,
               ),
@@ -583,7 +587,7 @@ class _RedefinirSenhaForm extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 'Mínimo de 6 caracteres',
-                style: TextStyle(fontSize: 12, color: AuthColors.textGrey),
+                style: TextStyle(fontSize: 11, color: AuthColors.textGrey),
               ),
             ),
             const SizedBox(height: 40),

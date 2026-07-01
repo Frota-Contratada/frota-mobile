@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
+import '../../../../core/error/exceptions.dart';
 import '../../../../core/network/dio_exception_mapper.dart';
 import '../../domain/entities/auth_token.dart';
 import '../../domain/entities/confirmar_pin_result.dart';
 import '../../domain/entities/verificacao_email_result.dart';
+import '../../domain/enums/tipo_token.dart';
 import '../dtos/request/confirmar_pin_request_dto.dart';
 import '../dtos/request/enviar_pin_email_request_dto.dart';
 import '../dtos/request/login_request_dto.dart';
@@ -12,6 +14,7 @@ import '../dtos/response/auth_token_dto.dart';
 import '../dtos/response/confirmar_pin_response_dto.dart';
 import '../dtos/response/verificacao_email_response_dto.dart';
 import '../mappers/auth_mapper.dart';
+import '../models/usuario_model.dart';
 
 abstract class AuthRemoteDatasource {
   Future<VerificacaoEmailResult> verificarEmail(String email);
@@ -119,5 +122,96 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
     } on DioException catch (e) {
       throw mapDioException(e);
     }
+  }
+}
+
+// MOCK — substituir por [AuthRemoteDatasourceImpl] quando a API estiver pronta
+
+class AuthRemoteDatasourceMock implements AuthRemoteDatasource {
+  static const String email = 'motorista@frota.com.br';
+  static const String senha = '123456';
+  static const String nome = 'Antônio Gonçalves';
+  static const int id = 1;
+  static const String pin = '123456';
+
+  Future<void> _simularLatencia() async {
+    await Future.delayed(const Duration(milliseconds: 600));
+  }
+
+  bool _emailValido(String emailInformado) {
+    return emailInformado.trim().toLowerCase() == email;
+  }
+
+  @override
+  Future<VerificacaoEmailResult> verificarEmail(String emailInformado) async {
+    await _simularLatencia();
+
+    if (!_emailValido(emailInformado)) {
+      throw const ServerException(
+        'Usuário não encontrado para o e-mail informado.',
+      );
+    }
+
+    return VerificacaoEmailResult(
+      usuario: const UsuarioModel(
+        id: id,
+        nome: nome,
+        email: email,
+      ),
+      precisaCadastroSenha: false,
+    );
+  }
+
+  @override
+  Future<AuthToken> login(LoginRequestDto request) async {
+    await _simularLatencia();
+
+    if (!_emailValido(request.email) || request.senha != senha) {
+      throw const ServerException('E-mail ou senha inválidos.');
+    }
+
+    return AuthToken(
+      accessToken: 'mock_access_token',
+      refreshToken: 'mock_refresh_token',
+      expirationDate: DateTime.now().add(const Duration(hours: 8)),
+    );
+  }
+
+  @override
+  Future<void> signUp(SignUpRequestDto request) async {
+    await _simularLatencia();
+  }
+
+  @override
+  Future<void> redefinirSenha(SignUpRequestDto request) async {
+    await _simularLatencia();
+  }
+
+  @override
+  Future<void> enviarPinEmail(EnviarPinEmailRequestDto request) async {
+    await _simularLatencia();
+
+    if (!_emailValido(request.email)) {
+      throw const ServerException(
+        'Usuário não encontrado para o e-mail informado.',
+      );
+    }
+  }
+
+  @override
+  Future<ConfirmarPinResult> confirmarPin(
+    ConfirmarPinRequestDto request,
+  ) async {
+    await _simularLatencia();
+
+    if (!_emailValido(request.email) || request.pin != pin) {
+      throw const ServerException('PIN inválido.');
+    }
+
+    return ConfirmarPinResult(
+      token: 'mock_sign_up_token',
+      tipoToken: TipoToken.fromValue(request.tipoToken),
+      expirationDate: DateTime.now().add(const Duration(minutes: 30)),
+    );
   }
 }
