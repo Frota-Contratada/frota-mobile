@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   static const Color primaryBlue = Color(0xFF1A3C8F);
@@ -8,48 +9,61 @@ class AppTheme {
   static const Color textGrey = Color(0xFF9E9E9E);
   static const Color textDark = Color(0xFF212121);
 
-  static ThemeData get theme => ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: primaryBlue,
-          primary: primaryBlue,
+  static TextTheme get _textTheme =>
+      GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme);
+
+  static ThemeData get theme {
+    final textTheme = _textTheme;
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      scaffoldBackgroundColor: const Color(0xFFF8F8F8),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: primaryBlue,
+        brightness: Brightness.light,
+      ),
+      fontFamily: GoogleFonts.poppins().fontFamily,
+      textTheme: textTheme,
+      primaryTextTheme: textTheme,
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: white,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: borderGrey),
         ),
-        fontFamily: 'Roboto',
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: borderGrey),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: borderGrey),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: primaryBlue, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: seararRed),
-          ),
-          hintStyle: const TextStyle(color: textGrey, fontSize: 14),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: borderGrey),
         ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: primaryBlue,
-            foregroundColor: white,
-            minimumSize: const Size(double.infinity, 50),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            textStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: primaryBlue, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: seararRed),
+        ),
+        hintStyle: textTheme.bodyMedium?.copyWith(color: textGrey),
+        labelStyle: textTheme.bodyMedium,
+        floatingLabelStyle: textTheme.bodyMedium,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBlue,
+          foregroundColor: white,
+          minimumSize: const Size(double.infinity, 50),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          textStyle: textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w600,
           ),
         ),
-      );
+      ),
+    );
+  }
 }

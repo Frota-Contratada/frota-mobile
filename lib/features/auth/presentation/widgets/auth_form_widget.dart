@@ -115,12 +115,12 @@ class _AppInputState extends State<AppInput> {
 
         labelStyle: const TextStyle(
           color: AuthColors.textGrey,
-          fontSize: 14,
+          fontSize: 12,
         ),
 
         floatingLabelStyle: const TextStyle(
           color: AuthColors.textGrey,
-          fontSize: 14,
+          fontSize: 12,
         ),
 
         filled: true,
@@ -236,7 +236,7 @@ class AuthPrimaryButton extends StatelessWidget {
               )
             : Text(
                 label,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
       ),
     );

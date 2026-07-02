@@ -5,4 +5,6 @@ class Env {
       dotenv.env['BASE_URL'] ?? 'http://localhost:8080';
 
   static String get authBaseUrl => '$baseUrl/autenticacao';
+
+  static String get motoristaViagensBaseUrl => '$baseUrl/motorista/viagens';
 }

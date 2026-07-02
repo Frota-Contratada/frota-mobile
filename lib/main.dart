@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'config/env_loader.dart';
 import 'config/themes.dart';
 import 'config/routes.dart';
 import 'features/auth/presentation/bloc/auth.bloc.dart';
 import 'features/auth/presentation/pages/login_page.dart';
-import 'features/home/presentation/pages/home_page.dart';
+import 'features/motorista/home/presentation/pages/home_page.dart';
 import 'injection_container/injection_container.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env');
+  await loadEnvironment();
   await initDependencies();
   runApp(const FrotaApp());
 }
@@ -24,13 +24,14 @@ class FrotaApp extends StatelessWidget {
       title: 'Frota Mobile',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
+      themeMode: ThemeMode.light,
       initialRoute: AppRoutes.login,
       routes: {
         AppRoutes.login: (_) => BlocProvider(
               create: (_) => sl<AuthBloc>(),
               child: const LoginPage(),
             ),
-        AppRoutes.home: (_) => const HomePage(),
+        AppRoutes.motoristaHome: (_) => const HomePage(),
       },
     );
   }
