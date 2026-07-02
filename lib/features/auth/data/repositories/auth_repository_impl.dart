@@ -3,6 +3,7 @@ import '../../../../core/error/failures.dart';
 import '../../domain/entities/confirmar_pin_result.dart';
 import '../../domain/entities/usuario.dart';
 import '../../domain/entities/verificacao_email_result.dart';
+import '../../domain/enums/perfil_usuario.dart';
 import '../../domain/enums/plataforma.dart';
 import '../../domain/enums/tipo_token.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -33,6 +34,7 @@ class AuthRepositoryImpl implements AuthRepository {
           cpf: result.usuario.cpf,
           dataAtivacao: result.usuario.dataAtivacao,
           dataDesativacao: result.usuario.dataDesativacao,
+          perfil: result.usuario.perfil,
         ),
       );
       if (result.precisaCadastroSenha) {
@@ -70,6 +72,7 @@ class AuthRepositoryImpl implements AuthRepository {
         cpf: pendente?.cpf,
         dataAtivacao: pendente?.dataAtivacao,
         dataDesativacao: pendente?.dataDesativacao,
+        perfil: pendente?.perfil ?? PerfilUsuario.motorista,
       );
       await localDatasource.salvarUsuario(usuario);
       return usuario;

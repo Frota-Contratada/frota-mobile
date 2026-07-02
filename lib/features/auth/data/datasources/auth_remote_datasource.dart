@@ -14,6 +14,7 @@ import '../dtos/response/auth_token_dto.dart';
 import '../dtos/response/confirmar_pin_response_dto.dart';
 import '../dtos/response/verificacao_email_response_dto.dart';
 import '../mappers/auth_mapper.dart';
+import '../mocks/auth_mock_usuarios.dart';
 import '../models/usuario_model.dart';
 
 abstract class AuthRemoteDatasource {
@@ -128,36 +129,27 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
 // MOCK — substituir por [AuthRemoteDatasourceImpl] quando a API estiver pronta
 
 class AuthRemoteDatasourceMock implements AuthRemoteDatasource {
-  static const String email = 'motorista@frota.com.br';
-  static const String senha = '123456';
-  static const String nome = 'Antônio Gonçalves';
-  static const int id = 1;
-  static const String pin = '123456';
-
   Future<void> _simularLatencia() async {
     await Future.delayed(const Duration(milliseconds: 600));
   }
 
-  bool _emailValido(String emailInformado) {
-    return emailInformado.trim().toLowerCase() == email;
+  UsuarioModel? _buscarUsuario(String emailInformado) {
+    return AuthMockUsuarios.buscarPorEmail(emailInformado);
   }
 
   @override
   Future<VerificacaoEmailResult> verificarEmail(String emailInformado) async {
     await _simularLatencia();
 
-    if (!_emailValido(emailInformado)) {
+    final usuario = _buscarUsuario(emailInformado);
+    if (usuario == null) {
       throw const ServerException(
         'Usuário não encontrado para o e-mail informado.',
       );
     }
 
     return VerificacaoEmailResult(
-      usuario: const UsuarioModel(
-        id: id,
-        nome: nome,
-        email: email,
-      ),
+      usuario: usuario,
       precisaCadastroSenha: false,
     );
   }
@@ -166,13 +158,14 @@ class AuthRemoteDatasourceMock implements AuthRemoteDatasource {
   Future<AuthToken> login(LoginRequestDto request) async {
     await _simularLatencia();
 
-    if (!_emailValido(request.email) || request.senha != senha) {
+    final usuario = _buscarUsuario(request.email);
+    if (usuario == null || request.senha != AuthMockUsuarios.senha) {
       throw const ServerException('E-mail ou senha inválidos.');
     }
 
     return AuthToken(
-      accessToken: 'mock_access_token',
-      refreshToken: 'mock_refresh_token',
+      accessToken: 'mock_access_token_${usuario.perfil.name}',
+      refreshToken: 'mock_refresh_token_${usuario.perfil.name}',
       expirationDate: DateTime.now().add(const Duration(hours: 8)),
     );
   }
@@ -191,7 +184,7 @@ class AuthRemoteDatasourceMock implements AuthRemoteDatasource {
   Future<void> enviarPinEmail(EnviarPinEmailRequestDto request) async {
     await _simularLatencia();
 
-    if (!_emailValido(request.email)) {
+    if (_buscarUsuario(request.email) == null) {
       throw const ServerException(
         'Usuário não encontrado para o e-mail informado.',
       );
@@ -204,7 +197,8 @@ class AuthRemoteDatasourceMock implements AuthRemoteDatasource {
   ) async {
     await _simularLatencia();
 
-    if (!_emailValido(request.email) || request.pin != pin) {
+    if (_buscarUsuario(request.email) == null ||
+        request.pin != AuthMockUsuarios.pin) {
       throw const ServerException('PIN inválido.');
     }
 

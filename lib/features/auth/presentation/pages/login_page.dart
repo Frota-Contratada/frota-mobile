@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../config/routes.dart';
 import '../bloc/auth.bloc.dart';
+import '../utils/auth_navigation.dart';
 import '../widgets/auth_form_widget.dart';
 
 class LoginPage extends StatefulWidget {
@@ -42,7 +42,7 @@ class _LoginPageState extends State<LoginPage> {
             );
             Navigator.pushReplacementNamed(
               context,
-              AppRoutes.motoristaHome,
+              AuthNavigation.rotaHome(state.usuario),
               arguments: state.usuario,
             );
           }
