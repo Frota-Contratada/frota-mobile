@@ -25,10 +25,7 @@ class CorridaCardWidget extends StatelessWidget {
       );
     }
 
-    return _CorridaPadraoCard(
-      corrida: corrida,
-      onVerDetalhes: onVerDetalhes,
-    );
+    return _CorridaPadraoCard(corrida: corrida, onVerDetalhes: onVerDetalhes);
   }
 }
 
@@ -36,10 +33,7 @@ class _CorridaPadraoCard extends StatelessWidget {
   final Corrida corrida;
   final VoidCallback? onVerDetalhes;
 
-  const _CorridaPadraoCard({
-    required this.corrida,
-    this.onVerDetalhes,
-  });
+  const _CorridaPadraoCard({required this.corrida, this.onVerDetalhes});
 
   @override
   Widget build(BuildContext context) {
@@ -49,10 +43,7 @@ class _CorridaPadraoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: HomeColors.borderGrey),
       ),
-      child: _CorridaConteudo(
-        corrida: corrida,
-        onVerDetalhes: onVerDetalhes,
-      ),
+      child: _CorridaConteudo(corrida: corrida, onVerDetalhes: onVerDetalhes),
     );
   }
 }
@@ -89,9 +80,10 @@ class _CorridaProximaCard extends StatelessWidget {
                   child: Text(
                     'Faltam $minutos minutos para a corrida!',
                     style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: HomeColors.white,
+                      height: 1.2,
                     ),
                   ),
                 ),
@@ -103,13 +95,16 @@ class _CorridaProximaCard extends StatelessWidget {
                     onTap: onIniciarCorrida,
                     borderRadius: BorderRadius.circular(15),
                     child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       child: Text(
                         'Iniciar corrida',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF1E1E1E),
+                          color: HomeColors.darkBlue,
                           letterSpacing: -0.12,
                         ),
                       ),
@@ -125,6 +120,7 @@ class _CorridaProximaCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: HomeColors.white,
                 borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: HomeColors.borderGrey),
               ),
               child: _CorridaConteudo(
                 corrida: corrida,
@@ -142,10 +138,7 @@ class _CorridaConteudo extends StatelessWidget {
   final Corrida corrida;
   final VoidCallback? onVerDetalhes;
 
-  const _CorridaConteudo({
-    required this.corrida,
-    this.onVerDetalhes,
-  });
+  const _CorridaConteudo({required this.corrida, this.onVerDetalhes});
 
   @override
   Widget build(BuildContext context) {
@@ -156,120 +149,128 @@ class _CorridaConteudo extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text(
-                'Origem',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: HomeColors.textGrey,
-                  letterSpacing: -0.12,
-                ),
-              ),
+              const SizedBox(width: 26),
+              const _LabelText('Origem'),
               const Spacer(),
-              const Text(
-                'Partida',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: HomeColors.textGrey,
-                  letterSpacing: -0.12,
-                ),
-              ),
+              const _LabelText('Partida'),
             ],
           ),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 9,
-                height: 9,
-                margin: const EdgeInsets.only(top: 5),
-                decoration: const BoxDecoration(
-                  color: HomeColors.buttonBlue,
-                  shape: BoxShape.circle,
-                ),
-              ),
+              _RotaIndicador(),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  corrida.origem,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: HomeColors.darkBlue,
-                    height: 1.2,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      corrida.origem,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: HomeColors.darkBlue,
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const _LabelText('Destino'),
+                    const SizedBox(height: 4),
+                    Text(
+                      corrida.destino,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: HomeColors.darkBlue,
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
               _HorarioPartida(dataHora: corrida.dataHoraPartida),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.only(left: 4, top: 2),
-            child: Container(
-              width: 2,
-              height: 34,
-              color: HomeColors.buttonBlue.withValues(alpha: 0.5),
-            ),
-          ),
-          const Text(
-            'Destino',
-            style: TextStyle(
-              fontSize: 10,
-              color: HomeColors.textGrey,
-              letterSpacing: -0.12,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.location_on_outlined,
-                color: HomeColors.buttonBlue,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  corrida.destino,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: HomeColors.darkBlue,
-                    height: 1.2,
-                  ),
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            height: 30,
+            height: 36,
             child: ElevatedButton(
               onPressed: onVerDetalhes,
               style: ElevatedButton.styleFrom(
                 backgroundColor: HomeColors.buttonBlue,
                 foregroundColor: HomeColors.white,
+                disabledBackgroundColor: HomeColors.buttonBlue,
+                disabledForegroundColor: HomeColors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(150),
                 ),
                 padding: EdgeInsets.zero,
-                minimumSize: const Size(double.infinity, 30),
+                minimumSize: const Size(double.infinity, 36),
               ),
               child: const Text(
                 'ver detalhes',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LabelText extends StatelessWidget {
+  final String text;
+
+  const _LabelText(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 11,
+        color: HomeColors.textGrey,
+        letterSpacing: -0.12,
+      ),
+    );
+  }
+}
+
+class _RotaIndicador extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 9,
+          height: 9,
+          margin: const EdgeInsets.only(top: 4),
+          decoration: const BoxDecoration(
+            color: HomeColors.primaryBlue,
+            shape: BoxShape.circle,
+          ),
+        ),
+        Container(
+          width: 2,
+          height: 36,
+          margin: const EdgeInsets.symmetric(vertical: 2),
+          color: HomeColors.borderGrey,
+        ),
+        const Icon(
+          Icons.location_on_outlined,
+          color: HomeColors.primaryBlue,
+          size: 18,
+        ),
+      ],
     );
   }
 }
@@ -286,14 +287,14 @@ class _HorarioPartida extends StatelessWidget {
       children: [
         const Icon(
           Icons.schedule_outlined,
-          color: HomeColors.buttonBlue,
+          color: HomeColors.primaryBlue,
           size: 18,
         ),
         const SizedBox(width: 4),
         Text(
           SemanaUtil.formatarHorario(dataHora),
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
             color: HomeColors.darkBlue,
           ),

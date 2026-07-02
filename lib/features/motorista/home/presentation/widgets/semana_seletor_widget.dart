@@ -53,10 +53,7 @@ class _BotaoNavegacao extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
 
-  const _BotaoNavegacao({
-    required this.icon,
-    required this.onPressed,
-  });
+  const _BotaoNavegacao({required this.icon, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -71,11 +68,7 @@ class _BotaoNavegacao extends StatelessWidget {
           child: SizedBox(
             width: 30,
             height: 30,
-            child: Icon(
-              icon,
-              color: HomeColors.white,
-              size: 22,
-            ),
+            child: Icon(icon, color: HomeColors.white, size: 22),
           ),
         ),
       ),
