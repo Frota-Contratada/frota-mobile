@@ -76,13 +76,10 @@ class _HomeContentState extends State<_HomeContent> {
                 SemanaSeletorWidget(
                   intervaloSemana: _resolverIntervaloSemana(state),
                   onSemanaAnterior: state is HomeCarregada
-                      ? () => context
-                          .read<HomeBloc>()
-                          .add(HomeSemanaAnterior())
+                      ? () => context.read<HomeBloc>().add(HomeSemanaAnterior())
                       : () {},
                   onSemanaProxima: state is HomeCarregada
-                      ? () =>
-                          context.read<HomeBloc>().add(HomeSemanaProxima())
+                      ? () => context.read<HomeBloc>().add(HomeSemanaProxima())
                       : () {},
                 ),
                 const SizedBox(height: 20),
@@ -118,8 +115,8 @@ class _HomeContentState extends State<_HomeContent> {
               ElevatedButton(
                 onPressed: () {
                   context.read<HomeBloc>().add(
-                        HomeIniciada(usuario: state.usuario),
-                      );
+                    HomeIniciada(usuario: state.usuario),
+                  );
                 },
                 child: const Text('Tentar novamente'),
               ),
@@ -136,10 +133,7 @@ class _HomeContentState extends State<_HomeContent> {
         return const Center(
           child: Text(
             'Nenhuma viagem agendada para esta semana.',
-            style: TextStyle(
-              fontSize: 12,
-              color: HomeColors.textMediumGrey,
-            ),
+            style: TextStyle(fontSize: 12, color: HomeColors.textMediumGrey),
           ),
         );
       }

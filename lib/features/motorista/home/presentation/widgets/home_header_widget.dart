@@ -6,11 +6,7 @@ class HomeHeaderWidget extends StatelessWidget {
   final Usuario? usuario;
   final VoidCallback? onConfiguracoes;
 
-  const HomeHeaderWidget({
-    super.key,
-    this.usuario,
-    this.onConfiguracoes,
-  });
+  const HomeHeaderWidget({super.key, this.usuario, this.onConfiguracoes});
 
   @override
   Widget build(BuildContext context) {
