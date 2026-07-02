@@ -7,4 +7,6 @@ class Env {
   static String get authBaseUrl => '$baseUrl/autenticacao';
 
   static String get motoristaViagensBaseUrl => '$baseUrl/motorista/viagens';
+
+  static String get motoristaCorridasBaseUrl => '$baseUrl/motorista/corridas';
 }

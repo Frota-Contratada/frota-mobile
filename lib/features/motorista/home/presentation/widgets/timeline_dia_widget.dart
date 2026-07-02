@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../config/routes.dart';
 import '../../domain/entities/corrida.dart';
 import '../utils/semana_util.dart';
 import 'corrida_card_widget.dart';
@@ -47,7 +48,19 @@ class TimelineDiaWidget extends StatelessWidget {
 
                     return Padding(
                       padding: EdgeInsets.only(bottom: bottomPadding),
-                      child: CorridaCardWidget(corrida: entry.value),
+                      child: CorridaCardWidget(
+                        corrida: entry.value,
+                        onVerDetalhes: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.motoristaCorridaDetalhe,
+                          arguments: entry.value.id,
+                        ),
+                        onIniciarCorrida: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.motoristaCorridaDetalhe,
+                          arguments: entry.value.id,
+                        ),
+                      ),
                     );
                   },
                 ),
