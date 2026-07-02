@@ -28,4 +28,5 @@ flutter:
   assets:
     - assets/backgrounds/
     - assets/icons/
+    - assets/images/corrida/
     - .env
