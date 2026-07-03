@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../config/app_assets.dart';
 import '../../../shared/presentation/theme/passageiro_colors.dart';
 
 class MapaBuscaWidget extends StatelessWidget {
@@ -51,10 +52,11 @@ class MapaBuscaWidget extends StatelessWidget {
                     child: Row(
                       children: [
                         const SizedBox(width: 14),
-                        Icon(
-                          Icons.location_on_outlined,
-                          color: PassageiroColors.primaryBlue,
-                          size: 21,
+                        Image.asset(
+                          AppAssets.iconDestino,
+                          width: 21,
+                          height: 20,
+                          fit: BoxFit.contain,
                         ),
                         const SizedBox(width: 12),
                         Text(

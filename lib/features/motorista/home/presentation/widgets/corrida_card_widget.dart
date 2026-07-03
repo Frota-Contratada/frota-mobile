@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../config/app_assets.dart';
 import '../../domain/entities/corrida.dart';
 import '../utils/semana_util.dart';
 import 'home_colors.dart';
@@ -265,10 +266,11 @@ class _RotaIndicador extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 2),
           color: HomeColors.borderGrey,
         ),
-        const Icon(
-          Icons.location_on_outlined,
-          color: HomeColors.primaryBlue,
-          size: 18,
+        Image.asset(
+          AppAssets.iconDestino,
+          width: 9,
+          height: 11,
+          fit: BoxFit.contain,
         ),
       ],
     );

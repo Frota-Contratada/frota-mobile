@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../enums/passageiro_nav_destino.dart';
+import '../theme/passageiro_assets.dart';
 import '../theme/passageiro_colors.dart';
 
 class PassageiroBottomBar extends StatelessWidget {
@@ -16,38 +17,41 @@ class PassageiroBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 75,
-      decoration: const BoxDecoration(
-        color: PassageiroColors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 8,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
+      color: PassageiroColors.white,
       child: SafeArea(
         top: false,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _NavItem(
-              label: 'solicitações',
-              icon: Icons.event_available_outlined,
-              ativo: destinoAtivo == PassageiroNavDestino.solicitacoes,
-              onTap: () => onDestinoSelecionado(PassageiroNavDestino.solicitacoes),
+            Expanded(
+              child: _NavItem(
+                label: 'solicitações',
+                iconPath: PassageiroAssets.bottomBarSolicitacoes,
+                iconWidth: 26,
+                iconHeight: 30,
+                ativo: destinoAtivo == PassageiroNavDestino.solicitacoes,
+                onTap: () =>
+                    onDestinoSelecionado(PassageiroNavDestino.solicitacoes),
+              ),
             ),
-            _NavItem(
-              label: 'home',
-              icon: Icons.location_on_outlined,
-              ativo: destinoAtivo == PassageiroNavDestino.home,
-              onTap: () => onDestinoSelecionado(PassageiroNavDestino.home),
+            Expanded(
+              child: _NavItem(
+                label: 'home',
+                iconPath: PassageiroAssets.bottomBarHome,
+                iconWidth: 30,
+                iconHeight: 30,
+                ativo: destinoAtivo == PassageiroNavDestino.home,
+                onTap: () => onDestinoSelecionado(PassageiroNavDestino.home),
+              ),
             ),
-            _NavItem(
-              label: 'perfil',
-              icon: Icons.person_outline,
-              ativo: destinoAtivo == PassageiroNavDestino.perfil,
-              onTap: () => onDestinoSelecionado(PassageiroNavDestino.perfil),
+            Expanded(
+              child: _NavItem(
+                label: 'perfil',
+                iconPath: PassageiroAssets.bottomBarPerfil,
+                iconWidth: 33,
+                iconHeight: 35,
+                ativo: destinoAtivo == PassageiroNavDestino.perfil,
+                onTap: () => onDestinoSelecionado(PassageiroNavDestino.perfil),
+              ),
             ),
           ],
         ),
@@ -58,13 +62,17 @@ class PassageiroBottomBar extends StatelessWidget {
 
 class _NavItem extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final String iconPath;
+  final double iconWidth;
+  final double iconHeight;
   final bool ativo;
   final VoidCallback onTap;
 
   const _NavItem({
     required this.label,
-    required this.icon,
+    required this.iconPath,
+    required this.iconWidth,
+    required this.iconHeight,
     required this.ativo,
     required this.onTap,
   });
@@ -73,36 +81,40 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
       child: SizedBox(
-        width: 90,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        height: 75,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
             if (ativo)
-              Container(
-                width: 24,
-                height: 3,
-                margin: const EdgeInsets.only(bottom: 6),
-                decoration: BoxDecoration(
-                  color: PassageiroColors.accentGreen,
-                  borderRadius: BorderRadius.circular(2),
+              Positioned(
+                top: 8,
+                child: Image.asset(
+                  PassageiroAssets.bottomBarIndicadorAtivo,
+                  width: 24,
+                  height: 3,
+                  fit: BoxFit.fill,
                 ),
-              )
-            else
-              const SizedBox(height: 9),
-            Icon(
-              icon,
-              size: 28,
-              color: PassageiroColors.darkBlue,
+              ),
+            Positioned(
+              top: 18,
+              child: Image.asset(
+                iconPath,
+                width: iconWidth,
+                height: iconHeight,
+                fit: BoxFit.contain,
+              ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 8,
-                fontWeight: FontWeight.w500,
-                color: PassageiroColors.darkBlue,
+            Positioned(
+              top: 53,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.w500,
+                  color: PassageiroColors.darkBlue,
+                  height: 1,
+                ),
               ),
             ),
           ],

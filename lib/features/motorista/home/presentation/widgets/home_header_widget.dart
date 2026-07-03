@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../config/app_assets.dart';
 import '../../../../auth/domain/entities/usuario.dart';
 import 'home_colors.dart';
 
@@ -57,10 +58,11 @@ class HomeHeaderWidget extends StatelessWidget {
           ),
           IconButton(
             onPressed: onConfiguracoes,
-            icon: const Icon(
-              Icons.settings_outlined,
-              color: HomeColors.textMediumGrey,
-              size: 22,
+            icon: Image.asset(
+              AppAssets.iconConfig,
+              width: 27,
+              height: 30,
+              fit: BoxFit.contain,
             ),
           ),
         ],

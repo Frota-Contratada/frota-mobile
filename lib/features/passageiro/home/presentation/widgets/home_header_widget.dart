@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../auth/domain/entities/usuario.dart';
+import '../../../../../config/app_assets.dart';
 import '../../../shared/presentation/theme/passageiro_colors.dart';
 
 class HomeHeaderWidget extends StatelessWidget {
@@ -70,10 +71,11 @@ class HomeHeaderWidget extends StatelessWidget {
           ),
           IconButton(
             onPressed: onConfiguracoes,
-            icon: const Icon(
-              Icons.settings_outlined,
-              color: PassageiroColors.textMediumGrey,
-              size: 27,
+            icon: Image.asset(
+              AppAssets.iconConfig,
+              width: 27,
+              height: 30,
+              fit: BoxFit.contain,
             ),
           ),
         ],

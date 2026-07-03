@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../config/app_assets.dart';
 import 'corrida_colors.dart';
 
 class CorridaMapaWidget extends StatelessWidget {
@@ -48,10 +49,11 @@ class CorridaMapaWidget extends StatelessWidget {
           Positioned(
             right: 25,
             top: 33,
-            child: Icon(
-              Icons.location_on,
-              color: CorridaColors.primaryBlue,
-              size: 20,
+            child: Image.asset(
+              AppAssets.iconDestino,
+              width: 9,
+              height: 11,
+              fit: BoxFit.contain,
             ),
           ),
         ],

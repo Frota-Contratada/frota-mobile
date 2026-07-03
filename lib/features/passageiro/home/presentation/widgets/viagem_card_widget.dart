@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/viagem.dart';
+import '../../../../../config/app_assets.dart';
 import '../utils/semana_util.dart';
 import '../../../shared/presentation/theme/passageiro_colors.dart';
 
@@ -187,10 +188,11 @@ class _RotaIndicador extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 2),
           color: PassageiroColors.borderGrey,
         ),
-        const Icon(
-          Icons.location_on_outlined,
-          color: PassageiroColors.primaryBlue,
-          size: 18,
+        Image.asset(
+          AppAssets.iconDestino,
+          width: 9,
+          height: 11,
+          fit: BoxFit.contain,
         ),
       ],
     );
