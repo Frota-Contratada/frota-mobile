@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../../../config/routes.dart';
+import '../../../../../core/widgets/timeline_dia_widget.dart' as shared;
 import '../../domain/entities/corrida.dart';
 import '../utils/semana_util.dart';
 import 'corrida_card_widget.dart';
-import 'home_colors.dart';
 
+/// Timeline de dia do motorista.
+/// Delegação para o widget compartilhado [shared.TimelineDiaWidget],
+/// construindo os cards específicos de corrida do motorista.
 class TimelineDiaWidget extends StatelessWidget {
   final DateTime dia;
   final List<Corrida> corridas;
@@ -19,53 +22,32 @@ class TimelineDiaWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  SemanaUtil.formatarDiaCorrida(dia),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: HomeColors.darkBlue,
-                    letterSpacing: -0.16,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...corridas.asMap().entries.map((entry) {
-                  final isUltimaCorrida = entry.key == corridas.length - 1;
-                  final bottomPadding = isUltimoDia && isUltimaCorrida
-                      ? 0.0
-                      : 16.0;
+    final cards = corridas.asMap().entries.map((entry) {
+      final isUltimaCorrida = entry.key == corridas.length - 1;
+      final bottomPadding = isUltimoDia && isUltimaCorrida ? 0.0 : 16.0;
 
-                  return Padding(
-                    padding: EdgeInsets.only(bottom: bottomPadding),
-                    child: CorridaCardWidget(
-                      corrida: entry.value,
-                      onVerDetalhes: () => Navigator.pushNamed(
-                        context,
-                        AppRoutes.motoristaCorridaDetalhe,
-                        arguments: entry.value.id,
-                      ),
-                      onIniciarCorrida: () => Navigator.pushNamed(
-                        context,
-                        AppRoutes.motoristaCorridaDetalhe,
-                        arguments: entry.value.id,
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            ),
+      return Padding(
+        padding: EdgeInsets.only(bottom: bottomPadding),
+        child: CorridaCardWidget(
+          corrida: entry.value,
+          onVerDetalhes: () => Navigator.pushNamed(
+            context,
+            AppRoutes.motoristaCorridaDetalhe,
+            arguments: entry.value.id,
           ),
-        ],
-      ),
+          onIniciarCorrida: () => Navigator.pushNamed(
+            context,
+            AppRoutes.motoristaCorridaDetalhe,
+            arguments: entry.value.id,
+          ),
+        ),
+      );
+    }).toList();
+
+    return shared.TimelineDiaWidget(
+      labelDia: SemanaUtil.formatarDiaCorrida(dia),
+      cards: cards,
+      isUltimoDia: isUltimoDia,
     );
   }
 }
