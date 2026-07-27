@@ -112,11 +112,6 @@ class _PerfilHeader extends StatelessWidget {
               width: 30,
               height: 30,
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Icon(
-                Icons.arrow_back_ios_new,
-                size: 22,
-                color: AppColors.darkBlue,
-              ),
             ),
           ),
           const SizedBox(width: 15),
@@ -234,7 +229,7 @@ class _KpiSection extends StatelessWidget {
                 valor: viagensFinalizadas.toString().padLeft(2, '0'),
                 label: 'Viagens finalizadas',
                 bgColor: AppColors.kpiBlueBg,
-                icon: Icons.directions_car_outlined,
+                iconAsset: AppAssets.iconViagensFinalizadas,
               ),
             ),
             const SizedBox(width: 8),
@@ -249,7 +244,7 @@ class _KpiSection extends StatelessWidget {
                 valor: transportesDeItens.toString().padLeft(2, '0'),
                 label: 'Transportes de itens',
                 bgColor: AppColors.kpiOrangeBg,
-                icon: Icons.inventory_2_outlined,
+                iconAsset: AppAssets.iconTransporteItens,
               ),
             ),
           ],
@@ -263,13 +258,13 @@ class _KpiItem extends StatelessWidget {
   final String valor;
   final String label;
   final Color bgColor;
-  final IconData icon;
+  final String iconAsset;
 
   const _KpiItem({
     required this.valor,
     required this.label,
     required this.bgColor,
-    required this.icon,
+    required this.iconAsset,
   });
 
   @override
@@ -284,7 +279,12 @@ class _KpiItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
           ),
           child: Center(
-            child: Icon(icon, size: 25, color: AppColors.darkBlue),
+            child: Image.asset(
+              iconAsset,
+              width: 25,
+              height: 25,
+              fit: BoxFit.contain,
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -351,10 +351,11 @@ class _BuscaFiltroSection extends StatelessWidget {
               child: Row(
                 children: [
                   const SizedBox(width: 10),
-                  const Icon(
-                    Icons.search,
-                    size: 21,
-                    color: AppColors.textGrey,
+                  Image.asset(
+                    AppAssets.iconBusca,
+                    width: 21,
+                    height: 21,
+                    fit: BoxFit.contain,
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -391,11 +392,6 @@ class _BuscaFiltroSection extends StatelessWidget {
               width: 21,
               height: 14,
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Icon(
-                Icons.filter_list,
-                size: 21,
-                color: AppColors.darkBlue,
-              ),
             ),
           ),
         ],

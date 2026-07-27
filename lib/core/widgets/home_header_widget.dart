@@ -9,6 +9,7 @@ class HomeHeaderWidget extends StatelessWidget {
   final String subtitulo;
   final String? avatarAssetPath;
   final VoidCallback? onConfiguracoes;
+  final VoidCallback? onAvatarTap;
 
   const HomeHeaderWidget({
     super.key,
@@ -16,6 +17,7 @@ class HomeHeaderWidget extends StatelessWidget {
     required this.subtitulo,
     this.avatarAssetPath,
     this.onConfiguracoes,
+    this.onAvatarTap,
   });
 
   @override
@@ -25,7 +27,10 @@ class HomeHeaderWidget extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildAvatar(),
+          GestureDetector(
+            onTap: onAvatarTap,
+            child: _buildAvatar(),
+          ),
           const SizedBox(width: 15),
           Expanded(
             child: Column(

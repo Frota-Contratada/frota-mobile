@@ -6,8 +6,10 @@ import 'config/routes.dart';
 import 'features/auth/presentation/bloc/auth.bloc.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/domain/entities/usuario.dart';
+import 'features/motorista/configuracoes/presentation/pages/configuracoes_page.dart';
 import 'features/motorista/corrida/presentation/pages/corrida_detalhe_page.dart';
 import 'features/motorista/home/presentation/pages/home_page.dart';
+import 'features/motorista/perfil/presentation/pages/perfil_page.dart';
 import 'features/passageiro/shared/presentation/pages/passageiro_shell_page.dart';
 import 'injection_container/injection_container.dart';
 
@@ -36,6 +38,9 @@ class FrotaApp extends StatelessWidget {
             ),
         AppRoutes.motoristaHome: (_) => const HomePage(),
         AppRoutes.motoristaCorridaDetalhe: (_) => const CorridaDetalhePage(),
+        AppRoutes.motoristaPerfil: (_) => const MotoristPerfilPage(),
+        AppRoutes.motoristaConfiguracoes: (_) =>
+            const MotoristaConfiguracoesPage(),
         AppRoutes.passageiroHome: (context) {
           final usuario =
               ModalRoute.of(context)?.settings.arguments as Usuario?;
