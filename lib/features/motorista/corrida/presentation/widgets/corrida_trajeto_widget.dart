@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../config/app_assets.dart';
 import 'corrida_colors.dart';
 
 class CorridaTrajetoWidget extends StatelessWidget {
@@ -34,10 +35,11 @@ class CorridaTrajetoWidget extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(vertical: 3),
                 color: CorridaColors.primaryBlue.withValues(alpha: 0.4),
               ),
-              Icon(
-                Icons.location_on_outlined,
-                color: CorridaColors.primaryBlue,
-                size: 15,
+              Image.asset(
+                AppAssets.iconDestino,
+                width: 9,
+                height: 11,
+                fit: BoxFit.contain,
               ),
             ],
           ),

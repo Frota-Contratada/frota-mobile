@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../enums/perfil_usuario.dart';
 
 class Usuario extends Equatable {
   final int? id;
@@ -7,6 +8,7 @@ class Usuario extends Equatable {
   final String? cpf;
   final DateTime? dataAtivacao;
   final DateTime? dataDesativacao;
+  final PerfilUsuario perfil;
 
   const Usuario({
     this.id,
@@ -15,9 +17,17 @@ class Usuario extends Equatable {
     this.cpf,
     this.dataAtivacao,
     this.dataDesativacao,
+    this.perfil = PerfilUsuario.motorista,
   });
 
   @override
-  List<Object?> get props =>
-      [id, nome, email, cpf, dataAtivacao, dataDesativacao];
+  List<Object?> get props => [
+        id,
+        nome,
+        email,
+        cpf,
+        dataAtivacao,
+        dataDesativacao,
+        perfil,
+      ];
 }

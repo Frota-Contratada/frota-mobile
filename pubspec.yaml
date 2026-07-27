@@ -29,4 +29,8 @@ flutter:
     - assets/backgrounds/
     - assets/icons/
     - assets/images/corrida/
+    - assets/images/passageiro/bottom_bar/
+    - assets/images/passageiro/cards/
+    - assets/images/passageiro/mapa_home.png
+    - assets/images/passageiro/avatar_placeholder.png
     - .env

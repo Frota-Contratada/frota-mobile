@@ -1,4 +1,5 @@
 import '../../domain/entities/usuario.dart';
+import '../../domain/enums/perfil_usuario.dart';
 
 class UsuarioModel extends Usuario {
   const UsuarioModel({
@@ -8,6 +9,7 @@ class UsuarioModel extends Usuario {
     super.cpf,
     super.dataAtivacao,
     super.dataDesativacao,
+    super.perfil = PerfilUsuario.motorista,
   });
 
   factory UsuarioModel.fromJson(Map<String, dynamic> json) {
@@ -22,6 +24,7 @@ class UsuarioModel extends Usuario {
       dataDesativacao: json['dataDesativacao'] != null
           ? DateTime.parse(json['dataDesativacao'] as String)
           : null,
+      perfil: _perfilFromJson(json['perfil'] as String?),
     );
   }
 
@@ -33,6 +36,14 @@ class UsuarioModel extends Usuario {
       'cpf': cpf,
       'dataAtivacao': dataAtivacao?.toIso8601String(),
       'dataDesativacao': dataDesativacao?.toIso8601String(),
+      'perfil': perfil.name,
     };
+  }
+
+  static PerfilUsuario _perfilFromJson(String? value) {
+    return PerfilUsuario.values.firstWhere(
+      (perfil) => perfil.name == value,
+      orElse: () => PerfilUsuario.motorista,
+    );
   }
 }
