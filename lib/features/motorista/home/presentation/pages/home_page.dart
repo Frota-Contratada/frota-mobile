@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../../config/routes.dart';
 import '../../../../../injection_container/injection_container.dart';
 import '../../../../auth/domain/entities/usuario.dart';
 import '../bloc/home.bloc.dart';
@@ -59,7 +60,17 @@ class _HomeContentState extends State<_HomeContent> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                HomeHeaderWidget(usuario: usuarioAtual),
+                HomeHeaderWidget(
+                  usuario: usuarioAtual,
+                  onAvatarTap: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.motoristaPerfil,
+                  ),
+                  onConfiguracoes: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.motoristaConfiguracoes,
+                  ),
+                ),
                 const SizedBox(height: 20),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 23),
@@ -76,10 +87,12 @@ class _HomeContentState extends State<_HomeContent> {
                 SemanaSeletorWidget(
                   intervaloSemana: _resolverIntervaloSemana(state),
                   onSemanaAnterior: state is HomeCarregada
-                      ? () => context.read<HomeBloc>().add(HomeSemanaAnterior())
+                      ? () =>
+                          context.read<HomeBloc>().add(HomeSemanaAnterior())
                       : () {},
                   onSemanaProxima: state is HomeCarregada
-                      ? () => context.read<HomeBloc>().add(HomeSemanaProxima())
+                      ? () =>
+                          context.read<HomeBloc>().add(HomeSemanaProxima())
                       : () {},
                 ),
                 const SizedBox(height: 20),

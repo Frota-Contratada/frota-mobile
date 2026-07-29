@@ -3,7 +3,7 @@ class PassageiroAssets {
 
   static const String ilustracaoViagem = '$_base/cards/ilustracao_viagem.png';
   static const String ilustracaoObjeto = '$_base/cards/ilustracao_objeto.png';
-  static const String setaAcao = '$_base/cards/seta_acao.png';
+  static const String setaAcao = '$_base/cards/button_seta_frente.png';
 
   static const String bottomBarHome = '$_base/bottom_bar/icon_home.png';
   static const String bottomBarSolicitacoes =
