@@ -11,6 +11,7 @@ class PerfilPageBase extends StatelessWidget {
   final int viagensFinalizadas;
   final int transportesDeItens;
   final VoidCallback onVoltar;
+  final bool mostrarBotaoVoltar;
   final String? buscaTexto;
   final ValueChanged<String>? onBuscaChanged;
   final VoidCallback? onFiltroTap;
@@ -23,6 +24,7 @@ class PerfilPageBase extends StatelessWidget {
     required this.viagensFinalizadas,
     required this.transportesDeItens,
     required this.onVoltar,
+    this.mostrarBotaoVoltar = true,
     this.avatarAssetPath,
     this.buscaTexto,
     this.onBuscaChanged,
@@ -37,7 +39,8 @@ class PerfilPageBase extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            _PerfilHeader(onVoltar: onVoltar),
+            if (mostrarBotaoVoltar) _PerfilHeader(onVoltar: onVoltar),
+            if (!mostrarBotaoVoltar) _PerfilHeaderSemVoltar(),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -124,6 +127,23 @@ class _PerfilHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PerfilHeaderSemVoltar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(25, 16, 25, 0),
+      child: Text(
+        'Meu perfil',
+        style: TextStyle(
+          fontSize: 21,
+          fontWeight: FontWeight.w500,
+          color: AppColors.darkBlue,
+        ),
       ),
     );
   }

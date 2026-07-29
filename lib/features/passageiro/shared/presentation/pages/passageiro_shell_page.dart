@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../auth/domain/entities/usuario.dart';
 import '../../../home/presentation/pages/home_page.dart';
+import '../../../perfil/presentation/pages/perfil_page.dart';
+import '../../../solicitacoes/presentation/pages/solicitacoes_page.dart';
 import '../enums/passageiro_nav_destino.dart';
 import '../theme/passageiro_colors.dart';
 import '../widgets/passageiro_bottom_bar.dart';
@@ -35,15 +37,9 @@ class _PassageiroShellPageState extends State<PassageiroShellPage> {
       body: IndexedStack(
         index: _destinoAtivo.index,
         children: [
-          _PlaceholderTab(
-            titulo: 'Solicitações',
-            icone: Icons.event_available_outlined,
-          ),
+          SolicitacoesPage(usuario: widget.usuario),
           PassageiroHomePage(usuario: widget.usuario),
-          _PlaceholderTab(
-            titulo: 'Perfil',
-            icone: Icons.person_outline,
-          ),
+          PassageiroPerfilPage(usuario: widget.usuario),
         ],
       ),
       bottomNavigationBar: PassageiroBottomBar(
@@ -51,51 +47,6 @@ class _PassageiroShellPageState extends State<PassageiroShellPage> {
         onDestinoSelecionado: (destino) {
           setState(() => _destinoAtivo = destino);
         },
-      ),
-    );
-  }
-}
-
-class _PlaceholderTab extends StatelessWidget {
-  final String titulo;
-  final IconData icone;
-
-  const _PlaceholderTab({
-    required this.titulo,
-    required this.icone,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icone,
-              size: 48,
-              color: PassageiroColors.primaryBlue,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              titulo,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: PassageiroColors.darkBlue,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Em breve',
-              style: TextStyle(
-                fontSize: 14,
-                color: PassageiroColors.textMediumGrey,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
