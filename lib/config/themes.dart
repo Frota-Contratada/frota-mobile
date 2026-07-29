@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color primaryBlue = Color(0xFF1A3C8F);
+  static const Color primaryBlue = Color(0xFF302C9E);
   static const Color seararRed = Color(0xFFE30613);
   static const Color white = Color(0xFFFFFFFF);
-  static const Color borderGrey = Color(0xFFE0E0E0);
-  static const Color textGrey = Color(0xFF9E9E9E);
-  static const Color textDark = Color(0xFF212121);
+  static const Color borderGrey = Color(0xFFD9D9D9);
+  static const Color textGrey = Color(0xFF8D8C8C);
+  static const Color textDark = Color(0xFF101038);
 
   static TextTheme get _textTheme =>
       GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme);

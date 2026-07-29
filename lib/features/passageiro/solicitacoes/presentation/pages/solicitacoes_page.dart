@@ -3,7 +3,6 @@ import '../../../../../config/app_assets.dart';
 import '../../../../../config/routes.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../auth/domain/entities/usuario.dart';
-import '../../../shared/presentation/theme/passageiro_colors.dart';
 import '../widgets/solicitacao_card_widget.dart';
 import '../widgets/solicitacao_status.dart';
 
@@ -35,11 +34,11 @@ class SolicitacoesPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 25),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 25),
                   child: Row(
                     children: [
-                      Expanded(
+                      const Expanded(
                         child: Text(
                           'Minhas solicitações',
                           style: TextStyle(
@@ -49,10 +48,11 @@ class SolicitacoesPage extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Icon(
-                        Icons.filter_list,
-                        size: 18,
-                        color: AppColors.darkBlue,
+                      Image.asset(
+                        AppAssets.iconFiltro,
+                        width: 21,
+                        height: 14,
+                        fit: BoxFit.contain,
                       ),
                     ],
                   ),

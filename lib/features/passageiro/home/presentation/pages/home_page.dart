@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../injection_container/injection_container.dart';
 import '../../../../auth/domain/entities/usuario.dart';
 import '../../../shared/presentation/theme/passageiro_colors.dart';
@@ -66,9 +67,9 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     HomeHeaderWidget(usuario: usuarioAtual),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 30),
                     const MapaBuscaWidget(),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 30),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 25),
                       child: Text(
@@ -108,7 +109,7 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
                               .add(PassageiroHomeSemanaProxima())
                           : () {},
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 28),
                   ],
                 ),
               ),
@@ -160,13 +161,11 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
 
       if (dias.isEmpty) {
         return const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 25, vertical: 24),
-          child: Text(
-            'Nenhuma viagem agendada para esta semana.',
-            style: TextStyle(
-              fontSize: 14,
-              color: PassageiroColors.textMediumGrey,
-            ),
+          padding: EdgeInsets.symmetric(horizontal: 25),
+          child: EmptyStateWidget(
+            icon: Icons.event_available_rounded,
+            mensagem: 'Nenhuma viagem agendada',
+            submensagem: 'Suas viagens para esta semana aparecerão aqui.',
           ),
         );
       }

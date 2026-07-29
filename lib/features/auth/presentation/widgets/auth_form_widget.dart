@@ -4,9 +4,9 @@ class AuthColors {
   static const Color primaryBlue = Color(0xFF2C2C9E);
   static const Color darkBlue = Color(0xFF101038);
   static const Color background = Color(0xFFF8F8F8);
-  static const Color textDark = Color(0xFF1A1A1A);
-  static const Color textGrey = Color(0xFF9CA3AF);
-  static const Color inputBorder = Color(0xFFD1D5DB);
+  static const Color textDark = Color(0xFF101038);
+  static const Color textGrey = Color(0xFF8D8C8C);
+  static const Color inputBorder = Color(0xFFD9D9D9);
   static const Color white = Color(0xFFFFFFFF);
   static const Color error = Color(0xFFDC2626);
 }

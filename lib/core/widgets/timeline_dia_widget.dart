@@ -34,14 +34,13 @@ class TimelineDiaWidget extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                 ),
-                if (!isUltimoDia)
-                  Expanded(
-                    child: Container(
-                      width: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      color: AppColors.timelineGrey,
-                    ),
+                Expanded(
+                  child: Container(
+                    width: 2,
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    color: AppColors.timelineGrey,
                   ),
+                ),
               ],
             ),
           ),

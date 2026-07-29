@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../../config/routes.dart';
 import '../../../../../core/widgets/corrida_card_base_widget.dart';
+import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../core/widgets/perfil_page_base.dart';
 import '../../../../../core/widgets/timeline_dia_widget.dart';
 import '../../../../auth/domain/entities/usuario.dart';
@@ -68,6 +68,16 @@ class _PassageiroPerfilPageState extends State<PassageiroPerfilPage> {
                     v.origem.toLowerCase().contains(_busca.toLowerCase()),
               )
               .toList();
+
+    if (viagensFiltradas.isEmpty) {
+      return [
+        const EmptyStateWidget(
+          icon: Icons.search_off_rounded,
+          mensagem: 'Nenhum resultado encontrado',
+          submensagem: 'Tente buscar por outro destino ou limpe o filtro.',
+        ),
+      ];
+    }
 
     return [
       TimelineDiaWidget(

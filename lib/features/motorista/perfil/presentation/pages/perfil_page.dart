@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/corrida_card_base_widget.dart';
+import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../core/widgets/perfil_page_base.dart';
 import '../../../../../core/widgets/timeline_dia_widget.dart';
 import '../../../../auth/domain/entities/usuario.dart';
@@ -69,6 +69,16 @@ class _MotoristPerfilPageState extends State<MotoristPerfilPage> {
               )
               .toList();
 
+    if (corridasFiltradas.isEmpty) {
+      return [
+        const EmptyStateWidget(
+          icon: Icons.search_off_rounded,
+          mensagem: 'Nenhum resultado encontrado',
+          submensagem: 'Tente buscar por outro destino ou limpe o filtro.',
+        ),
+      ];
+    }
+
     return [
       TimelineDiaWidget(
         labelDia: 'Ontem - 20/04',
@@ -76,15 +86,9 @@ class _MotoristPerfilPageState extends State<MotoristPerfilPage> {
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: CorridaCardBaseWidget(
-              origem: corridasFiltradas.isNotEmpty
-                  ? corridasFiltradas[0].origem
-                  : '',
-              destino: corridasFiltradas.isNotEmpty
-                  ? corridasFiltradas[0].destino
-                  : '',
-              horarioPartida: corridasFiltradas.isNotEmpty
-                  ? corridasFiltradas[0].horario
-                  : '',
+              origem: corridasFiltradas[0].origem,
+              destino: corridasFiltradas[0].destino,
+              horarioPartida: corridasFiltradas[0].horario,
               onVerDetalhes: () {
                 // TODO: navegar para detalhe da corrida
               },
@@ -107,14 +111,11 @@ class _MotoristPerfilPageState extends State<MotoristPerfilPage> {
               ),
             ),
           if (corridasFiltradas.length > 2)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 0),
-              child: CorridaCardBaseWidget(
-                origem: corridasFiltradas[2].origem,
-                destino: corridasFiltradas[2].destino,
-                horarioPartida: corridasFiltradas[2].horario,
-                onVerDetalhes: () {},
-              ),
+            CorridaCardBaseWidget(
+              origem: corridasFiltradas[2].origem,
+              destino: corridasFiltradas[2].destino,
+              horarioPartida: corridasFiltradas[2].horario,
+              onVerDetalhes: () {},
             ),
         ],
       ),
