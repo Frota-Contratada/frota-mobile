@@ -7,6 +7,7 @@ import 'app_colors.dart';
 class PerfilPageBase extends StatelessWidget {
   final String nome;
   final String subtitulo;
+  final String? unidade;
   final String? avatarAssetPath;
   final int viagensFinalizadas;
   final int transportesDeItens;
@@ -21,6 +22,7 @@ class PerfilPageBase extends StatelessWidget {
     super.key,
     required this.nome,
     required this.subtitulo,
+    this.unidade,
     required this.viagensFinalizadas,
     required this.transportesDeItens,
     required this.onVoltar,
@@ -50,6 +52,7 @@ class PerfilPageBase extends StatelessWidget {
                     _AvatarSection(
                       nome: nome,
                       subtitulo: subtitulo,
+                      unidade: unidade,
                       avatarAssetPath: avatarAssetPath,
                     ),
                     const SizedBox(height: 16),
@@ -152,11 +155,13 @@ class _PerfilHeaderSemVoltar extends StatelessWidget {
 class _AvatarSection extends StatelessWidget {
   final String nome;
   final String subtitulo;
+  final String? unidade;
   final String? avatarAssetPath;
 
   const _AvatarSection({
     required this.nome,
     required this.subtitulo,
+    this.unidade,
     this.avatarAssetPath,
   });
 
@@ -184,6 +189,17 @@ class _AvatarSection extends StatelessWidget {
               color: AppColors.textMediumGrey,
             ),
           ),
+          if (unidade != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              unidade!,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textMediumGrey,
+              ),
+            ),
+          ],
         ],
       ),
     );

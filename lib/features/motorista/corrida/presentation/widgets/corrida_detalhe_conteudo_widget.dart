@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../../../config/app_assets.dart';
+import '../../../../../core/widgets/app_colors.dart';
 import '../../../home/presentation/utils/semana_util.dart';
 import '../utils/corrida_format_util.dart';
 import '../../domain/entities/corrida_detalhe.dart';
-import 'corrida_colors.dart';
 import 'corrida_header_widget.dart';
 import 'corrida_info_item_widget.dart';
 import 'corrida_iniciar_button_widget.dart';
@@ -49,40 +50,48 @@ class CorridaDetalheConteudoWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 CorridaInfoItemWidget(
-                  icon: Icon(
-                    Icons.calendar_today_outlined,
-                    color: CorridaColors.iconBlue,
-                    size: 14,
+                  icon: Image.asset(
+                    AppAssets.iconData,
+                    width: 12,
+                    height: 14,
+                    fit: BoxFit.contain,
+                    color: AppColors.primaryBlue,
                   ),
                   label: 'Data',
                   valor: dataFormatada,
                 ),
                 const SizedBox(height: 20),
                 CorridaInfoItemWidget(
-                  icon: Icon(
-                    Icons.schedule_outlined,
-                    color: CorridaColors.iconBlue,
-                    size: 12,
+                  icon: Image.asset(
+                    AppAssets.iconHorario,
+                    width: 12,
+                    height: 12,
+                    fit: BoxFit.contain,
+                    color: AppColors.primaryBlue,
                   ),
                   label: 'Horário de partida',
                   valor: SemanaUtil.formatarHorario(corrida.dataHoraPartida),
                 ),
                 const SizedBox(height: 20),
                 CorridaInfoItemWidget(
-                  icon: Icon(
-                    Icons.person_outline,
-                    color: CorridaColors.iconBlue,
-                    size: 13,
+                  icon: Image.asset(
+                    AppAssets.iconFuncionario,
+                    width: 12,
+                    height: 13,
+                    fit: BoxFit.contain,
+                    color: AppColors.primaryBlue,
                   ),
                   label: 'Nome do passageiro',
                   valor: corrida.nomePassageiro,
                 ),
                 const SizedBox(height: 20),
                 CorridaInfoItemWidget(
-                  icon: Icon(
-                    Icons.payments_outlined,
-                    color: CorridaColors.iconBlue,
-                    size: 12,
+                  icon: Image.asset(
+                    AppAssets.iconCusto,
+                    width: 12,
+                    height: 10,
+                    fit: BoxFit.contain,
+                    color: AppColors.primaryBlue,
                   ),
                   label: 'Valor estimado da corrida',
                   valor: valorFormatado,

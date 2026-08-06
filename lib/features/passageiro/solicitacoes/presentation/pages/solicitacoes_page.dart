@@ -263,7 +263,27 @@ class _GrupoSolicitacoes extends StatelessWidget {
                       status: s.status,
                       data: s.data,
                       horarioPartida: s.horario,
-                      onVerDetalhes: () {},
+                      onVerDetalhes: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.passageiroDetalheSolicitacao,
+                          arguments: {
+                            'status': s.status,
+                            'origem': 'Rod PR-340 - km 2.5, Jaguapitã',
+                            'destino': s.destino,
+                            'data': '17/03/2026',
+                            'horarioPartida': s.horario,
+                            'horarioChegada': '20h00',
+                            'valor': 'R\$68,90',
+                            'motivo':
+                                'Preciso ir ao aeroporto para viagem de trabalho',
+                            'motivoReprovacao': s.status ==
+                                    SolicitacaoStatus.reprovada
+                                ? 'Viagem vai exceder a verba do setor para corridas de táxi'
+                                : null,
+                          },
+                        );
+                      },
                     ),
                   ),
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../config/routes.dart';
 import '../../../../../core/widgets/corrida_card_base_widget.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../core/widgets/perfil_page_base.dart';
@@ -89,9 +90,7 @@ class _MotoristPerfilPageState extends State<MotoristPerfilPage> {
               origem: corridasFiltradas[0].origem,
               destino: corridasFiltradas[0].destino,
               horarioPartida: corridasFiltradas[0].horario,
-              onVerDetalhes: () {
-                // TODO: navegar para detalhe da corrida
-              },
+              onVerDetalhes: () => _navegarDetalhe(corridasFiltradas[0]),
             ),
           ),
         ],
@@ -107,7 +106,7 @@ class _MotoristPerfilPageState extends State<MotoristPerfilPage> {
                 origem: corridasFiltradas[1].origem,
                 destino: corridasFiltradas[1].destino,
                 horarioPartida: corridasFiltradas[1].horario,
-                onVerDetalhes: () {},
+                onVerDetalhes: () => _navegarDetalhe(corridasFiltradas[1]),
               ),
             ),
           if (corridasFiltradas.length > 2)
@@ -115,11 +114,19 @@ class _MotoristPerfilPageState extends State<MotoristPerfilPage> {
               origem: corridasFiltradas[2].origem,
               destino: corridasFiltradas[2].destino,
               horarioPartida: corridasFiltradas[2].horario,
-              onVerDetalhes: () {},
+              onVerDetalhes: () => _navegarDetalhe(corridasFiltradas[2]),
             ),
         ],
       ),
     ];
+  }
+
+  void _navegarDetalhe(_CorridaMock corrida) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.motoristaCorridaDetalhe,
+      arguments: corrida.destino, // corridaId mock
+    );
   }
 }
 

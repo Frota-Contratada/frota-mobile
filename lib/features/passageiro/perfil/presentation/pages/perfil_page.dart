@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../../../config/routes.dart';
 import '../../../../../core/widgets/corrida_card_base_widget.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../core/widgets/perfil_page_base.dart';
 import '../../../../../core/widgets/timeline_dia_widget.dart';
 import '../../../../auth/domain/entities/usuario.dart';
+import '../../../solicitacoes/presentation/widgets/solicitacao_status.dart';
 
 /// Página de Perfil do passageiro.
 /// Usa o [PerfilPageBase] compartilhado com dados específicos do passageiro.
@@ -26,6 +28,7 @@ class _PassageiroPerfilPageState extends State<PassageiroPerfilPage> {
     return PerfilPageBase(
       nome: nome,
       subtitulo: 'Analista de Qualidade',
+      unidade: 'Unidade Jaguapitã',
       viagensFinalizadas: 20,
       transportesDeItens: 5,
       mostrarBotaoVoltar: false,
@@ -90,7 +93,7 @@ class _PassageiroPerfilPageState extends State<PassageiroPerfilPage> {
                 origem: viagensFiltradas[0].origem,
                 destino: viagensFiltradas[0].destino,
                 horarioPartida: viagensFiltradas[0].horario,
-                onVerDetalhes: () {},
+                onVerDetalhes: () => _navegarDetalhe(viagensFiltradas[0]),
               ),
             ),
         ],
@@ -106,7 +109,7 @@ class _PassageiroPerfilPageState extends State<PassageiroPerfilPage> {
                 origem: viagensFiltradas[1].origem,
                 destino: viagensFiltradas[1].destino,
                 horarioPartida: viagensFiltradas[1].horario,
-                onVerDetalhes: () {},
+                onVerDetalhes: () => _navegarDetalhe(viagensFiltradas[1]),
               ),
             ),
           if (viagensFiltradas.length > 2)
@@ -114,11 +117,31 @@ class _PassageiroPerfilPageState extends State<PassageiroPerfilPage> {
               origem: viagensFiltradas[2].origem,
               destino: viagensFiltradas[2].destino,
               horarioPartida: viagensFiltradas[2].horario,
-              onVerDetalhes: () {},
+              onVerDetalhes: () => _navegarDetalhe(viagensFiltradas[2]),
             ),
         ],
       ),
     ];
+  }
+
+  void _navegarDetalhe(_ViagemMock viagem) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.passageiroDetalheSolicitacao,
+      arguments: {
+        'status': SolicitacaoStatus.aprovada,
+        'origem': viagem.origem,
+        'destino': viagem.destino,
+        'data': '17/03/2026',
+        'horarioPartida': viagem.horario,
+        'horarioChegada': '20h00',
+        'valor': 'R\$68,90',
+        'motivo': 'Preciso ir ao aeroporto para viagem de trabalho',
+        'motorista': 'Filipi Inácio Penha dos Santos',
+        'placa': 'DXU1921',
+        'corridaRealizada': true,
+      },
+    );
   }
 }
 
