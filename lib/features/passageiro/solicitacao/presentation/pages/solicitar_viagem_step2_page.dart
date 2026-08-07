@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../../config/app_assets.dart';
+import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
+import '../../../../../core/widgets/app_map_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import 'solicitar_viagem_revisao_page.dart';
 
@@ -12,6 +14,8 @@ class SolicitarViagemStep2Page extends StatefulWidget {
   final String data;
   final String horario;
   final String motivo;
+  final MapPoint? origemPoint;
+  final MapPoint? destinoPoint;
 
   const SolicitarViagemStep2Page({
     super.key,
@@ -20,6 +24,8 @@ class SolicitarViagemStep2Page extends StatefulWidget {
     required this.data,
     required this.horario,
     required this.motivo,
+    this.origemPoint,
+    this.destinoPoint,
   });
 
   @override
@@ -38,13 +44,14 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // Mapa com rota
-          Container(
+          SizedBox(
             height: 306,
             width: double.infinity,
-            color: AppColors.weekSelectorBg,
-            child: const Center(
-              child: Icon(Icons.map_outlined, size: 64, color: AppColors.textGrey),
+            child: MapRoutePreview(
+              originAddress: widget.origem,
+              destinationAddress: widget.destino,
+              origin: widget.origemPoint,
+              destination: widget.destinoPoint,
             ),
           ),
           Expanded(
@@ -323,6 +330,8 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
           motivo: widget.motivo,
           centroCusto: _centroCusto!,
           veiculo: _veiculo!,
+          origemPoint: widget.origemPoint,
+          destinoPoint: widget.destinoPoint,
         ),
       ),
     );

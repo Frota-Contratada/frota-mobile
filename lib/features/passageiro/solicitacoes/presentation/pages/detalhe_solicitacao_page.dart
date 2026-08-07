@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../../config/app_assets.dart';
+import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
+import '../../../../../core/widgets/app_map_widget.dart';
 import '../widgets/solicitacao_status.dart';
 
 /// Página de detalhes de uma solicitação do passageiro.
@@ -19,6 +21,8 @@ class DetalheSolicitacaoPage extends StatelessWidget {
   final String? motorista;
   final String? placa;
   final bool corridaRealizada;
+  final MapPoint? origemPoint;
+  final MapPoint? destinoPoint;
 
   const DetalheSolicitacaoPage({
     super.key,
@@ -34,6 +38,8 @@ class DetalheSolicitacaoPage extends StatelessWidget {
     this.motorista,
     this.placa,
     this.corridaRealizada = false,
+    this.origemPoint,
+    this.destinoPoint,
   });
 
   @override
@@ -49,17 +55,18 @@ class DetalheSolicitacaoPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Mapa placeholder
-                    Container(
+                    // Mapa com a rota e os marcadores de origem/destino.
+                    SizedBox(
                       height: 198,
                       width: double.infinity,
-                      margin: const EdgeInsets.symmetric(horizontal: 25),
-                      decoration: BoxDecoration(
-                        color: AppColors.weekSelectorBg,
+                      child: ClipRRect(
                         borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.map_outlined, size: 48, color: AppColors.textGrey),
+                        child: MapRoutePreview(
+                          originAddress: origem,
+                          destinationAddress: destino,
+                          origin: origemPoint,
+                          destination: destinoPoint,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),

@@ -6,6 +6,7 @@ import 'config/routes.dart';
 import 'features/auth/presentation/bloc/auth.bloc.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/domain/entities/usuario.dart';
+import 'core/maps/map_point.dart';
 import 'features/motorista/configuracoes/presentation/pages/configuracoes_page.dart';
 import 'features/motorista/corrida/presentation/pages/corrida_detalhe_page.dart';
 import 'features/motorista/home/presentation/pages/home_page.dart';
@@ -83,6 +84,8 @@ class FrotaApp extends StatelessWidget {
             motorista: args?['motorista'] as String?,
             placa: args?['placa'] as String?,
             corridaRealizada: args?['corridaRealizada'] as bool? ?? false,
+            origemPoint: args?['origemPoint'] as MapPoint?,
+            destinoPoint: args?['destinoPoint'] as MapPoint?,
           );
         },
       },

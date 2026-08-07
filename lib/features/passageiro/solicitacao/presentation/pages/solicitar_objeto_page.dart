@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../../config/app_assets.dart';
+import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
+import '../../../../../core/widgets/app_map_widget.dart';
+import '../../../../../core/widgets/map_picker_page.dart';
 import '../widgets/solicitacao_input_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
@@ -22,6 +25,8 @@ class _SolicitarObjetoPageState extends State<SolicitarObjetoPage> {
   String? _data;
   String? _horario;
   String? _centroCusto;
+  MapPoint? _origemPoint;
+  MapPoint? _destinoPoint;
 
   @override
   Widget build(BuildContext context) {
@@ -29,12 +34,14 @@ class _SolicitarObjetoPageState extends State<SolicitarObjetoPage> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          Container(
+          SizedBox(
             height: 185,
             width: double.infinity,
-            color: AppColors.weekSelectorBg,
-            child: const Center(
-              child: Icon(Icons.map_outlined, size: 48, color: AppColors.textGrey),
+            child: AppMapWidget(
+              showAttribution: false,
+              initialCenter: _origemPoint ?? _destinoPoint,
+              origin: _origemPoint,
+              destination: _destinoPoint,
             ),
           ),
           Expanded(
@@ -166,18 +173,44 @@ class _SolicitarObjetoPageState extends State<SolicitarObjetoPage> {
             children: [
               SolicitacaoInputWidget(
                 label: 'origem', valor: _origem,
-                onTap: () => setState(() => _origem = 'Rod PR-340 - km 2.5, Jaguapitã'),
+                onTap: () => _selecionarPonto(MapSelectionKind.origin),
               ),
               const SizedBox(height: 12),
               SolicitacaoInputWidget(
                 label: 'destino', valor: _destino,
-                onTap: () => setState(() => _destino = 'Aeroporto de Londrina'),
+                onTap: () => _selecionarPonto(MapSelectionKind.destination),
               ),
             ],
           ),
         ),
       ],
     );
+  }
+
+  Future<void> _selecionarPonto(MapSelectionKind kind) async {
+    final atual = kind == MapSelectionKind.origin ? _origemPoint : _destinoPoint;
+    final result = await Navigator.push<MapSelectionResult>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapPickerPage(
+          title: kind == MapSelectionKind.origin ? 'Selecionar origem' : 'Selecionar destino',
+          initialPoint: atual,
+          selectionKind: kind,
+        ),
+      ),
+    );
+    if (!mounted || result == null) return;
+    final address = result.address ??
+        '${result.point.latitude.toStringAsFixed(5)}, ${result.point.longitude.toStringAsFixed(5)}';
+    setState(() {
+      if (kind == MapSelectionKind.origin) {
+        _origemPoint = result.point;
+        _origem = address;
+      } else {
+        _destinoPoint = result.point;
+        _destino = address;
+      }
+    });
   }
 
   bool _podeAvancar() {
@@ -194,6 +227,8 @@ class _SolicitarObjetoPageState extends State<SolicitarObjetoPage> {
           data: _data!,
           horario: _horario!,
           centroCusto: _centroCusto!,
+          origemPoint: _origemPoint,
+          destinoPoint: _destinoPoint,
         ),
       ),
     );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../../config/app_assets.dart';
+import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
+import '../../../../../core/widgets/app_map_widget.dart';
 import '../widgets/solicitacao_input_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
@@ -15,6 +17,8 @@ class SolicitarObjetoStep2Page extends StatefulWidget {
   final String data;
   final String horario;
   final String centroCusto;
+  final MapPoint? origemPoint;
+  final MapPoint? destinoPoint;
 
   const SolicitarObjetoStep2Page({
     super.key,
@@ -23,6 +27,8 @@ class SolicitarObjetoStep2Page extends StatefulWidget {
     required this.data,
     required this.horario,
     required this.centroCusto,
+    this.origemPoint,
+    this.destinoPoint,
   });
 
   @override
@@ -39,12 +45,14 @@ class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          Container(
+          SizedBox(
             height: 306,
             width: double.infinity,
-            color: AppColors.weekSelectorBg,
-            child: const Center(
-              child: Icon(Icons.map_outlined, size: 64, color: AppColors.textGrey),
+            child: MapRoutePreview(
+              originAddress: widget.origem,
+              destinationAddress: widget.destino,
+              origin: widget.origemPoint,
+              destination: widget.destinoPoint,
             ),
           ),
           Expanded(
@@ -149,6 +157,8 @@ class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
           centroCusto: widget.centroCusto,
           objeto: _objeto!,
           veiculo: _veiculo!,
+          origemPoint: widget.origemPoint,
+          destinoPoint: widget.destinoPoint,
         ),
       ),
     );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../../config/app_assets.dart';
+import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
+import '../../../../../core/widgets/app_map_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
 import '../widgets/solicitacao_confirmacao_dialog.dart';
@@ -14,6 +16,8 @@ class SolicitarObjetoRevisaoPage extends StatelessWidget {
   final String centroCusto;
   final String objeto;
   final String veiculo;
+  final MapPoint? origemPoint;
+  final MapPoint? destinoPoint;
 
   const SolicitarObjetoRevisaoPage({
     super.key,
@@ -24,6 +28,8 @@ class SolicitarObjetoRevisaoPage extends StatelessWidget {
     required this.centroCusto,
     required this.objeto,
     required this.veiculo,
+    this.origemPoint,
+    this.destinoPoint,
   });
 
   @override
@@ -32,12 +38,14 @@ class SolicitarObjetoRevisaoPage extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          Container(
+          SizedBox(
             height: 306,
             width: double.infinity,
-            color: AppColors.weekSelectorBg,
-            child: const Center(
-              child: Icon(Icons.map_outlined, size: 64, color: AppColors.textGrey),
+            child: MapRoutePreview(
+              originAddress: origem,
+              destinationAddress: destino,
+              origin: origemPoint,
+              destination: destinoPoint,
             ),
           ),
           Expanded(
