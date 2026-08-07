@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/network/dio_exception_mapper.dart';
 import '../../domain/entities/auth_token.dart';
 import '../../domain/entities/confirmar_pin_result.dart';
 import '../../domain/entities/verificacao_email_result.dart';
+import '../../domain/enums/perfil_usuario.dart';
 import '../../domain/enums/tipo_token.dart';
 import '../dtos/request/confirmar_pin_request_dto.dart';
 import '../dtos/request/enviar_pin_email_request_dto.dart';
@@ -144,6 +147,78 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
   }
 }
 
+class AuthRemoteDatasourceFallback implements AuthRemoteDatasource {
+  final AuthRemoteDatasource primary;
+  final AuthRemoteDatasource mock;
+
+  AuthRemoteDatasourceFallback({
+    required this.primary,
+    required this.mock,
+  });
+
+  bool _isMockUser(String email) {
+    return AuthMockUsuarios.buscarPorEmail(email) != null;
+  }
+
+  Future<T> _callWithFallback<T>(
+    String email,
+    Future<T> Function() primaryCall,
+    Future<T> Function() fallbackCall,
+  ) async {
+    try {
+      return await primaryCall();
+    } on ServerException catch (error) {
+      if (!error.isNetworkError || !_isMockUser(email)) {
+        rethrow;
+      }
+      return fallbackCall();
+    }
+  }
+
+  @override
+  Future<VerificacaoEmailResult> verificarEmail(String email) {
+    return _callWithFallback(
+      email,
+      () => primary.verificarEmail(email),
+      () => mock.verificarEmail(email),
+    );
+  }
+
+  @override
+  Future<AuthToken> login(LoginRequestDto request) {
+    return _callWithFallback(
+      request.email,
+      () => primary.login(request),
+      () => mock.login(request),
+    );
+  }
+
+  @override
+  Future<UsuarioModel> buscarUsuarioAtual() {
+    return primary.buscarUsuarioAtual();
+  }
+
+  @override
+  Future<void> signUp(SignUpRequestDto request) {
+    return primary.signUp(request);
+  }
+
+  @override
+  Future<void> redefinirSenha(SignUpRequestDto request) {
+    return primary.redefinirSenha(request);
+  }
+
+  @override
+  Future<void> enviarPinEmail(EnviarPinEmailRequestDto request) {
+    return primary.enviarPinEmail(request);
+  }
+
+  @override
+  Future<ConfirmarPinResult> confirmarPin(ConfirmarPinRequestDto request) {
+    return primary.confirmarPin(request);
+  }
+}
+
 // MOCK — substituir por [AuthRemoteDatasourceImpl] quando a API estiver pronta
 
 class AuthRemoteDatasourceMock implements AuthRemoteDatasource {
@@ -153,6 +228,22 @@ class AuthRemoteDatasourceMock implements AuthRemoteDatasource {
 
   UsuarioModel? _buscarUsuario(String emailInformado) {
     return AuthMockUsuarios.buscarPorEmail(emailInformado);
+  }
+
+  String _criarAccessToken(UsuarioModel usuario) {
+    final perfil = usuario.perfil == PerfilUsuario.passageiro
+        ? 'solicitante'
+        : 'motorista';
+    final payload = base64Url.encode(
+      utf8.encode(
+        jsonEncode({
+          'sub': usuario.id,
+          'email': usuario.email,
+          'perfis': [perfil],
+        }),
+      ),
+    );
+    return 'mock.$payload.mock';
   }
 
   @override
@@ -182,7 +273,7 @@ class AuthRemoteDatasourceMock implements AuthRemoteDatasource {
     }
 
     return AuthToken(
-      accessToken: 'mock_access_token_${usuario.perfil.name}',
+      accessToken: _criarAccessToken(usuario),
       refreshToken: 'mock_refresh_token_${usuario.perfil.name}',
       expirationDate: DateTime.now().add(const Duration(hours: 8)),
     );

@@ -1,7 +1,11 @@
 class ServerException implements Exception {
   final String message;
+  final bool isNetworkError;
 
-  const ServerException([this.message = 'Erro ao comunicar com o servidor.']);
+  const ServerException([
+    this.message = 'Erro ao comunicar com o servidor.',
+    this.isNetworkError = false,
+  ]);
 
   @override
   String toString() => message;
