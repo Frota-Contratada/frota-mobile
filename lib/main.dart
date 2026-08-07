@@ -60,11 +60,13 @@ class FrotaApp extends StatelessWidget {
         AppRoutes.passageiroSolicitarObjeto: (_) =>
             const SolicitarObjetoPage(),
         AppRoutes.passageiroCorridaAndamento: (context) {
-          final args =
-              ModalRoute.of(context)?.settings.arguments as Map<String, String>?;
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
           return CorridaAndamentoPage(
-            origem: args?['origem'] ?? '',
-            destino: args?['destino'] ?? '',
+            origem: args?['origem'] as String? ?? '',
+            destino: args?['destino'] as String? ?? '',
+            origemPoint: args?['origemPoint'] as MapPoint?,
+            destinoPoint: args?['destinoPoint'] as MapPoint?,
           );
         },
         AppRoutes.passageiroDetalheSolicitacao: (context) {

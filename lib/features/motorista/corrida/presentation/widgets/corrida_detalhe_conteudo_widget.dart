@@ -42,7 +42,10 @@ class CorridaDetalheConteudoWidget extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const CorridaMapaWidget(),
+                CorridaMapaWidget(
+                  origem: corrida.origem,
+                  destino: corrida.destino,
+                ),
                 const SizedBox(height: 30),
                 CorridaTrajetoWidget(
                   origem: corrida.origem,

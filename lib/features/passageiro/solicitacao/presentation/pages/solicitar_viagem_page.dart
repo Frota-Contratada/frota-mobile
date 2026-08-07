@@ -7,8 +7,7 @@ import '../../../../../core/widgets/map_picker_page.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import 'solicitar_viagem_step2_page.dart';
 
-/// Página de solicitação de viagem (Táxi) - Step 1.
-/// Campos: origem, destino, data, horário, motivo.
+
 class SolicitarViagemPage extends StatefulWidget {
   const SolicitarViagemPage({super.key});
 
@@ -45,7 +44,6 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
             width: double.infinity,
             child: AppMapWidget(
               showAttribution: false,
-              initialCenter: _origemPoint ?? _destinoPoint,
               origin: _origemPoint,
               destination: _destinoPoint,
             ),

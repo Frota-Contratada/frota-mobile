@@ -56,16 +56,19 @@ class DetalheSolicitacaoPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Mapa com a rota e os marcadores de origem/destino.
-                    SizedBox(
-                      height: 198,
-                      width: double.infinity,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(15),
-                        child: MapRoutePreview(
-                          originAddress: origem,
-                          destinationAddress: destino,
-                          origin: origemPoint,
-                          destination: destinoPoint,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 25),
+                      child: SizedBox(
+                        height: 198,
+                        width: double.infinity,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: MapRoutePreview(
+                            originAddress: origem,
+                            destinationAddress: destino,
+                            origin: origemPoint,
+                            destination: destinoPoint,
+                          ),
                         ),
                       ),
                     ),

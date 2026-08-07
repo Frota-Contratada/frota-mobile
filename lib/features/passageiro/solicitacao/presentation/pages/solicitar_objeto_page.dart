@@ -39,7 +39,6 @@ class _SolicitarObjetoPageState extends State<SolicitarObjetoPage> {
             width: double.infinity,
             child: AppMapWidget(
               showAttribution: false,
-              initialCenter: _origemPoint ?? _destinoPoint,
               origin: _origemPoint,
               destination: _destinoPoint,
             ),
