@@ -79,7 +79,7 @@ class HomeHeaderWidget extends StatelessWidget {
           width: 40,
           height: 40,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _buildAvatarFallback(),
+          errorBuilder: (_, _, _) => _buildAvatarFallback(),
         ),
       );
     }

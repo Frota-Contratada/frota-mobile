@@ -22,6 +22,8 @@ abstract class AuthRemoteDatasource {
 
   Future<AuthToken> login(LoginRequestDto request);
 
+  Future<UsuarioModel> buscarUsuarioAtual();
+
   Future<void> signUp(SignUpRequestDto request);
 
   Future<void> redefinirSenha(SignUpRequestDto request);
@@ -34,10 +36,12 @@ abstract class AuthRemoteDatasource {
 class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
   final Dio dio;
   final String authBaseUrl;
+  final String usuarioBaseUrl;
 
   AuthRemoteDatasourceImpl({
     required this.dio,
     required this.authBaseUrl,
+    required this.usuarioBaseUrl,
   });
 
   @override
@@ -71,6 +75,20 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
         AuthTokenDto.fromJson,
       );
       return AuthMapper.toAuthToken(apiResponse.response);
+    } on DioException catch (e) {
+      throw mapDioException(e);
+    }
+  }
+
+  @override
+  Future<UsuarioModel> buscarUsuarioAtual() async {
+    try {
+      final response = await dio.get('$usuarioBaseUrl/me');
+      final apiResponse = ApiResponseDto.fromJson(
+        response.data as Map<String, dynamic>,
+        UsuarioModel.fromJson,
+      );
+      return apiResponse.response;
     } on DioException catch (e) {
       throw mapDioException(e);
     }
@@ -168,6 +186,12 @@ class AuthRemoteDatasourceMock implements AuthRemoteDatasource {
       refreshToken: 'mock_refresh_token_${usuario.perfil.name}',
       expirationDate: DateTime.now().add(const Duration(hours: 8)),
     );
+  }
+
+  @override
+  Future<UsuarioModel> buscarUsuarioAtual() async {
+    await _simularLatencia();
+    return AuthMockUsuarios.motorista;
   }
 
   @override

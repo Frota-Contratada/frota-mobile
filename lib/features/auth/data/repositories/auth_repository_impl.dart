@@ -3,7 +3,6 @@ import '../../../../core/error/failures.dart';
 import '../../domain/entities/confirmar_pin_result.dart';
 import '../../domain/entities/usuario.dart';
 import '../../domain/entities/verificacao_email_result.dart';
-import '../../domain/enums/perfil_usuario.dart';
 import '../../domain/enums/plataforma.dart';
 import '../../domain/enums/tipo_token.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -50,10 +49,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Usuario> login({
-    required String email,
-    required String senha,
-  }) async {
+  Future<Usuario> login({required String email, required String senha}) async {
     return _handleRemoteCall(() async {
       final authToken = await remoteDatasource.login(
         AuthMapper.toLoginRequestDto(
@@ -64,15 +60,10 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       await localDatasource.salvarAuthToken(authToken);
 
-      final pendente = await localDatasource.getUsuarioPendente();
-      final usuario = UsuarioModel(
-        id: pendente?.id,
-        nome: pendente?.nome ?? email,
-        email: email,
-        cpf: pendente?.cpf,
-        dataAtivacao: pendente?.dataAtivacao,
-        dataDesativacao: pendente?.dataDesativacao,
-        perfil: pendente?.perfil ?? PerfilUsuario.motorista,
+      final usuarioBase = await localDatasource.getUsuarioPendente();
+      final usuario = AuthMapper.usuarioFromAccessToken(
+        authToken,
+        usuarioBase: usuarioBase,
       );
       await localDatasource.salvarUsuario(usuario);
       return usuario;
@@ -88,7 +79,8 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     }
     await _handleRemoteCall(
-      () => remoteDatasource.signUp(SignUpRequestDto(token: token, senha: senha)),
+      () =>
+          remoteDatasource.signUp(SignUpRequestDto(token: token, senha: senha)),
     );
     await localDatasource.limparSignUpToken();
   }

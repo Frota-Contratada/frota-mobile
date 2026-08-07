@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
-import '../../core/network/dio_factory.dart';import '../features/auth/data/datasources/auth_local_datasource.dart';
+import '../../config/env.dart';
+import '../../core/network/dio_factory.dart';
+import '../features/auth/data/datasources/auth_local_datasource.dart';
 import '../features/auth/data/datasources/auth_remote_datasource.dart';
+import '../features/auth/data/interceptors/auth_interceptor.dart';
 import '../features/auth/data/repositories/auth_repository_impl.dart';
 import '../features/auth/domain/repositories/auth_repository.dart';
 import '../features/auth/domain/usecases/confirmar_pin_usecase.dart';
@@ -14,17 +17,29 @@ import '../features/auth/domain/usecases/verificar_email_usecase.dart';
 import '../features/auth/presentation/bloc/auth.bloc.dart';
 
 void registerAuthDependencies(GetIt sl) {
-  sl.registerLazySingleton<Dio>(() => createDio());
-
-  // Datasources
-  // Vamos trocar [AuthRemoteDatasourceMock] por [AuthRemoteDatasourceImpl] quando a API estiver pronta
-  // AuthRemoteDatasourceImpl(dio: sl(), authBaseUrl: Env.authBaseUrl)
-  sl.registerLazySingleton<AuthRemoteDatasource>(
-    () => AuthRemoteDatasourceMock(),
-  );
-
   sl.registerLazySingleton<AuthLocalDatasource>(
     () => AuthLocalDatasourceImpl(sharedPreferences: sl()),
+  );
+
+  sl.registerLazySingleton<Dio>(() {
+    final dio = createDio();
+    dio.interceptors.add(
+      AuthInterceptor(
+        dio: dio,
+        localDatasource: sl(),
+        authBaseUrl: Env.authBaseUrl,
+      ),
+    );
+    return dio;
+  });
+
+  // Datasources
+  sl.registerLazySingleton<AuthRemoteDatasource>(
+    () => AuthRemoteDatasourceImpl(
+      dio: sl(),
+      authBaseUrl: Env.authBaseUrl,
+      usuarioBaseUrl: Env.usuarioBaseUrl,
+    ),
   );
 
   sl.registerLazySingleton<AuthRepository>(

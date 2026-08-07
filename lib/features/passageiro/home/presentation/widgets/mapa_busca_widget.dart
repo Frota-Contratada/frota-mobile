@@ -23,7 +23,7 @@ class MapaBuscaWidget extends StatelessWidget {
                 width: double.infinity,
                 height: 185,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, _, _) => Container(
                   width: double.infinity,
                   height: 185,
                   color: PassageiroColors.weekSelectorBg,
