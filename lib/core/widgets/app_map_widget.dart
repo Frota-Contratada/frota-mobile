@@ -1,27 +1,26 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_map/flutter_map.dart' as leaflet_map;
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' as google_maps;
-import 'package:latlong2/latlong.dart' as latlong;
+import 'package:maplibre_gl/maplibre_gl.dart';
 
 import '../maps/map_point.dart';
 
 const _defaultMapCenter = MapPoint(-23.3045, -51.1696);
-const _routePadding = EdgeInsets.fromLTRB(44, 44, 44, 56);
+const _mapStyleAsset = 'assets/maps/frota_uber_style.json';
+const _routePadding = 56.0;
 
-/// Mapa compartilhado do aplicativo.
+/// Mapa vetorial compartilhado do aplicativo.
 ///
-/// Flutter Map é o backend padrão, com cache persistente de tiles nativos.
-/// Google Maps pode ser habilitado com USE_GOOGLE_MAPS=true e uma chave
-/// configurada nativamente nas plataformas. Sem chave, o mapa cacheado do
-/// Flutter Map continua funcionando.
+/// O estilo local controla a aparência do mapa e usa dados vetoriais do
+/// OpenFreeMap. A geometria de [routePoints] pode ser preenchida por um motor
+/// de rotas no futuro; enquanto ela não existir, origem e destino formam uma
+/// linha visual de fallback.
 class AppMapWidget extends StatefulWidget {
   final MapPoint? origin;
   final MapPoint? destination;
+  final List<MapPoint>? routePoints;
   final MapPoint? initialCenter;
   final ValueChanged<MapPoint>? onTap;
   final VoidCallback? onCurrentLocation;
@@ -35,6 +34,7 @@ class AppMapWidget extends StatefulWidget {
     super.key,
     this.origin,
     this.destination,
+    this.routePoints,
     this.initialCenter,
     this.onTap,
     this.onCurrentLocation,
@@ -50,29 +50,26 @@ class AppMapWidget extends StatefulWidget {
 }
 
 class _AppMapWidgetState extends State<AppMapWidget> {
-  final leaflet_map.MapController _leafletController =
-      leaflet_map.MapController();
-
-  MapPoint? _currentLocation;
+  MapLibreMapController? _controller;
   StreamSubscription<Position>? _positionSubscription;
-  google_maps.GoogleMapController? _googleController;
+  MapPoint? _currentLocation;
   String? _locationMessage;
   bool _loadingLocation = true;
-  bool _leafletReady = false;
+  bool _styleReady = false;
   bool _centeredOnCurrentLocation = false;
 
-  bool get _useGoogleMaps {
-    final enabled = dotenv.env['USE_GOOGLE_MAPS']?.toLowerCase() == 'true';
-    final key = dotenv.env['GOOGLE_MAPS_API_KEY'];
-    return enabled && key != null && key.trim().isNotEmpty;
+  bool get _hasRoute => _routeMapPoints.length >= 2;
+
+  List<MapPoint> get _routeMapPoints {
+    final providedRoute = widget.routePoints;
+    if (providedRoute != null && providedRoute.length >= 2) {
+      return providedRoute;
+    }
+    return [
+      if (widget.origin != null) widget.origin!,
+      if (widget.destination != null) widget.destination!,
+    ];
   }
-
-  bool get _hasRoute => widget.origin != null && widget.destination != null;
-
-  List<MapPoint> get _routeMapPoints => [
-        if (widget.origin != null) widget.origin!,
-        if (widget.destination != null) widget.destination!,
-      ];
 
   MapPoint get _center =>
       widget.initialCenter ??
@@ -93,12 +90,13 @@ class _AppMapWidgetState extends State<AppMapWidget> {
   @override
   void didUpdateWidget(covariant AppMapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final routeChanged = oldWidget.origin != widget.origin ||
-        oldWidget.destination != widget.destination;
-    if (routeChanged) {
+    final mapContentChanged =
+        oldWidget.origin != widget.origin ||
+        oldWidget.destination != widget.destination ||
+        oldWidget.routePoints != widget.routePoints;
+    if (mapContentChanged && _styleReady) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !_hasRoute) return;
-        _fitRoute();
+        if (mounted) unawaited(_refreshMap());
       });
     }
   }
@@ -106,7 +104,6 @@ class _AppMapWidgetState extends State<AppMapWidget> {
   @override
   void dispose() {
     _positionSubscription?.cancel();
-    _leafletController.dispose();
     super.dispose();
   }
 
@@ -169,11 +166,13 @@ class _AppMapWidgetState extends State<AppMapWidget> {
       _locationMessage = null;
     });
 
+    if (_styleReady) unawaited(_renderAnnotations());
+
     if (wasFirstLocation &&
         widget.centerOnCurrentLocation &&
         !_hasRoute &&
         widget.initialCenter == null) {
-      _moveToCurrentLocation();
+      unawaited(_moveToCurrentLocation());
     }
   }
 
@@ -183,104 +182,160 @@ class _AppMapWidgetState extends State<AppMapWidget> {
       _startLocationTracking();
       return;
     }
-    _moveToCurrentLocation();
+    unawaited(_moveToCurrentLocation());
     widget.onTap?.call(current);
     widget.onCurrentLocation?.call();
   }
 
   Future<void> _moveToCurrentLocation() async {
     final current = _currentLocation;
-    if (current == null) return;
+    final controller = _controller;
+    if (current == null || controller == null || !_styleReady) return;
 
-    if (_useGoogleMaps) {
-      final controller = _googleController;
-      if (controller == null) return;
-      await controller.animateCamera(
-        google_maps.CameraUpdate.newCameraPosition(
-          google_maps.CameraPosition(
-            target: current.googleLatLng,
-            zoom: 16,
-          ),
+    await controller.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: _toLatLng(current),
+          zoom: 16,
+          bearing: 0,
+          tilt: 0,
+        ),
+      ),
+    );
+    _centeredOnCurrentLocation = true;
+  }
+
+  Future<void> _onMapCreated(MapLibreMapController controller) async {
+    _controller = controller;
+  }
+
+  Future<void> _onStyleLoaded() async {
+    _styleReady = true;
+    await _refreshMap();
+  }
+
+  Future<void> _refreshMap() async {
+    if (!_styleReady || _controller == null) return;
+    await _renderAnnotations();
+    if (_hasRoute) {
+      await _fitRoute();
+    } else if (_currentLocation != null &&
+        widget.centerOnCurrentLocation &&
+        widget.initialCenter == null &&
+        !_centeredOnCurrentLocation) {
+      await _moveToCurrentLocation();
+    }
+  }
+
+  Future<void> _renderAnnotations() async {
+    final controller = _controller;
+    if (controller == null || !_styleReady) return;
+
+    await controller.clearLines();
+    await controller.clearCircles();
+
+    final route = _routeMapPoints.map(_toLatLng).toList();
+    if (route.length >= 2) {
+      await controller.addLine(
+        LineOptions(
+          geometry: route,
+          lineColor: '#FFFFFF',
+          lineWidth: 12,
+          lineOpacity: 0.98,
+          lineJoin: 'round',
         ),
       );
-      _centeredOnCurrentLocation = true;
-      return;
+      await controller.addLine(
+        LineOptions(
+          geometry: route,
+          lineColor: '#087AF0',
+          lineWidth: 7,
+          lineOpacity: 1,
+          lineJoin: 'round',
+        ),
+      );
     }
 
-    if (_leafletReady) {
-      _leafletController.move(current.leafletLatLng, 16);
-      _centeredOnCurrentLocation = true;
+    if (widget.showCurrentLocationMarker && _currentLocation != null) {
+      await controller.addCircle(
+        CircleOptions(
+          geometry: _toLatLng(_currentLocation!),
+          circleRadius: 14,
+          circleColor: '#087AF0',
+          circleOpacity: 0.16,
+          circleStrokeWidth: 0,
+        ),
+      );
+      await controller.addCircle(
+        CircleOptions(
+          geometry: _toLatLng(_currentLocation!),
+          circleRadius: 8,
+          circleColor: '#087AF0',
+          circleStrokeColor: '#FFFFFF',
+          circleStrokeWidth: 3,
+          circleStrokeOpacity: 1,
+        ),
+      );
     }
-  }
 
-  void _onLeafletMapReady() {
-    _leafletReady = true;
-    if (_hasRoute) {
-      _fitRoute();
-    } else if (_currentLocation != null &&
-        widget.centerOnCurrentLocation &&
-        widget.initialCenter == null &&
-        !_centeredOnCurrentLocation) {
-      _moveToCurrentLocation();
+    if (widget.origin != null) {
+      await controller.addCircle(
+        CircleOptions(
+          geometry: _toLatLng(widget.origin!),
+          circleRadius: 7,
+          circleColor: '#172B4D',
+          circleStrokeColor: '#FFFFFF',
+          circleStrokeWidth: 3,
+          circleStrokeOpacity: 1,
+        ),
+      );
     }
-  }
 
-  void _onGoogleMapCreated(google_maps.GoogleMapController controller) {
-    _googleController = controller;
-    if (_hasRoute) {
-      _fitRoute();
-    } else if (_currentLocation != null &&
-        widget.centerOnCurrentLocation &&
-        widget.initialCenter == null &&
-        !_centeredOnCurrentLocation) {
-      _moveToCurrentLocation();
+    if (widget.destination != null) {
+      await controller.addCircle(
+        CircleOptions(
+          geometry: _toLatLng(widget.destination!),
+          circleRadius: 9,
+          circleColor: '#F15B5A',
+          circleStrokeColor: '#FFFFFF',
+          circleStrokeWidth: 3,
+          circleStrokeOpacity: 1,
+        ),
+      );
     }
   }
 
   Future<void> _fitRoute() async {
+    final controller = _controller;
     final points = _routeMapPoints;
-    if (points.length < 2) return;
+    if (controller == null || points.length < 2 || !_styleReady) return;
 
-    if (_useGoogleMaps) {
-      final controller = _googleController;
-      if (controller == null) return;
-      final googlePoints = points.map((point) => point.googleLatLng).toList();
-      final latitudes = googlePoints.map((point) => point.latitude);
-      final longitudes = googlePoints.map((point) => point.longitude);
-      final south = latitudes.reduce((a, b) => a < b ? a : b);
-      final north = latitudes.reduce((a, b) => a > b ? a : b);
-      final west = longitudes.reduce((a, b) => a < b ? a : b);
-      final east = longitudes.reduce((a, b) => a > b ? a : b);
+    final latitudes = points.map((point) => point.latitude).toList();
+    final longitudes = points.map((point) => point.longitude).toList();
+    final south = latitudes.reduce((a, b) => a < b ? a : b);
+    final north = latitudes.reduce((a, b) => a > b ? a : b);
+    final west = longitudes.reduce((a, b) => a < b ? a : b);
+    final east = longitudes.reduce((a, b) => a > b ? a : b);
 
-      if ((north - south).abs() < 0.0001 && (east - west).abs() < 0.0001) {
-        await controller.animateCamera(
-          google_maps.CameraUpdate.newCameraPosition(
-            google_maps.CameraPosition(target: googlePoints.first, zoom: 16),
-          ),
-        );
-      } else {
-        await controller.animateCamera(
-          google_maps.CameraUpdate.newLatLngBounds(
-            google_maps.LatLngBounds(
-              southwest: google_maps.LatLng(south, west),
-              northeast: google_maps.LatLng(north, east),
-            ),
-            52,
-          ),
-        );
-      }
+    if ((north - south).abs() < 0.0001 && (east - west).abs() < 0.0001) {
+      await controller.animateCamera(
+        CameraUpdate.newLatLngZoom(_toLatLng(points.first), 16),
+      );
       return;
     }
 
-    if (_leafletReady) {
-      _leafletController.fitCamera(
-        leaflet_map.CameraFit.coordinates(
-          coordinates: points.map((point) => point.leafletLatLng).toList(),
-          padding: _routePadding,
-          maxZoom: 15,
+    await controller.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          southwest: LatLng(south, west),
+          northeast: LatLng(north, east),
         ),
-      );
-    }
+        left: _routePadding,
+        top: _routePadding,
+        right: _routePadding,
+        bottom: _routePadding + 20,
+      ),
+    );
   }
 
   @override
@@ -288,39 +343,56 @@ class _AppMapWidgetState extends State<AppMapWidget> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        _useGoogleMaps ? _buildGoogleMap() : _buildFlutterMap(),
-        if (widget.showAttribution && !_useGoogleMaps)
-          const Positioned(
-            right: 8,
-            bottom: 6,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.white70,
-                borderRadius: BorderRadius.all(Radius.circular(4)),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                child: Text(
-                  '© OpenStreetMap · cache local',
-                  style: TextStyle(fontSize: 9, color: Colors.black54),
-                ),
-              ),
-            ),
+        MapLibreMap(
+          styleString: _mapStyleAsset,
+          initialCameraPosition: CameraPosition(
+            target: _toLatLng(_center),
+            zoom: _hasRoute ? 12 : 13,
           ),
+          onMapCreated: _onMapCreated,
+          onStyleLoadedCallback: _onStyleLoaded,
+          onMapClick: widget.onTap == null
+              ? null
+              : (_, point) =>
+                    widget.onTap!(MapPoint(point.latitude, point.longitude)),
+          compassEnabled: false,
+          logoEnabled: false,
+          scaleControlEnabled: false,
+          myLocationEnabled: false,
+          dragEnabled: widget.interactive,
+          scrollGesturesEnabled: widget.interactive,
+          zoomGesturesEnabled: widget.interactive,
+          rotateGesturesEnabled: widget.interactive,
+          tiltGesturesEnabled: widget.interactive,
+          doubleClickZoomEnabled: widget.interactive,
+          foregroundLoadColor: Colors.transparent,
+          annotationOrder: const [
+            AnnotationType.line,
+            AnnotationType.circle,
+            AnnotationType.symbol,
+            AnnotationType.fill,
+          ],
+        ),
+        if (widget.showAttribution)
+          const Positioned(left: 8, bottom: 7, child: _MapAttributionChip()),
         if (widget.showCurrentLocation)
           Positioned(
-            right: 10,
-            bottom: widget.showAttribution && !_useGoogleMaps ? 28 : 10,
+            right: 12,
+            bottom: widget.showAttribution ? 34 : 12,
             child: Material(
               color: Colors.white,
-              elevation: 3,
+              elevation: 4,
               shape: const CircleBorder(),
               child: InkWell(
                 customBorder: const CircleBorder(),
                 onTap: _selectCurrentLocation,
                 child: const Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Icon(Icons.my_location, size: 20),
+                  padding: EdgeInsets.all(11),
+                  child: Icon(
+                    Icons.my_location_rounded,
+                    size: 20,
+                    color: Color(0xff172B4D),
+                  ),
                 ),
               ),
             ),
@@ -335,159 +407,15 @@ class _AppMapWidgetState extends State<AppMapWidget> {
           Positioned(
             top: 10,
             left: 10,
-            right: 52,
+            right: 58,
             child: _MapStatusChip(label: _locationMessage!),
           ),
       ],
     );
   }
 
-  Widget _buildFlutterMap() {
-    final center = _center.leafletLatLng;
-    final markers = <leaflet_map.Marker>[
-      if (widget.showCurrentLocationMarker && _currentLocation != null)
-        leaflet_map.Marker(
-          point: _currentLocation!.leafletLatLng,
-          width: 28,
-          height: 28,
-          child: const _CurrentLocationMarker(),
-        ),
-      if (widget.origin != null)
-        leaflet_map.Marker(
-          point: widget.origin!.leafletLatLng,
-          width: 28,
-          height: 28,
-          child: const _OriginMarker(),
-        ),
-      if (widget.destination != null)
-        leaflet_map.Marker(
-          point: widget.destination!.leafletLatLng,
-          width: 34,
-          height: 40,
-          alignment: Alignment.topCenter,
-          child: const Icon(
-            Icons.location_on,
-            color: Color(0xffe45756),
-            size: 34,
-          ),
-        ),
-    ];
-
-    final routePoints = <latlong.LatLng>[
-      if (widget.origin != null) widget.origin!.leafletLatLng,
-      if (widget.destination != null) widget.destination!.leafletLatLng,
-    ];
-
-    return leaflet_map.FlutterMap(
-      mapController: _leafletController,
-      options: leaflet_map.MapOptions(
-        initialCenter: center,
-        initialZoom: routePoints.length == 2 ? 12 : 13,
-        initialCameraFit: routePoints.length == 2
-            ? leaflet_map.CameraFit.coordinates(
-                coordinates: routePoints,
-                padding: _routePadding,
-                maxZoom: 15,
-              )
-            : null,
-        interactionOptions: leaflet_map.InteractionOptions(
-          flags: widget.interactive
-              ? leaflet_map.InteractiveFlag.all
-              : leaflet_map.InteractiveFlag.none,
-        ),
-        onMapReady: _onLeafletMapReady,
-        onTap: widget.onTap == null
-            ? null
-            : (_, point) => widget.onTap!(
-                  MapPoint(point.latitude, point.longitude),
-                ),
-      ),
-      children: [
-        leaflet_map.TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.example.app_frota_seara',
-          tileProvider: leaflet_map.NetworkTileProvider(
-            cachingProvider:
-                leaflet_map.BuiltInMapCachingProvider.getOrCreateInstance(
-              maxCacheSize: 250 * 1024 * 1024,
-              overrideFreshAge: const Duration(days: 30),
-            ),
-          ),
-        ),
-        if (routePoints.length == 2)
-          leaflet_map.PolylineLayer(
-            polylines: [
-              leaflet_map.Polyline(
-                points: routePoints,
-                strokeWidth: 5,
-                color: const Color(0xff1769aa),
-                borderStrokeWidth: 1,
-                borderColor: Colors.white,
-              ),
-            ],
-          ),
-        if (markers.isNotEmpty) leaflet_map.MarkerLayer(markers: markers),
-      ],
-    );
-  }
-
-  Widget _buildGoogleMap() {
-    final markers = <google_maps.Marker>{
-      if (widget.showCurrentLocationMarker && _currentLocation != null)
-        google_maps.Marker(
-          markerId: const google_maps.MarkerId('current-location'),
-          position: _currentLocation!.googleLatLng,
-          icon: google_maps.BitmapDescriptor.defaultMarkerWithHue(
-            google_maps.BitmapDescriptor.hueAzure,
-          ),
-        ),
-      if (widget.origin != null)
-        google_maps.Marker(
-          markerId: const google_maps.MarkerId('origin'),
-          position: widget.origin!.googleLatLng,
-          icon: google_maps.BitmapDescriptor.defaultMarkerWithHue(
-            google_maps.BitmapDescriptor.hueAzure,
-          ),
-        ),
-      if (widget.destination != null)
-        google_maps.Marker(
-          markerId: const google_maps.MarkerId('destination'),
-          position: widget.destination!.googleLatLng,
-          icon: google_maps.BitmapDescriptor.defaultMarker,
-        ),
-    };
-    final routePoints = <google_maps.LatLng>[
-      if (widget.origin != null) widget.origin!.googleLatLng,
-      if (widget.destination != null) widget.destination!.googleLatLng,
-    ];
-
-    return google_maps.GoogleMap(
-      initialCameraPosition: google_maps.CameraPosition(
-        target: _center.googleLatLng,
-        zoom: routePoints.length == 2 ? 12 : 13,
-      ),
-      markers: markers,
-      polylines: routePoints.length == 2
-          ? {
-              google_maps.Polyline(
-                polylineId: const google_maps.PolylineId('route'),
-                points: routePoints,
-                color: const Color(0xff1769aa),
-                width: 5,
-              ),
-            }
-          : const {},
-      myLocationEnabled: widget.showCurrentLocation,
-      myLocationButtonEnabled: false,
-      zoomControlsEnabled: false,
-      onMapCreated: _onGoogleMapCreated,
-      onTap: widget.onTap == null
-          ? null
-          : (point) => widget.onTap!(
-                MapPoint(point.latitude, point.longitude),
-              ),
-    );
-  }
+  static LatLng _toLatLng(MapPoint point) =>
+      LatLng(point.latitude, point.longitude);
 }
 
 class MapRoutePreview extends StatefulWidget {
@@ -495,6 +423,7 @@ class MapRoutePreview extends StatefulWidget {
   final String destinationAddress;
   final MapPoint? origin;
   final MapPoint? destination;
+  final List<MapPoint>? routePoints;
   final bool showCurrentLocation;
 
   const MapRoutePreview({
@@ -503,6 +432,7 @@ class MapRoutePreview extends StatefulWidget {
     required this.destinationAddress,
     this.origin,
     this.destination,
+    this.routePoints,
     this.showCurrentLocation = false,
   });
 
@@ -539,7 +469,9 @@ class _MapRoutePreviewState extends State<MapRoutePreview> {
     final geocoder = Geocoding();
     if (_origin == null && widget.originAddress.trim().isNotEmpty) {
       try {
-        final locations = await geocoder.locationFromAddress(widget.originAddress);
+        final locations = await geocoder.locationFromAddress(
+          widget.originAddress,
+        );
         if (locations.isNotEmpty && mounted) {
           setState(() {
             _origin = MapPoint(
@@ -552,8 +484,9 @@ class _MapRoutePreviewState extends State<MapRoutePreview> {
     }
     if (_destination == null && widget.destinationAddress.trim().isNotEmpty) {
       try {
-        final locations =
-            await geocoder.locationFromAddress(widget.destinationAddress);
+        final locations = await geocoder.locationFromAddress(
+          widget.destinationAddress,
+        );
         if (locations.isNotEmpty && mounted) {
           setState(() {
             _destination = MapPoint(
@@ -571,46 +504,29 @@ class _MapRoutePreviewState extends State<MapRoutePreview> {
     return AppMapWidget(
       origin: _origin,
       destination: _destination,
+      routePoints: widget.routePoints,
       showCurrentLocation: widget.showCurrentLocation,
       interactive: false,
     );
   }
 }
 
-class _CurrentLocationMarker extends StatelessWidget {
-  const _CurrentLocationMarker();
+class _MapAttributionChip extends StatelessWidget {
+  const _MapAttributionChip();
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 18,
-        height: 18,
-        decoration: BoxDecoration(
-          color: const Color(0xff1976d2),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 3),
-          boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4)],
-        ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(5),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3)],
       ),
-    );
-  }
-}
-
-class _OriginMarker extends StatelessWidget {
-  const _OriginMarker();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 15,
-        height: 15,
-        decoration: BoxDecoration(
-          color: const Color(0xff1769aa),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 2),
-          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 3)],
+      child: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        child: Text(
+          '© OpenFreeMap · © OpenStreetMap',
+          style: TextStyle(fontSize: 9, color: Color(0xff69727D)),
         ),
       ),
     );
@@ -626,8 +542,8 @@ class _MapStatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(9),
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
       ),
       child: Padding(
