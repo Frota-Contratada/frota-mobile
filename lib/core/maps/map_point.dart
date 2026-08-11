@@ -23,4 +23,4 @@ class MapSelectionResult {
   const MapSelectionResult({required this.point, this.address});
 }
 
-enum MapSelectionKind { origin, destination }
+enum MapSelectionKind { origin, stop, destination }

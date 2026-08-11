@@ -1,30 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import '../../../../../config/app_assets.dart';
 import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/app_map_widget.dart';
+import '../widgets/solicitacao_dropdown_options_widget.dart';
+import '../widgets/solicitacao_input_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
+import '../widgets/solicitacao_primary_button_widget.dart';
+import '../widgets/solicitacao_tags_input_widget.dart';
+import '../widgets/solicitacao_text_field_widget.dart';
 import 'solicitar_viagem_revisao_page.dart';
 
-/// Página de solicitação de viagem - Step 2.
-/// Campos: centro de custos, veículo, viagem compartilhada.
 class SolicitarViagemStep2Page extends StatefulWidget {
   final String origem;
   final String destino;
+  final List<String> paradas;
   final String data;
   final String horario;
   final String motivo;
   final MapPoint? origemPoint;
+  final List<MapPoint> paradaPoints;
   final MapPoint? destinoPoint;
 
   const SolicitarViagemStep2Page({
     super.key,
     required this.origem,
     required this.destino,
+    this.paradas = const [],
     required this.data,
     required this.horario,
     required this.motivo,
     this.origemPoint,
+    this.paradaPoints = const [],
     this.destinoPoint,
   });
 
@@ -34,14 +43,24 @@ class SolicitarViagemStep2Page extends StatefulWidget {
 }
 
 class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
-  String? _centroCusto;
+  static const _veiculos = <String>['Moto', 'Carro', 'Van'];
+
+  final List<String> _centrosCusto = <String>[];
   String? _veiculo;
+  bool _veiculoExpandido = false;
   bool? _viagemCompartilhada;
+  final List<TextEditingController> _cpfAcompanhanteControllers = [];
+
+  @override
+  void dispose() {
+    _limparAcompanhantes();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.white,
       body: Column(
         children: [
           SizedBox(
@@ -51,6 +70,7 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
               originAddress: widget.origem,
               destinationAddress: widget.destino,
               origin: widget.origemPoint,
+              viaPoints: widget.paradaPoints,
               destination: widget.destinoPoint,
             ),
           ),
@@ -59,83 +79,38 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
               width: double.infinity,
               transform: Matrix4.translationValues(0, -19, 0),
               decoration: const BoxDecoration(
-                color: AppColors.background,
+                color: AppColors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(25, 28, 25, 40),
+                padding: const EdgeInsets.fromLTRB(25, 24, 25, 40),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Image.asset(
-                            AppAssets.iconVoltar,
-                            width: 30,
-                            height: 30,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Solicitar viagem',
-                              style: TextStyle(
-                                fontSize: 21,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.darkBlue,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Preencha os campos abaixo para prosseguir',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w400,
-                                color: AppColors.textMediumGrey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+                    _buildHeader(),
+                    const SizedBox(height: 16),
                     const SolicitacaoModalidadeChipWidget(modalidade: 'Táxi'),
-                    const SizedBox(height: 28),
-
-                    // 4. Custos
-                    _buildSecaoLabel('4.', 'Custos'),
-                    const SizedBox(height: 14),
-                    _buildDropdown(
-                      valor: _centroCusto,
-                      hint: 'selecione o(s) centro(s) de custos',
-                      onTap: () => setState(() => _centroCusto = '3144 - Conta 4442'),
-                      iconAsset: AppAssets.iconCusto,
-                    ),
-                    const SizedBox(height: 28),
-
-                    // 5. Veículo
-                    _buildSecaoLabel('5.', 'Veículo'),
-                    const SizedBox(height: 14),
-                    _buildDropdown(
-                      valor: _veiculo,
-                      hint: 'selecione um veículo',
-                      onTap: () => setState(() => _veiculo = 'moto'),
-                      iconAsset: AppAssets.iconVeiculo,
-                    ),
-                    const SizedBox(height: 28),
-
-                    // Viagem compartilhada
+                    const SizedBox(height: 12),
+                    _buildSectionTitle('4.', 'Custos'),
+                    const SizedBox(height: 8),
+                    _buildCentroCustoField(),
+                    const SizedBox(height: 18),
+                    _buildSectionTitle('5.', 'Veículo'),
+                    const SizedBox(height: 8),
+                    _buildVehicleField(),
+                    const SizedBox(height: 10),
                     _buildViagemCompartilhada(),
-                    const SizedBox(height: 40),
-
-                    // Botão Avançar
-                    _buildBotaoAvancar(),
+                    if (_viagemCompartilhada == true) ...[
+                      const SizedBox(height: 16),
+                      _buildSectionTitle('6.', 'Viagem compartilhada'),
+                      const SizedBox(height: 8),
+                      _buildAcompanhantes(),
+                    ],
+                    const SizedBox(height: 28),
+                    SolicitacaoPrimaryButtonWidget(
+                      label: 'Avançar',
+                      onPressed: _podeAvancar() ? _avancar : null,
+                    ),
                   ],
                 ),
               ),
@@ -146,109 +121,168 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
     );
   }
 
-  Widget _buildSecaoLabel(String numero, String label) {
+  Widget _buildHeader() {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          numero,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: AppColors.darkBlue,
+        GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Image.asset(
+            AppAssets.iconVoltar,
+            width: 27,
+            height: 27,
+            fit: BoxFit.contain,
           ),
         ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: AppColors.darkBlue,
+        const SizedBox(width: 10),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Solicitar viagem',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkBlue,
+                ),
+              ),
+              SizedBox(height: 1),
+              Text(
+                'Preencha os campos abaixo para prosseguir',
+                style: TextStyle(fontSize: 11, color: AppColors.textGrey),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildDropdown({
-    required String? valor,
-    required String hint,
-    required VoidCallback onTap,
-    required String iconAsset,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 45,
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.borderGrey),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        child: Row(
-          children: [
-            Image.asset(
-              iconAsset,
-              width: 14,
-              height: 14,
-              fit: BoxFit.contain,
-              color: AppColors.textGrey,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: valor != null
-                  ? _buildChipValor(valor)
-                  : Text(
-                      hint,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.textGrey,
-                      ),
-                    ),
-            ),
-            const Icon(Icons.keyboard_arrow_down, size: 18, color: AppColors.textGrey),
-          ],
-        ),
+  Widget _buildSectionTitle(String number, String label) {
+    return Text(
+      '$number $label',
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: AppColors.darkBlue,
       ),
     );
   }
 
-  Widget _buildChipValor(String valor) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.weekSelectorBg,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              valor,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.darkBlue,
-              ),
+  /// Linha com ícone à esquerda + conteúdo do campo, alinhados ao restante
+  /// dos formulários de solicitação.
+  Widget _buildFieldRow({
+    required String iconAsset,
+    required Widget child,
+    bool destacado = false,
+    double iconHeight = 48,
+    Widget? trailing,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 20,
+          height: iconHeight,
+          child: Center(
+            child: Image.asset(
+              iconAsset,
+              width: 16,
+              height: 16,
+              fit: BoxFit.contain,
+              color: destacado ? AppColors.primaryBlue : AppColors.borderGrey,
             ),
-            const SizedBox(width: 6),
-            GestureDetector(
-              onTap: () {
-                // Remove seleção
-                if (valor == _centroCusto) {
-                  setState(() => _centroCusto = null);
-                } else if (valor == _veiculo) {
-                  setState(() => _veiculo = null);
-                }
-              },
-              child: const Icon(Icons.close, size: 14, color: AppColors.textMediumGrey),
-            ),
-          ],
+          ),
         ),
+        const SizedBox(width: 8),
+        Expanded(child: child),
+        ?trailing,
+      ],
+    );
+  }
+
+  Widget _buildDropdown({
+    required String? value,
+    required String hint,
+    required String iconAsset,
+    required VoidCallback onTap,
+    bool isOpen = false,
+  }) {
+    return _buildFieldRow(
+      iconAsset: iconAsset,
+      destacado: isOpen,
+      child: SolicitacaoInputWidget(
+        label: hint,
+        valor: value,
+        isDropdown: true,
+        isOpen: isOpen,
+        onTap: onTap,
+      ),
+    );
+  }
+
+  /// Campo de seleção + lista de opções expansível, alinhada ao input.
+  Widget _buildSelectField({
+    required Widget field,
+    required bool isOpen,
+    required List<String> options,
+    required String? selected,
+    required ValueChanged<String> onSelected,
+  }) {
+    return Column(
+      children: [
+        field,
+        AnimatedSize(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          alignment: Alignment.topCenter,
+          child: isOpen
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 28, top: 8),
+                  child: SolicitacaoDropdownOptionsWidget(
+                    options: options,
+                    selected: selected,
+                    onSelected: onSelected,
+                  ),
+                )
+              : const SizedBox(width: double.infinity),
+        ),
+      ],
+    );
+  }
+
+  /// Centros de custo são digitados manualmente: cada número confirmado vira
+  /// uma tag removível, e é possível adicionar quantos forem necessários.
+  Widget _buildCentroCustoField() {
+    return _buildFieldRow(
+      iconAsset: AppAssets.iconCusto,
+      destacado: _centrosCusto.isNotEmpty,
+      child: SolicitacaoTagsInputWidget(
+        label: 'digite o número do centro de custo',
+        helperText: 'confirme no teclado para adicionar outro centro de custo',
+        values: _centrosCusto,
+        onAdded: (value) => setState(() => _centrosCusto.add(value)),
+        onRemoved: (index) => setState(() => _centrosCusto.removeAt(index)),
+      ),
+    );
+  }
+
+  Widget _buildVehicleField() {
+    return _buildSelectField(
+      isOpen: _veiculoExpandido,
+      options: _veiculos,
+      selected: _veiculo,
+      onSelected: (value) => setState(() {
+        _veiculo = value;
+        _veiculoExpandido = false;
+      }),
+      field: _buildDropdown(
+        value: _veiculo,
+        hint: 'selecione um veículo',
+        iconAsset: AppAssets.iconVeiculo,
+        isOpen: _veiculoExpandido,
+        onTap: () => setState(() => _veiculoExpandido = !_veiculoExpandido),
       ),
     );
   }
@@ -260,24 +294,24 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
         const Text(
           'Outro funcionário irá te acompanhar?',
           style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: AppColors.darkBlue,
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+            color: AppColors.textGrey,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 6),
         Row(
           children: [
             _RadioOption(
               label: 'Sim',
               selected: _viagemCompartilhada == true,
-              onTap: () => setState(() => _viagemCompartilhada = true),
+              onTap: () => _selecionarCompartilhada(true),
             ),
-            const SizedBox(width: 32),
+            const SizedBox(width: 22),
             _RadioOption(
               label: 'Não',
               selected: _viagemCompartilhada == false,
-              onTap: () => setState(() => _viagemCompartilhada = false),
+              onTap: () => _selecionarCompartilhada(false),
             ),
           ],
         ),
@@ -285,37 +319,131 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
     );
   }
 
-  Widget _buildBotaoAvancar() {
-    final habilitado = _podeAvancar();
-    return Center(
-      child: SizedBox(
-        width: 245,
-        height: 60,
-        child: ElevatedButton(
-          onPressed: habilitado ? _avancar : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryBlue,
-            foregroundColor: AppColors.white,
-            disabledBackgroundColor: AppColors.primaryBlue.withValues(alpha: 0.4),
-            disabledForegroundColor: AppColors.white.withValues(alpha: 0.7),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
+  Widget _buildAcompanhantes() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var index = 0; index < _cpfAcompanhanteControllers.length; index++)
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: index == _cpfAcompanhanteControllers.length - 1 ? 0 : 8,
+            ),
+            child: _buildCpfInput(index),
+          ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: _adicionarAcompanhante,
+            icon: const Icon(Icons.add_circle_outline, size: 20),
+            label: const Text('Adicionar acompanhante'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primaryBlue,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
-          child: const Text(
-            'Avançar',
-            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCpfInput(int index) {
+    // Com dois ou mais acompanhantes todas as linhas reservam o espaço do
+    // botão de remover, para que os campos fiquem do mesmo tamanho.
+    final reservaEspacoRemover = _cpfAcompanhanteControllers.length > 1;
+    final podeRemover = index > 0;
+
+    return _buildFieldRow(
+      iconAsset: AppAssets.iconFuncionario,
+      iconHeight: 45,
+      destacado: _cpfAcompanhanteControllers[index].text.trim().isNotEmpty,
+      child: SolicitacaoTextFieldWidget(
+        controller: _cpfAcompanhanteControllers[index],
+        hintText: 'CPF do ${index + 2}º passageiro',
+        keyboardType: TextInputType.number,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(11),
+        ],
+        onChanged: (_) => setState(() {}),
+      ),
+      trailing: reservaEspacoRemover
+          ? SizedBox(
+              width: 34,
+              height: 45,
+              child: podeRemover
+                  ? Center(child: _buildRemoverAcompanhante(index))
+                  : null,
+            )
+          : null,
+    );
+  }
+
+  Widget _buildRemoverAcompanhante(int index) {
+    return Semantics(
+      button: true,
+      label: 'Remover acompanhante',
+      child: Tooltip(
+        message: 'Remover acompanhante',
+        child: InkWell(
+          onTap: () => _removerAcompanhante(index),
+          customBorder: const CircleBorder(),
+          child: const SizedBox(
+            width: 32,
+            height: 32,
+            child: Icon(
+              Icons.remove_circle_outline,
+              size: 19,
+              color: AppColors.textMediumGrey,
+            ),
           ),
         ),
       ),
     );
   }
 
+  void _selecionarCompartilhada(bool value) {
+    setState(() {
+      _viagemCompartilhada = value;
+      if (value && _cpfAcompanhanteControllers.isEmpty) {
+        _cpfAcompanhanteControllers.add(TextEditingController());
+      } else if (!value) {
+        _limparAcompanhantes();
+      }
+    });
+  }
+
+  void _adicionarAcompanhante() {
+    setState(() {
+      _cpfAcompanhanteControllers.add(TextEditingController());
+    });
+  }
+
+  void _removerAcompanhante(int index) {
+    setState(() {
+      _cpfAcompanhanteControllers.removeAt(index).dispose();
+    });
+  }
+
+  void _limparAcompanhantes() {
+    for (final controller in _cpfAcompanhanteControllers) {
+      controller.dispose();
+    }
+    _cpfAcompanhanteControllers.clear();
+  }
+
   bool _podeAvancar() {
-    return _centroCusto != null &&
+    final acompanhantesPreenchidos =
+        _viagemCompartilhada != true ||
+        (_cpfAcompanhanteControllers.isNotEmpty &&
+            _cpfAcompanhanteControllers.every(
+              (controller) => controller.text.trim().isNotEmpty,
+            ));
+
+    return _centrosCusto.isNotEmpty &&
         _veiculo != null &&
-        _viagemCompartilhada != null;
+        _viagemCompartilhada != null &&
+        acompanhantesPreenchidos;
   }
 
   void _avancar() {
@@ -325,12 +453,19 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
         builder: (_) => SolicitarViagemRevisaoPage(
           origem: widget.origem,
           destino: widget.destino,
+          paradas: widget.paradas,
           data: widget.data,
           horario: widget.horario,
           motivo: widget.motivo,
-          centroCusto: _centroCusto!,
+          centrosCusto: List<String>.of(_centrosCusto),
           veiculo: _veiculo!,
+          acompanhantes: _cpfAcompanhanteControllers
+              .map((controller) => controller.text.trim())
+              .where((cpf) => cpf.isNotEmpty)
+              .toList(growable: false),
+
           origemPoint: widget.origemPoint,
+          paradaPoints: widget.paradaPoints,
           destinoPoint: widget.destinoPoint,
         ),
       ),
@@ -356,20 +491,20 @@ class _RadioOption extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 20,
-            height: 20,
+            width: 15,
+            height: 15,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
                 color: selected ? AppColors.primaryBlue : AppColors.borderGrey,
-                width: 2,
+                width: 1.5,
               ),
             ),
             child: selected
                 ? Center(
                     child: Container(
-                      width: 10,
-                      height: 10,
+                      width: 8,
+                      height: 8,
                       decoration: const BoxDecoration(
                         color: AppColors.primaryBlue,
                         shape: BoxShape.circle,
@@ -378,14 +513,10 @@ class _RadioOption extends StatelessWidget {
                   )
                 : null,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: selected ? AppColors.darkBlue : AppColors.textMediumGrey,
-            ),
+            style: const TextStyle(fontSize: 11, color: AppColors.textGrey),
           ),
         ],
       ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../../../../core/widgets/app_colors.dart';
 
-/// Dialog de confirmação de solicitação (viagem ou objeto).
-/// Exibe ícone de sucesso, título, mensagem e botão fechar.
+/// Diálogo exibido após o envio de uma solicitação.
 class SolicitacaoConfirmacaoDialog extends StatelessWidget {
   final String titulo;
   final String mensagem;
@@ -20,46 +20,45 @@ class SolicitacaoConfirmacaoDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       backgroundColor: AppColors.white,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        padding: const EdgeInsets.fromLTRB(24, 26, 24, 27),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Ícone de sucesso
             Container(
-              width: 107,
-              height: 107,
-              decoration: BoxDecoration(
-                color: AppColors.accentGreen.withValues(alpha: 0.15),
+              width: 66,
+              height: 66,
+              decoration: const BoxDecoration(
+                color: AppColors.accentGreen,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.check_circle_rounded,
-                size: 60,
-                color: AppColors.accentGreen,
+                Icons.check_rounded,
+                size: 48,
+                color: AppColors.white,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Text(
               titulo,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 18,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: AppColors.darkBlue,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(
               mensagem,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
+                fontSize: 11,
                 color: AppColors.textMediumGrey,
-                height: 1.5,
+                height: 1.35,
               ),
             ),
             if (submensagem != null) ...[
@@ -68,30 +67,30 @@ class SolicitacaoConfirmacaoDialog extends StatelessWidget {
                 submensagem!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
+                  fontSize: 11,
                   color: AppColors.textMediumGrey,
-                  height: 1.5,
+                  height: 1.35,
                 ),
               ),
             ],
-            const SizedBox(height: 28),
+            const SizedBox(height: 18),
             SizedBox(
-              width: 245,
-              height: 60,
+              width: 150,
+              height: 38,
               child: ElevatedButton(
                 onPressed: onFechar,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryBlue,
                   foregroundColor: AppColors.white,
                   elevation: 0,
+                  padding: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
                 child: const Text(
                   'Fechar',
-                  style: TextStyle(fontSize: 21, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ),
             ),

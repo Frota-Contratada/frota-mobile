@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
+
 import '../../../../../config/app_assets.dart';
 import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/app_map_widget.dart';
+import '../widgets/solicitacao_dropdown_options_widget.dart';
 import '../widgets/solicitacao_input_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
-import '../widgets/solicitacao_secao_header_widget.dart';
 import 'solicitar_objeto_revisao_page.dart';
 
-/// Página de transporte de itens - Step 2.
-/// Campos: objeto a transportar, veículo.
 class SolicitarObjetoStep2Page extends StatefulWidget {
   final String origem;
   final String destino;
   final String data;
   final String horario;
-  final String centroCusto;
+  final List<String> centrosCusto;
   final MapPoint? origemPoint;
   final MapPoint? destinoPoint;
 
@@ -26,23 +25,35 @@ class SolicitarObjetoStep2Page extends StatefulWidget {
     required this.destino,
     required this.data,
     required this.horario,
-    required this.centroCusto,
+    required this.centrosCusto,
     this.origemPoint,
     this.destinoPoint,
   });
 
   @override
-  State<SolicitarObjetoStep2Page> createState() => _SolicitarObjetoStep2PageState();
+  State<SolicitarObjetoStep2Page> createState() =>
+      _SolicitarObjetoStep2PageState();
 }
 
 class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
+  static const _veiculos = <String>['Moto', 'Carro', 'Van'];
+  static const _objetos = <String>[
+    'Documentos',
+    'Equipamentos',
+    'Encomendas',
+    'Materiais de escritório',
+    'Outros',
+  ];
+
   String? _objeto;
   String? _veiculo;
+  bool _objetoExpandido = false;
+  bool _veiculoExpandido = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.white,
       body: Column(
         children: [
           SizedBox(
@@ -60,75 +71,28 @@ class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
               width: double.infinity,
               transform: Matrix4.translationValues(0, -19, 0),
               decoration: const BoxDecoration(
-                color: AppColors.background,
+                color: AppColors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(25, 25, 25, 40),
+                padding: const EdgeInsets.fromLTRB(25, 24, 25, 40),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Image.asset(
-                            AppAssets.iconVoltar,
-                            width: 30,
-                            height: 30,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        const Expanded(
-                          child: Text(
-                            'Solicitar transporte de itens',
-                            style: TextStyle(
-                              fontSize: 21,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.darkBlue,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    const Padding(
-                      padding: EdgeInsets.only(left: 45),
-                      child: Text(
-                        'Preencha os campos abaixo para prosseguir',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textMediumGrey,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const SolicitacaoModalidadeChipWidget(modalidade: 'Objetos'),
-                    const SizedBox(height: 24),
-
-                    // Objeto
-                    const SolicitacaoSecaoHeaderWidget(emoji: '📦', label: 'Objeto'),
+                    _buildHeader(),
                     const SizedBox(height: 16),
-                    SolicitacaoInputWidget(
-                      label: 'qual objeto será transportado?',
-                      valor: _objeto,
-                      onTap: () => setState(() => _objeto = 'documentos'),
+                    const SolicitacaoModalidadeChipWidget(
+                      modalidade: 'Objetos',
                     ),
-                    const SizedBox(height: 24),
-
-                    // Transporte
-                    const SolicitacaoSecaoHeaderWidget(emoji: '🚗', label: 'Transporte'),
-                    const SizedBox(height: 16),
-                    SolicitacaoInputWidget(
-                      label: 'selecione um veículo',
-                      valor: _veiculo,
-                      isDropdown: true,
-                      onTap: () => setState(() => _veiculo = 'moto'),
-                    ),
-                    const SizedBox(height: 40),
-
+                    const SizedBox(height: 12),
+                    _buildSectionTitle('4.', 'Objeto'),
+                    const SizedBox(height: 8),
+                    _buildObjetoField(),
+                    const SizedBox(height: 18),
+                    _buildSectionTitle('5.', 'Transporte'),
+                    const SizedBox(height: 8),
+                    _buildVehicleField(),
+                    const SizedBox(height: 28),
                     SolicitacaoPrimaryButtonWidget(
                       label: 'Avançar',
                       onPressed: _podeAvancar() ? _avancar : null,
@@ -139,6 +103,168 @@ class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Image.asset(
+            AppAssets.iconVoltar,
+            width: 27,
+            height: 27,
+            fit: BoxFit.contain,
+          ),
+        ),
+        const SizedBox(width: 10),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Solicitar transporte de itens',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkBlue,
+                ),
+              ),
+              SizedBox(height: 1),
+              Text(
+                'Preencha os campos abaixo para prosseguir',
+                style: TextStyle(fontSize: 11, color: AppColors.textGrey),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionTitle(String number, String label) {
+    return Text(
+      '$number $label',
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: AppColors.darkBlue,
+      ),
+    );
+  }
+
+  Widget _buildField({
+    required String iconAsset,
+    required String label,
+    required String? value,
+    required VoidCallback onTap,
+    bool isDropdown = false,
+    bool isOpen = false,
+  }) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 20,
+          height: 45,
+          child: Center(
+            child: Image.asset(
+              iconAsset,
+              width: 16,
+              height: 16,
+              fit: BoxFit.contain,
+              color: isOpen ? AppColors.primaryBlue : AppColors.borderGrey,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: SolicitacaoInputWidget(
+            label: label,
+            valor: value,
+            isDropdown: isDropdown,
+            isOpen: isOpen,
+            onTap: onTap,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Campo de seleção + lista de opções expansível, alinhada ao input.
+  Widget _buildSelectField({
+    required Widget field,
+    required bool isOpen,
+    required List<String> options,
+    required String? selected,
+    required ValueChanged<String> onSelected,
+  }) {
+    return Column(
+      children: [
+        field,
+        AnimatedSize(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          alignment: Alignment.topCenter,
+          child: isOpen
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 28, top: 8),
+                  child: SolicitacaoDropdownOptionsWidget(
+                    options: options,
+                    selected: selected,
+                    onSelected: onSelected,
+                  ),
+                )
+              : const SizedBox(width: double.infinity),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildObjetoField() {
+    return _buildSelectField(
+      isOpen: _objetoExpandido,
+      options: _objetos,
+      selected: _objeto,
+      onSelected: (value) => setState(() {
+        _objeto = value;
+        _objetoExpandido = false;
+      }),
+      field: _buildField(
+        iconAsset: AppAssets.iconTransporteItens,
+        label: 'qual objeto será transportado?',
+        value: _objeto,
+        isDropdown: true,
+        isOpen: _objetoExpandido,
+        onTap: () => setState(() {
+          _objetoExpandido = !_objetoExpandido;
+          _veiculoExpandido = false;
+        }),
+      ),
+    );
+  }
+
+  Widget _buildVehicleField() {
+    return _buildSelectField(
+      isOpen: _veiculoExpandido,
+      options: _veiculos,
+      selected: _veiculo,
+      onSelected: (value) => setState(() {
+        _veiculo = value;
+        _veiculoExpandido = false;
+      }),
+      field: _buildField(
+        iconAsset: AppAssets.iconVeiculo,
+        label: 'selecione um veículo',
+        value: _veiculo,
+        isDropdown: true,
+        isOpen: _veiculoExpandido,
+        onTap: () => setState(() {
+          _veiculoExpandido = !_veiculoExpandido;
+          _objetoExpandido = false;
+        }),
       ),
     );
   }
@@ -154,7 +280,7 @@ class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
           destino: widget.destino,
           data: widget.data,
           horario: widget.horario,
-          centroCusto: widget.centroCusto,
+          centrosCusto: widget.centrosCusto,
           objeto: _objeto!,
           veiculo: _veiculo!,
           origemPoint: widget.origemPoint,
