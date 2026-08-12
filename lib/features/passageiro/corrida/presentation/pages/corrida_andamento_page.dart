@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../../../../config/app_assets.dart';
+import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
+import '../../../../../core/widgets/app_map_widget.dart';
 
-/// Tela de acompanhamento de corrida em andamento (passageiro).
-/// Exibe mapa em tela cheia com barra de informações na parte inferior.
 class CorridaAndamentoPage extends StatelessWidget {
   final String origem;
   final String destino;
   final int minutosAndamento;
   final bool motoristaPausado;
+  final MapPoint? origemPoint;
+  final MapPoint? destinoPoint;
 
   const CorridaAndamentoPage({
     super.key,
@@ -16,8 +18,9 @@ class CorridaAndamentoPage extends StatelessWidget {
     required this.destino,
     this.minutosAndamento = 10,
     this.motoristaPausado = false,
+    this.origemPoint,
+    this.destinoPoint,
   });
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,14 +56,14 @@ class CorridaAndamentoPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Mapa (ocupa o espaço restante)
+            // Mapa em tempo real com a posição atual, rota e enquadramento.
             Expanded(
-              child: Container(
-                width: double.infinity,
-                color: AppColors.weekSelectorBg,
-                child: const Center(
-                  child: Icon(Icons.map_outlined, size: 80, color: AppColors.textGrey),
-                ),
+              child: MapRoutePreview(
+                originAddress: origem,
+                destinationAddress: destino,
+                origin: origemPoint,
+                destination: destinoPoint,
+                showCurrentLocation: true,
               ),
             ),
 

@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+
 import '../../../../../config/app_assets.dart';
+import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
+import '../../../../../core/widgets/app_map_widget.dart';
+import '../../../../../core/widgets/map_picker_page.dart';
+import '../utils/solicitacao_formatters.dart';
+import '../widgets/solicitacao_dropdown_options_widget.dart';
+import '../widgets/solicitacao_input_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
+import '../widgets/solicitacao_primary_button_widget.dart';
 import 'solicitar_viagem_step2_page.dart';
 
-/// Página de solicitação de viagem (Táxi) - Step 1.
-/// Campos: origem, destino, data, horário, motivo.
 class SolicitarViagemPage extends StatefulWidget {
   const SolicitarViagemPage({super.key});
 
@@ -14,11 +20,21 @@ class SolicitarViagemPage extends StatefulWidget {
 }
 
 class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
+  static const _motivos = <String>['Viagem de trabalho', 'Emergência'];
+
   final _origemController = TextEditingController();
   final _destinoController = TextEditingController();
   final _dataController = TextEditingController();
   final _horarioController = TextEditingController();
+  final List<TextEditingController> _paradaControllers = [];
+
+  MapPoint? _origemPoint;
+  MapPoint? _destinoPoint;
+  final List<MapPoint?> _paradaPoints = [];
+  DateTime? _dataSelecionada;
+  TimeOfDay? _horarioSelecionado;
   String? _motivo;
+  bool _motivosExpandidos = false;
 
   @override
   void dispose() {
@@ -26,115 +42,76 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
     _destinoController.dispose();
     _dataController.dispose();
     _horarioController.dispose();
+    for (final controller in _paradaControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.white,
       body: Column(
         children: [
-          // Mapa placeholder
-          Container(
+          SizedBox(
             height: 189,
             width: double.infinity,
-            color: AppColors.weekSelectorBg,
-            child: const Center(
-              child: Icon(Icons.map_outlined, size: 48, color: AppColors.textGrey),
+            child: AppMapWidget(
+              showAttribution: false,
+              origin: _origemPoint,
+              viaPoints: _paradaPoints.whereType<MapPoint>().toList(),
+              destination: _destinoPoint,
             ),
           ),
-          // Conteúdo
           Expanded(
             child: Container(
               width: double.infinity,
               transform: Matrix4.translationValues(0, -21, 0),
               decoration: const BoxDecoration(
-                color: AppColors.background,
+                color: AppColors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(25, 28, 25, 40),
+                padding: const EdgeInsets.fromLTRB(25, 24, 25, 40),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Image.asset(
-                            AppAssets.iconVoltar,
-                            width: 30,
-                            height: 30,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Solicitar viagem',
-                              style: TextStyle(
-                                fontSize: 21,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.darkBlue,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Preencha os campos abaixo para prosseguir',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w400,
-                                color: AppColors.textMediumGrey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    _buildHeader(
+                      title: 'Solicitar viagem',
+                      subtitle: 'Preencha os campos abaixo para prosseguir',
+                    ),
+                    const SizedBox(height: 16),
+                    const SolicitacaoModalidadeChipWidget(modalidade: 'Táxi'),
+                    const SizedBox(height: 12),
+                    _buildSectionTitle('1.', 'Trajeto'),
+                    const SizedBox(height: 8),
+                    _buildTrajetoSection(),
+                    const SizedBox(height: 20),
+                    _buildSectionTitle('2.', 'Data e horário de partida'),
+                    const SizedBox(height: 8),
+                    _buildIconInput(
+                      iconAsset: AppAssets.iconData,
+                      label: 'data',
+                      value: _dataController.text,
+                      onTap: _selecionarData,
+                    ),
+                    const SizedBox(height: 10),
+                    _buildIconInput(
+                      iconAsset: AppAssets.iconHorario,
+                      label: 'horário',
+                      value: _horarioController.text,
+                      onTap: _selecionarHorario,
                     ),
                     const SizedBox(height: 20),
-                    const SolicitacaoModalidadeChipWidget(modalidade: 'Táxi'),
-                    const SizedBox(height: 28),
-
-                    // 1. Trajeto
-                    _buildSecaoLabel('1.', 'Trajeto'),
-                    const SizedBox(height: 14),
-                    _buildTrajetoSection(),
-                    const SizedBox(height: 28),
-
-                    // 2. Data e horário de partida
-                    _buildSecaoLabel('2.', 'Data e horário de partida'),
-                    const SizedBox(height: 14),
-                    _buildInputComIcone(
-                      controller: _dataController,
-                      hint: 'data',
-                      iconAsset: AppAssets.iconData,
-                      iconWidth: 14,
-                      iconHeight: 16,
-                      onTap: () => _selecionarData(),
+                    _buildSectionTitle('3.', 'Motivo da corrida'),
+                    const SizedBox(height: 8),
+                    _buildMotivoInput(),
+                    const SizedBox(height: 30),
+                    SolicitacaoPrimaryButtonWidget(
+                      label: 'Avançar',
+                      onPressed: _podeAvancar() ? _avancar : null,
                     ),
-                    const SizedBox(height: 12),
-                    _buildInputComIcone(
-                      controller: _horarioController,
-                      hint: 'horário',
-                      iconAsset: AppAssets.iconHorario,
-                      iconWidth: 14,
-                      iconHeight: 14,
-                      onTap: () => _selecionarHorario(),
-                    ),
-                    const SizedBox(height: 28),
-
-                    // 3. Motivo da corrida
-                    _buildSecaoLabel('3.', 'Motivo da corrida'),
-                    const SizedBox(height: 14),
-                    _buildDropdownMotivo(),
-                    const SizedBox(height: 40),
-
-                    // Botão Avançar
-                    _buildBotaoAvancar(),
                   ],
                 ),
               ),
@@ -145,96 +122,93 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
     );
   }
 
-  Widget _buildSecaoLabel(String numero, String label) {
+  Widget _buildHeader({required String title, required String subtitle}) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          numero,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: AppColors.darkBlue,
+        GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Image.asset(
+            AppAssets.iconVoltar,
+            width: 27,
+            height: 27,
+            fit: BoxFit.contain,
           ),
         ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: AppColors.darkBlue,
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkBlue,
+                ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                subtitle,
+                style: const TextStyle(fontSize: 11, color: AppColors.textGrey),
+              ),
+            ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSectionTitle(String number, String label) {
+    return Text(
+      '$number $label',
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: AppColors.darkBlue,
+      ),
     );
   }
 
   Widget _buildTrajetoSection() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
       children: [
-        // Indicadores visuais
-        Padding(
-          padding: const EdgeInsets.only(top: 14),
-          child: Column(
-            children: [
-              Container(
-                width: 11,
-                height: 11,
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryBlue,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              Container(
-                width: 2,
-                height: 36,
-                margin: const EdgeInsets.symmetric(vertical: 3),
-                color: AppColors.borderGrey,
-              ),
-              Image.asset(
-                AppAssets.iconDestino,
-                width: 11,
-                height: 14,
-                fit: BoxFit.contain,
-                color: AppColors.primaryBlue,
-              ),
-            ],
-          ),
+        _buildRouteItem(
+          label: 'origem',
+          controller: _origemController,
+          pointKind: MapSelectionKind.origin,
+          point: _origemPoint,
         ),
-        const SizedBox(width: 10),
-        // Inputs
-        Expanded(
-          child: Column(
-            children: [
-              _buildTextInput(
-                controller: _origemController,
-                hint: 'origem',
-              ),
-              const SizedBox(height: 12),
-              _buildTextInput(
-                controller: _destinoController,
-                hint: 'destino',
-              ),
-            ],
+        _buildRouteConnector(),
+        for (var index = 0; index < _paradaControllers.length; index++) ...[
+          _buildRouteItem(
+            label: 'parada ${index + 1}',
+            controller: _paradaControllers[index],
+            pointKind: MapSelectionKind.stop,
+            point: _paradaPoints[index],
+            onRemove: () => _removerParada(index),
+            onTap: () =>
+                _selecionarPonto(MapSelectionKind.stop, stopIndex: index),
           ),
+          _buildRouteConnector(),
+        ],
+        _buildRouteItem(
+          label: 'destino',
+          controller: _destinoController,
+          pointKind: MapSelectionKind.destination,
+          point: _destinoPoint,
         ),
-        const SizedBox(width: 10),
-        // Botão adicionar parada
-        Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: GestureDetector(
-            onTap: () {
-              // TODO: adicionar parada
-            },
-            child: Container(
-              width: 31,
-              height: 31,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryBlue,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.add, color: AppColors.white, size: 18),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: _adicionarParada,
+            icon: const Icon(Icons.add_circle_outline, size: 20),
+            label: const Text('Adicionar parada'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primaryBlue,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
         ),
@@ -242,165 +216,334 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
     );
   }
 
-  Widget _buildTextInput({
+  Widget _buildRouteItem({
+    required String label,
     required TextEditingController controller,
-    required String hint,
-  }) {
-    return Container(
-      height: 45,
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderGrey),
-      ),
-      child: TextField(
-        controller: controller,
-        onChanged: (_) => setState(() {}),
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: AppColors.darkBlue,
-        ),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            color: AppColors.textGrey,
-          ),
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          isDense: true,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInputComIcone({
-    required TextEditingController controller,
-    required String hint,
-    required String iconAsset,
-    required double iconWidth,
-    required double iconHeight,
+    required MapSelectionKind pointKind,
+    required MapPoint? point,
+    VoidCallback? onRemove,
     VoidCallback? onTap,
   }) {
-    return GestureDetector(
+    final selectPoint = onTap ?? () => _selecionarPonto(pointKind);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 20,
+          height: 45,
+          child: Center(
+            child: pointKind == MapSelectionKind.destination
+                ? Image.asset(
+                    AppAssets.iconDestinoCinza,
+                    width: 16,
+                    height: 18,
+                    fit: BoxFit.contain,
+                    color: point == null
+                        ? AppColors.textGrey
+                        : AppColors.primaryBlue,
+                  )
+                : Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: point == null
+                          ? AppColors.borderGrey
+                          : AppColors.primaryBlue,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildRouteInput(
+            controller: controller,
+            label: label,
+            onTap: selectPoint,
+          ),
+        ),
+        if (onRemove != null)
+          SizedBox(
+            width: 28,
+            height: 45,
+            child: IconButton(
+              onPressed: onRemove,
+              padding: EdgeInsets.zero,
+              icon: const Icon(
+                Icons.remove_circle_outline,
+                size: 18,
+                color: AppColors.textMediumGrey,
+              ),
+              tooltip: 'Remover $label',
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRouteConnector() {
+    return SizedBox(
+      height: 8,
+      child: Row(
+        children: [
+          SizedBox(
+            width: 20,
+            child: Center(
+              child: Container(
+                width: 1,
+                height: 8,
+                color: AppColors.borderGrey,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Expanded(child: SizedBox()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRouteInput({
+    required TextEditingController controller,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final value = controller.text.trim();
+    return SolicitacaoInputWidget(
+      label: label,
+      valor: value.isEmpty ? null : value,
       onTap: onTap,
-      child: Container(
-        height: 45,
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.borderGrey),
-        ),
-        child: Row(
-          children: [
-            const SizedBox(width: 14),
-            Image.asset(
+      height: 45,
+    );
+  }
+
+  Widget _buildIconInput({
+    required String iconAsset,
+    required String label,
+    required String? value,
+    required VoidCallback onTap,
+    bool isDropdown = false,
+  }) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 20,
+          height: 48,
+          child: Center(
+            child: Image.asset(
               iconAsset,
-              width: iconWidth,
-              height: iconHeight,
+              width: 16,
+              height: 16,
               fit: BoxFit.contain,
-              color: AppColors.textGrey,
+              color: AppColors.borderGrey,
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                controller.text.isEmpty ? hint : controller.text,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: controller.text.isEmpty ? FontWeight.w400 : FontWeight.w500,
-                  color: controller.text.isEmpty ? AppColors.textGrey : AppColors.darkBlue,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: SolicitacaoInputWidget(
+            label: label,
+            valor: value,
+            isDropdown: isDropdown,
+            onTap: onTap,
+            height: 48,
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildDropdownMotivo() {
-    return GestureDetector(
-      onTap: _selecionarMotivo,
-      child: Container(
-        height: 45,
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.borderGrey),
+  Widget _buildMotivoInput() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 20,
+          height: 48,
+          child: Center(
+            child: Image.asset(
+              AppAssets.iconMotivo,
+              width: 16,
+              height: 16,
+              fit: BoxFit.contain,
+              color: _motivosExpandidos
+                  ? AppColors.primaryBlue
+                  : AppColors.borderGrey,
+            ),
+          ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                _motivo ?? 'descreva o motivo da corrida',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: _motivo != null ? FontWeight.w500 : FontWeight.w400,
-                  color: _motivo != null ? AppColors.darkBlue : AppColors.textGrey,
-                ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            children: [
+              SolicitacaoInputWidget(
+                label: 'descreva o motivo da corrida',
+                valor: _motivo,
+                isDropdown: true,
+                isOpen: _motivosExpandidos,
+                onTap: () =>
+                    setState(() => _motivosExpandidos = !_motivosExpandidos),
+                height: 48,
               ),
-            ),
-            const Icon(
-              Icons.keyboard_arrow_down,
-              size: 18,
-              color: AppColors.textGrey,
-            ),
-          ],
+              AnimatedSize(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                alignment: Alignment.topCenter,
+                child: _motivosExpandidos
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: _buildMotivoOptions(),
+                      )
+                    : const SizedBox(width: double.infinity),
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildBotaoAvancar() {
-    final habilitado = _podeAvancar();
-    return Center(
-      child: SizedBox(
-        width: 245,
-        height: 60,
-        child: ElevatedButton(
-          onPressed: habilitado ? _avancar : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryBlue,
-            foregroundColor: AppColors.white,
-            disabledBackgroundColor: AppColors.primaryBlue.withValues(alpha: 0.4),
-            disabledForegroundColor: AppColors.white.withValues(alpha: 0.7),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-          ),
-          child: const Text(
-            'Avançar',
-            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w600),
-          ),
-        ),
-      ),
+  Widget _buildMotivoOptions() {
+    return SolicitacaoDropdownOptionsWidget(
+      options: _motivos,
+      selected: _motivo,
+      optionIcons: const [
+        AppAssets.iconMotivo,
+        AppAssets.iconMotivoInterrogacao,
+      ],
+      onSelected: _selecionarMotivo,
     );
   }
 
   bool _podeAvancar() {
-    return _origemController.text.isNotEmpty &&
-        _destinoController.text.isNotEmpty &&
+    final temParadasValidas = _paradaControllers.every(
+      (controller) => controller.text.trim().isNotEmpty,
+    );
+    return _origemController.text.trim().isNotEmpty &&
+        _destinoController.text.trim().isNotEmpty &&
+        temParadasValidas &&
         _dataController.text.isNotEmpty &&
         _horarioController.text.isNotEmpty &&
         _motivo != null;
   }
 
-  void _selecionarData() {
-    setState(() => _dataController.text = '17/03/2026');
+  Future<void> _selecionarPonto(MapSelectionKind kind, {int? stopIndex}) async {
+    final controller = switch (kind) {
+      MapSelectionKind.origin => _origemController,
+      MapSelectionKind.stop => _paradaControllers[stopIndex!],
+      MapSelectionKind.destination => _destinoController,
+    };
+    final atual = switch (kind) {
+      MapSelectionKind.origin => _origemPoint,
+      MapSelectionKind.stop => _paradaPoints[stopIndex!],
+      MapSelectionKind.destination => _destinoPoint,
+    };
+
+    final result = await Navigator.push<MapSelectionResult>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapPickerPage(
+          title: switch (kind) {
+            MapSelectionKind.origin => 'Selecionar origem',
+            MapSelectionKind.stop => 'Adicionar parada',
+            MapSelectionKind.destination => 'Selecionar destino',
+          },
+          initialPoint: atual,
+          initialAddress: controller.text.trim().isEmpty
+              ? null
+              : controller.text.trim(),
+          selectionKind: kind,
+        ),
+      ),
+    );
+    if (!mounted || result == null) return;
+
+    final address =
+        result.address ??
+        '${result.point.latitude.toStringAsFixed(5)}, '
+            '${result.point.longitude.toStringAsFixed(5)}';
+    setState(() {
+      controller.text = address;
+      switch (kind) {
+        case MapSelectionKind.origin:
+          _origemPoint = result.point;
+        case MapSelectionKind.stop:
+          _paradaPoints[stopIndex!] = result.point;
+        case MapSelectionKind.destination:
+          _destinoPoint = result.point;
+      }
+    });
   }
 
-  void _selecionarHorario() {
-    setState(() => _horarioController.text = '18h30');
+  void _adicionarParada() {
+    setState(() {
+      _paradaControllers.add(TextEditingController());
+      _paradaPoints.add(null);
+    });
   }
 
-  void _selecionarMotivo() {
-    setState(() => _motivo = 'Viagem de trabalho');
+  void _removerParada(int index) {
+    setState(() {
+      _paradaControllers.removeAt(index).dispose();
+      _paradaPoints.removeAt(index);
+    });
+  }
+
+  Future<void> _selecionarData() async {
+    final hoje = DateTime.now();
+    final dataInicial =
+        _dataSelecionada != null &&
+            !_dataSelecionada!.isBefore(
+              DateTime(hoje.year, hoje.month, hoje.day),
+            )
+        ? _dataSelecionada!
+        : hoje;
+    final data = await showDatePicker(
+      context: context,
+      initialDate: dataInicial,
+      firstDate: DateTime(hoje.year, hoje.month, hoje.day),
+      lastDate: DateTime(hoje.year + 2, hoje.month, hoje.day),
+      helpText: 'Selecione a data da viagem',
+      cancelText: 'Cancelar',
+      confirmText: 'Confirmar',
+    );
+    if (!mounted || data == null) return;
+    setState(() {
+      _dataSelecionada = data;
+      _dataController.text = formatarDataSolicitacao(data);
+    });
+  }
+
+  Future<void> _selecionarHorario() async {
+    final horario = await showTimePicker(
+      context: context,
+      initialTime: _horarioSelecionado ?? TimeOfDay.now(),
+      helpText: 'Selecione o horário da viagem',
+      cancelText: 'Cancelar',
+      confirmText: 'Confirmar',
+    );
+    if (!mounted || horario == null) return;
+    final agora = DateTime.now();
+    setState(() {
+      _horarioSelecionado = horario;
+      _horarioController.text = formatarHorarioSolicitacao(
+        DateTime(
+          agora.year,
+          agora.month,
+          agora.day,
+          horario.hour,
+          horario.minute,
+        ),
+      );
+    });
+  }
+
+  void _selecionarMotivo(String motivo) {
+    setState(() {
+      _motivo = motivo;
+      _motivosExpandidos = false;
+    });
   }
 
   void _avancar() {
@@ -408,8 +551,14 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
       context,
       MaterialPageRoute(
         builder: (_) => SolicitarViagemStep2Page(
-          origem: _origemController.text,
-          destino: _destinoController.text,
+          origem: _origemController.text.trim(),
+          destino: _destinoController.text.trim(),
+          paradas: [
+            for (final controller in _paradaControllers) controller.text.trim(),
+          ],
+          origemPoint: _origemPoint,
+          paradaPoints: _paradaPoints.whereType<MapPoint>().toList(),
+          destinoPoint: _destinoPoint,
           data: _dataController.text,
           horario: _horarioController.text,
           motivo: _motivo!,

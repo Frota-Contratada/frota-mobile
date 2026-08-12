@@ -12,5 +12,8 @@ ServerException mapDioException(DioException exception) {
       return ServerException(message.map((item) => item.toString()).join('\n'));
     }
   }
-  return const ServerException();
+  return ServerException(
+    'Erro ao comunicar com o servidor.',
+    exception.response == null,
+  );
 }

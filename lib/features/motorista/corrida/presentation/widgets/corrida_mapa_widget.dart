@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../../../../config/app_assets.dart';
+
+import '../../../../../core/widgets/app_map_widget.dart';
 import 'corrida_colors.dart';
 
 class CorridaMapaWidget extends StatelessWidget {
-  const CorridaMapaWidget({super.key});
+  final String origem;
+  final String destino;
+
+  const CorridaMapaWidget({
+    super.key,
+    required this.origem,
+    required this.destino,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,37 +34,9 @@ class CorridaMapaWidget extends StatelessWidget {
         ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            'assets/images/corrida/mapa_trajeto.png',
-            fit: BoxFit.cover,
-            alignment: const Alignment(-0.27, -0.37),
-          ),
-          Positioned(
-            left: 9,
-            bottom: 24,
-            child: Container(
-              width: 12,
-              height: 12,
-              decoration: const BoxDecoration(
-                color: CorridaColors.primaryBlue,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          Positioned(
-            right: 25,
-            top: 33,
-            child: Image.asset(
-              AppAssets.iconDestino,
-              width: 9,
-              height: 11,
-              fit: BoxFit.contain,
-            ),
-          ),
-        ],
+      child: MapRoutePreview(
+        originAddress: origem,
+        destinationAddress: destino,
       ),
     );
   }

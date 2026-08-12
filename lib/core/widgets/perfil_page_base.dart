@@ -213,7 +213,7 @@ class _AvatarSection extends StatelessWidget {
           width: 84,
           height: 84,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _buildAvatarFallback(),
+          errorBuilder: (_, _, _) => _buildAvatarFallback(),
         ),
       );
     }

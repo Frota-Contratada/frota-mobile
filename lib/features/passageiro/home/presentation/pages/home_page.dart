@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../config/routes.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
+import '../../../../../core/widgets/map_picker_page.dart';
 import '../../../../../injection_container/injection_container.dart';
 import '../../../../auth/domain/entities/usuario.dart';
 import '../../../shared/presentation/theme/passageiro_colors.dart';
@@ -70,7 +71,7 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
                   children: [
                     HomeHeaderWidget(usuario: usuarioAtual),
                     const SizedBox(height: 30),
-                    const MapaBuscaWidget(),
+                    MapaBuscaWidget(onBuscarLocal: _abrirBuscaLocal),
                     const SizedBox(height: 30),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 25),
@@ -224,6 +225,15 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
     }
 
     return const SizedBox.shrink();
+  }
+
+  Future<void> _abrirBuscaLocal() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const MapPickerPage(title: 'Buscar local'),
+      ),
+    );
   }
 
   Usuario? _resolverUsuario(PassageiroHomeState state) {

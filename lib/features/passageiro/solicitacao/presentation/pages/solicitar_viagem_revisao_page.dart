@@ -1,43 +1,61 @@
 import 'package:flutter/material.dart';
+
 import '../../../../../config/app_assets.dart';
+import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
+import '../../../../../core/widgets/app_map_widget.dart';
+import '../widgets/solicitacao_confirmacao_dialog.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
-import '../../presentation/widgets/solicitacao_confirmacao_dialog.dart';
+import '../widgets/solicitacao_revisao_info_widget.dart';
 
-/// Página de revisão da solicitação de viagem - dados resumidos antes de enviar.
 class SolicitarViagemRevisaoPage extends StatelessWidget {
   final String origem;
   final String destino;
+  final List<String> paradas;
   final String data;
   final String horario;
   final String motivo;
-  final String centroCusto;
+  final List<String> centrosCusto;
   final String veiculo;
+  final List<String> acompanhantes;
+  final String? cpfAcompanhante;
+  final MapPoint? origemPoint;
+  final List<MapPoint> paradaPoints;
+  final MapPoint? destinoPoint;
 
   const SolicitarViagemRevisaoPage({
     super.key,
     required this.origem,
     required this.destino,
+    this.paradas = const [],
     required this.data,
     required this.horario,
     required this.motivo,
-    required this.centroCusto,
+    required this.centrosCusto,
     required this.veiculo,
+    this.acompanhantes = const [],
+    this.cpfAcompanhante,
+    this.origemPoint,
+    this.paradaPoints = const [],
+    this.destinoPoint,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.white,
       body: Column(
         children: [
-          Container(
+          SizedBox(
             height: 306,
             width: double.infinity,
-            color: AppColors.weekSelectorBg,
-            child: const Center(
-              child: Icon(Icons.map_outlined, size: 64, color: AppColors.textGrey),
+            child: MapRoutePreview(
+              originAddress: origem,
+              destinationAddress: destino,
+              origin: origemPoint,
+              viaPoints: paradaPoints,
+              destination: destinoPoint,
             ),
           ),
           Expanded(
@@ -45,151 +63,73 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
               width: double.infinity,
               transform: Matrix4.translationValues(0, -19, 0),
               decoration: const BoxDecoration(
-                color: AppColors.background,
+                color: AppColors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(25, 25, 25, 40),
+                padding: const EdgeInsets.fromLTRB(25, 24, 25, 40),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Image.asset(
-                            AppAssets.iconVoltar,
-                            width: 30,
-                            height: 30,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        const Text(
-                          'Dados da viagem',
-                          style: TextStyle(
-                            fontSize: 21,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.darkBlue,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    const Padding(
-                      padding: EdgeInsets.only(left: 45),
-                      child: Text(
-                        'Revise as informações inseridas',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textMediumGrey,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+                    _buildHeader(context),
+                    const SizedBox(height: 16),
                     const SolicitacaoModalidadeChipWidget(modalidade: 'Táxi'),
-                    const SizedBox(height: 24),
-
-                    // Trajeto
-                    _buildInfoItemAsset(
-                      label: 'Origem',
-                      valor: origem,
-                      iconWidget: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: const BoxDecoration(
-                          color: AppColors.textGrey,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                    _buildLinhaConectora(),
-                    _buildInfoItemAsset(
-                      label: 'Destino',
-                      valor: destino,
-                      iconWidget: Image.asset(
-                        AppAssets.iconDestino,
-                        width: 12,
-                        height: 15,
-                        fit: BoxFit.contain,
-                        color: AppColors.textGrey,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Data
-                    _buildInfoItemAsset(
+                    const SizedBox(height: 12),
+                    _buildRouteDetails(),
+                    _buildInfoItem(
                       label: 'Data',
-                      valor: data,
-                      iconWidget: Image.asset(
-                        AppAssets.iconData,
-                        width: 12,
-                        height: 14,
-                        fit: BoxFit.contain,
-                        color: AppColors.textGrey,
-                      ),
+                      valores: [data],
+                      iconAsset: AppAssets.iconData,
                     ),
-                    const SizedBox(height: 20),
-
-                    // Horário partida
-                    _buildInfoItemAsset(
+                    _buildInfoItem(
                       label: 'Horário de partida',
-                      valor: horario,
-                      iconWidget: Image.asset(
-                        AppAssets.iconHorario,
-                        width: 12,
-                        height: 12,
-                        fit: BoxFit.contain,
-                        color: AppColors.textGrey,
-                      ),
+                      valores: [horario],
+                      iconAsset: AppAssets.iconHorario,
                     ),
-                    const SizedBox(height: 20),
-
-                    // Horário estimado de chegada
-                    _buildInfoItemAsset(
+                    _buildInfoItem(
                       label: 'Horário de chegada',
-                      valor: '20h00',
-                      iconWidget: Image.asset(
-                        AppAssets.iconHorario,
-                        width: 12,
-                        height: 12,
-                        fit: BoxFit.contain,
-                        color: AppColors.textGrey,
-                      ),
+                      valores: const ['20h00'],
+                      iconAsset: AppAssets.iconHorario,
                     ),
-                    const SizedBox(height: 20),
-
-                    // Valor estimado
-                    _buildInfoItemAsset(
+                    _buildInfoItem(
                       label: 'Valor da corrida',
-                      valor: 'R\$68,90',
-                      iconWidget: Image.asset(
-                        AppAssets.iconCusto,
-                        width: 12,
-                        height: 10,
-                        fit: BoxFit.contain,
-                        color: AppColors.textGrey,
-                      ),
+                      valores: const [r'R$68,90'],
+                      iconAsset: AppAssets.iconCusto,
                     ),
-                    const SizedBox(height: 20),
-
-                    // Centro de custos
-                    _buildInfoItemAsset(
-                      label: 'Centro de custos',
-                      valor: centroCusto,
-                      iconWidget: Image.asset(
-                        AppAssets.iconCusto,
-                        width: 12,
-                        height: 10,
-                        fit: BoxFit.contain,
-                        color: AppColors.textGrey,
-                      ),
+                    _buildInfoItem(
+                      label: 'Motivo da corrida',
+                      valores: [motivo],
+                      iconAsset: AppAssets.iconMotivo,
                     ),
-                    const SizedBox(height: 40),
-
+                    _buildInfoItem(
+                      label: 'Veículo',
+                      valores: [veiculo],
+                      iconAsset: AppAssets.iconVeiculo,
+                    ),
+                    _buildInfoItem(
+                      label: centrosCusto.length == 1
+                          ? 'Centro de custo'
+                          : 'Centros de custo',
+                      valores: centrosCusto.isNotEmpty
+                          ? centrosCusto
+                          : const ['Não informado'],
+                      iconAsset: AppAssets.iconCusto,
+                    ),
+                    _buildInfoItem(
+                      label: acompanhantes.length == 1
+                          ? 'Acompanhante'
+                          : 'Acompanhantes',
+                      valores: _valoresAcompanhantes(),
+                      iconAsset: AppAssets.iconFuncionario,
+                    ),
+                    const SizedBox(height: 26),
                     SolicitacaoPrimaryButtonWidget(
                       label: 'Enviar solicitação',
+                      backgroundColor: AppColors.accentGreen,
+                      foregroundColor: AppColors.darkBlue,
+                      width: 175,
+                      height: 45,
+                      fontSize: 14,
                       onPressed: () => _enviarSolicitacao(context),
                     ),
                   ],
@@ -202,39 +142,36 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoItemAsset({
-    required String label,
-    required String valor,
-    required Widget iconWidget,
-  }) {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: iconWidget,
+        GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Image.asset(
+            AppAssets.iconVoltar,
+            width: 27,
+            height: 27,
+            fit: BoxFit.contain,
+          ),
         ),
         const SizedBox(width: 10),
-        Expanded(
+        const Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                label,
-                style: const TextStyle(
+                'Dados da viagem',
+                style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.textGrey,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                valor,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                   color: AppColors.darkBlue,
                 ),
+              ),
+              SizedBox(height: 1),
+              Text(
+                'Revise as informações inseridas',
+                style: TextStyle(fontSize: 11, color: AppColors.textGrey),
               ),
             ],
           ),
@@ -243,14 +180,74 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
     );
   }
 
-  Widget _buildLinhaConectora() {
+  Widget _buildRouteDetails() {
+    final locations = <String>[origem, ...paradas, destino];
+    return Column(
+      children: [
+        for (var index = 0; index < locations.length; index++) ...[
+          _buildRouteLocation(
+            label: index == 0
+                ? 'Origem'
+                : index == locations.length - 1
+                ? 'Destino'
+                : 'Parada $index',
+            value: locations[index],
+            isDestination: index == locations.length - 1,
+          ),
+          if (index < locations.length - 1) _buildConnector(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildRouteLocation({
+    required String label,
+    required String value,
+    required bool isDestination,
+  }) {
+    return SolicitacaoRevisaoInfoWidget(
+      icon: isDestination
+          ? Image.asset(
+              AppAssets.iconDestinoCinza,
+              width: 14,
+              height: 16,
+              fit: BoxFit.contain,
+              color: AppColors.primaryBlue,
+            )
+          : SolicitacaoRevisaoInfoWidget.dot(),
+      label: label,
+      valores: [value],
+      maxLines: 2,
+    );
+  }
+
+  Widget _buildConnector() => SolicitacaoRevisaoInfoWidget.connector();
+
+  List<String> _valoresAcompanhantes() {
+    if (acompanhantes.isNotEmpty) return acompanhantes;
+    if (cpfAcompanhante?.isNotEmpty == true) return [cpfAcompanhante!];
+    return const ['Não informado'];
+  }
+
+  Widget _buildInfoItem({
+    required String label,
+    required List<String> valores,
+    required String iconAsset,
+  }) {
     return Padding(
-      padding: const EdgeInsets.only(left: 5),
-      child: Container(
-        width: 2,
-        height: 20,
-        margin: const EdgeInsets.symmetric(vertical: 2),
-        color: AppColors.borderGrey,
+      padding: const EdgeInsets.only(
+        top: SolicitacaoRevisaoInfoWidget.itemSpacing,
+      ),
+      child: SolicitacaoRevisaoInfoWidget(
+        icon: Image.asset(
+          iconAsset,
+          width: 15,
+          height: 15,
+          fit: BoxFit.contain,
+          color: AppColors.primaryBlue,
+        ),
+        label: label,
+        valores: valores,
       ),
     );
   }
@@ -261,12 +258,12 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
       barrierDismissible: false,
       builder: (_) => SolicitacaoConfirmacaoDialog(
         titulo: 'Sua viagem foi solicitada!',
-        mensagem: 'Agora é só esperar os responsáveis aprovarem sua solicitação!',
+        mensagem:
+            'Agora é só esperar os responsáveis aprovarem sua solicitação!',
         submensagem:
-            'Você pode acompanhar o status da sua solicitação através da aba \'solicitações\' aqui no aplicativo',
-        onFechar: () {
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        },
+            'Você pode acompanhar o status da sua solicitação através da aba ‘solicitações’ aqui no aplicativo',
+        onFechar: () =>
+            Navigator.of(context).popUntil((route) => route.isFirst),
       ),
     );
   }

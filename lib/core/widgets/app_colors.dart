@@ -20,4 +20,9 @@ class AppColors {
   static const Color kpiTextGrey = Color(0xFF8B8989);
   static const Color searchShadow = Color(0x40000000);
   static const Color inputPlaceholder = Color(0xFFC4C4C4);
+
+  /// Campos de seleção / listas de opções (dropdowns).
+  static const Color dropdownBorder = Color(0xFFE6E8EF);
+  static const Color selectedOptionBg = Color(0xFFEDF2F8);
+  static const Color scrollThumb = Color(0xFFCBD2DE);
 }

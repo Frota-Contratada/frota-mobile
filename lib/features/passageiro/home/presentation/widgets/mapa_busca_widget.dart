@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../config/app_assets.dart';
+import '../../../../../core/widgets/app_map_widget.dart';
 import '../../../shared/presentation/theme/passageiro_colors.dart';
 
 class MapaBuscaWidget extends StatelessWidget {
@@ -18,21 +19,10 @@ class MapaBuscaWidget extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
-              child: Image.asset(
-                'assets/images/passageiro/mapa_home.png',
-                width: double.infinity,
-                height: 185,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  width: double.infinity,
-                  height: 185,
-                  color: PassageiroColors.weekSelectorBg,
-                  child: const Icon(
-                    Icons.map_outlined,
-                    size: 48,
-                    color: PassageiroColors.textMediumGrey,
-                  ),
-                ),
+              child: AppMapWidget(
+                interactive: false,
+                showAttribution: false,
+                onTap: (_) => onBuscarLocal?.call(),
               ),
             ),
             Positioned(
