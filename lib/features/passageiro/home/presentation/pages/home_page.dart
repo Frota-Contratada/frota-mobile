@@ -183,7 +183,7 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
       }
 
       return Padding(
-        padding: const EdgeInsets.fromLTRB(25, 0, 16, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 25),
         child: Column(
           children: dias.asMap().entries.map((entry) {
             final index = entry.key;

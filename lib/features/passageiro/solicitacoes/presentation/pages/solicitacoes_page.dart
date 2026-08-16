@@ -8,7 +8,7 @@ import '../widgets/solicitacao_status.dart';
 
 /// Página de Solicitações do passageiro.
 /// Exibe header com avatar/saudação/config, e lista de solicitações
-/// agrupadas por status (aprovadas, pendentes, reprovadas) com timeline.
+/// agrupadas por status (aprovadas, pendentes, reprovadas).
 class SolicitacoesPage extends StatelessWidget {
   final Usuario? usuario;
 
@@ -62,7 +62,7 @@ class SolicitacoesPage extends StatelessWidget {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(25, 0, 16, 24),
+            padding: const EdgeInsets.fromLTRB(25, 0, 25, 24),
             sliver: SliverList(
               delegate: SliverChildListDelegate(
                 _buildGruposSolicitacoes(),
@@ -88,7 +88,6 @@ class SolicitacoesPage extends StatelessWidget {
             horario: '20h30',
           ),
         ],
-        isUltimo: false,
       ),
       _GrupoSolicitacoes(
         label: 'Solicitações pendentes',
@@ -101,7 +100,6 @@ class SolicitacoesPage extends StatelessWidget {
             horario: '20h30',
           ),
         ],
-        isUltimo: false,
       ),
       _GrupoSolicitacoes(
         label: 'Solicitações reprovadas',
@@ -114,7 +112,6 @@ class SolicitacoesPage extends StatelessWidget {
             horario: '20h30',
           ),
         ],
-        isUltimo: true,
       ),
     ];
   }
@@ -200,98 +197,78 @@ class _SolicitacoesHeader extends StatelessWidget {
 class _GrupoSolicitacoes extends StatelessWidget {
   final String label;
   final List<_SolicitacaoMock> solicitacoes;
-  final bool isUltimo;
   final Color corIndicador;
 
   const _GrupoSolicitacoes({
     required this.label,
     required this.solicitacoes,
-    required this.isUltimo,
     required this.corIndicador,
   });
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 18,
-            child: Column(
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  margin: const EdgeInsets.only(top: 5),
-                  decoration: BoxDecoration(
-                    color: corIndicador,
-                    shape: BoxShape.circle,
-                  ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: corIndicador,
+                shape: BoxShape.circle,
+              ),
+            ),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.darkBlue,
+                  letterSpacing: -0.16,
+                  height: 1.2,
                 ),
-                if (!isUltimo)
-                  Expanded(
-                    child: Container(
-                      width: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      color: AppColors.timelineGrey,
-                    ),
-                  ),
-              ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ...solicitacoes.map(
+          (s) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: SolicitacaoCardWidget(
+              destino: s.destino,
+              status: s.status,
+              data: s.data,
+              horarioPartida: s.horario,
+              onVerDetalhes: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.passageiroDetalheSolicitacao,
+                  arguments: {
+                    'status': s.status,
+                    'origem': 'Rod PR-340 - km 2.5, Jaguapitã',
+                    'destino': s.destino,
+                    'data': '17/03/2026',
+                    'horarioPartida': s.horario,
+                    'horarioChegada': '20h00',
+                    'valor': 'R\$68,90',
+                    'motivo':
+                        'Preciso ir ao aeroporto para viagem de trabalho',
+                    'motivoReprovacao': s.status ==
+                            SolicitacaoStatus.reprovada
+                        ? 'Viagem vai exceder a verba do setor para corridas de táxi'
+                        : null,
+                  },
+                );
+              },
             ),
           ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.darkBlue,
-                    letterSpacing: -0.16,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...solicitacoes.map(
-                  (s) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: SolicitacaoCardWidget(
-                      destino: s.destino,
-                      status: s.status,
-                      data: s.data,
-                      horarioPartida: s.horario,
-                      onVerDetalhes: () {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.passageiroDetalheSolicitacao,
-                          arguments: {
-                            'status': s.status,
-                            'origem': 'Rod PR-340 - km 2.5, Jaguapitã',
-                            'destino': s.destino,
-                            'data': '17/03/2026',
-                            'horarioPartida': s.horario,
-                            'horarioChegada': '20h00',
-                            'valor': 'R\$68,90',
-                            'motivo':
-                                'Preciso ir ao aeroporto para viagem de trabalho',
-                            'motivoReprovacao': s.status ==
-                                    SolicitacaoStatus.reprovada
-                                ? 'Viagem vai exceder a verba do setor para corridas de táxi'
-                                : null,
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
