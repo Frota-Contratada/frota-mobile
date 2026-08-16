@@ -5,6 +5,8 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import '../maps/map_point.dart';
+import '../maps/map_route.dart';
+import '../maps/routing_service.dart';
 
 const _defaultMapCenter = MapPoint(-23.3045, -51.1696);
 const _mapStyleAsset = 'assets/maps/frota_uber_style.json';
@@ -18,11 +20,20 @@ class AppMapWidget extends StatefulWidget {
   final MapPoint? initialCenter;
   final ValueChanged<MapPoint>? onTap;
   final VoidCallback? onCurrentLocation;
+
+  /// Informa a distância e a duração do trajeto sempre que ele é recalculado.
+  final ValueChanged<MapRoute>? onRouteResolved;
   final bool showCurrentLocation;
   final bool showCurrentLocationMarker;
   final bool centerOnCurrentLocation;
   final bool interactive;
   final bool showAttribution;
+
+  /// Quando `false`, mantém o traçado em linha reta entre os pontos.
+  final bool followRoads;
+
+  /// Permite injetar outro serviço de roteirização, útil em testes.
+  final RoutingService? routingService;
 
   const AppMapWidget({
     super.key,
@@ -33,11 +44,14 @@ class AppMapWidget extends StatefulWidget {
     this.initialCenter,
     this.onTap,
     this.onCurrentLocation,
+    this.onRouteResolved,
     this.showCurrentLocation = true,
     this.showCurrentLocationMarker = true,
     this.centerOnCurrentLocation = true,
     this.interactive = true,
     this.showAttribution = true,
+    this.followRoads = true,
+    this.routingService,
   });
 
   @override
@@ -59,11 +73,37 @@ class _AppMapWidgetState extends State<AppMapWidget> {
   bool _renderingAnnotations = false;
   bool _renderRequested = false;
 
-  // Identifica a última operação de geocoding/renderização relevante.
-  int _geocodingRequestId = 0;
+  // Identifica a última requisição de rota, para descartar respostas antigas
+  // quando o usuário troca os pontos antes de a anterior terminar.
+  int _routeRequestId = 0;
+
+  List<MapPoint>? _resolvedRoutePoints;
+  bool _loadingRoute = false;
+
+  RoutingService get _routingService =>
+      widget.routingService ?? mapRoutingService;
 
   bool get _hasRoute => _routeMapPoints.length >= 2;
 
+  /// Pontos escolhidos pelo usuário, na ordem em que devem ser percorridos.
+  List<MapPoint> get _waypoints => _waypointsOf(widget);
+
+  static List<MapPoint> _waypointsOf(AppMapWidget widget) => List.unmodifiable([
+    if (widget.origin != null) widget.origin!,
+    ...?widget.viaPoints,
+    if (widget.destination != null) widget.destination!,
+  ]);
+
+  /// Assinatura dos pontos, para detectar mudança real de trajeto sem depender
+  /// da identidade das listas recriadas em cada build.
+  static String _assinaturaDe(List<MapPoint> pontos) =>
+      pontos.map((ponto) => '${ponto.latitude},${ponto.longitude}').join(';');
+
+  /// Geometria desenhada no mapa.
+  ///
+  /// A rota informada por quem usa o widget tem prioridade. Sem ela, vale o
+  /// caminho por vias reais devolvido pelo serviço de roteirização e, se ele
+  /// não estiver disponível, os próprios pontos ligados em linha reta.
   List<MapPoint> get _routeMapPoints {
     final providedRoute = widget.routePoints;
 
@@ -71,11 +111,13 @@ class _AppMapWidgetState extends State<AppMapWidget> {
       return List.unmodifiable(providedRoute);
     }
 
-    return List.unmodifiable([
-      if (widget.origin != null) widget.origin!,
-      ...?widget.viaPoints,
-      if (widget.destination != null) widget.destination!,
-    ]);
+    final resolved = _resolvedRoutePoints;
+
+    if (resolved != null && resolved.length >= 2) {
+      return List.unmodifiable(resolved);
+    }
+
+    return _waypoints;
   }
 
   MapPoint get _center =>
@@ -93,6 +135,8 @@ class _AppMapWidgetState extends State<AppMapWidget> {
     } else {
       _loadingLocation = false;
     }
+
+    unawaited(_resolveRoute());
   }
 
   @override
@@ -138,12 +182,67 @@ class _AppMapWidgetState extends State<AppMapWidget> {
       unawaited(_moveToCurrentLocation());
     }
 
+    final trajetoChanged =
+        _assinaturaDe(_waypointsOf(oldWidget)) != _assinaturaDe(_waypoints) ||
+        oldWidget.followRoads != widget.followRoads ||
+        oldWidget.routePoints != widget.routePoints;
+
+    if (trajetoChanged) {
+      unawaited(_resolveRoute());
+    }
+
     if (mapContentChanged && _styleReady) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           unawaited(_refreshMap());
         }
       });
+    }
+  }
+
+  // Busca o caminho mais rápido entre os pontos selecionados.
+  
+  // Enquanto a resposta não chega — ou se ela falhar — o mapa continua
+  // mostrando os pontos ligados em linha reta, então o usuário nunca fica
+  // sem referência visual do trajeto.
+  Future<void> _resolveRoute() async {
+    final rotaInformada = widget.routePoints;
+
+    if (rotaInformada != null && rotaInformada.length >= 2) {
+      return;
+    }
+
+    final pontos = _waypoints;
+
+    // O estado anterior ao await é atribuído direto: este método é chamado de
+    // initState e de didUpdateWidget, onde um build já vem a seguir e chamar
+    // setState seria inválido.
+    if (!widget.followRoads || pontos.length < 2) {
+      _resolvedRoutePoints = null;
+      _loadingRoute = false;
+
+      return;
+    }
+
+    final requestId = ++_routeRequestId;
+
+    _loadingRoute = true;
+
+    final rota = await _routingService.buscarRota(pontos);
+
+    if (!mounted || requestId != _routeRequestId) return;
+
+    setState(() {
+      _loadingRoute = false;
+      _resolvedRoutePoints = rota?.points;
+    });
+
+    if (rota != null) {
+      widget.onRouteResolved?.call(rota);
+    }
+
+    if (_styleReady) {
+      await _refreshMap();
     }
   }
 
@@ -572,6 +671,12 @@ class _AppMapWidgetState extends State<AppMapWidget> {
             left: 10,
             right: 58,
             child: _MapStatusChip(label: _locationMessage!),
+          ),
+        if (_loadingRoute && !_loadingLocation && _locationMessage == null)
+          const Positioned(
+            top: 10,
+            left: 10,
+            child: _MapStatusChip(label: 'Calculando a melhor rota...'),
           ),
       ],
     );
