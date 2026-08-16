@@ -1,0 +1,128 @@
+{
+  "version": 8,
+  "name": "Frota Mobility",
+  "sources": {
+    "openmaptiles": {
+      "type": "vector",
+      "url": "https://tiles.openfreemap.org/planet"
+    }
+  },
+  "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": { "background-color": "#F4F6F8" }
+    },
+    {
+      "id": "landcover",
+      "type": "fill",
+      "source": "openmaptiles",
+      "source-layer": "landcover",
+      "paint": { "fill-color": "#E9F0E8", "fill-opacity": 0.7 }
+    },
+    {
+      "id": "parks",
+      "type": "fill",
+      "source": "openmaptiles",
+      "source-layer": "park",
+      "paint": { "fill-color": "#DCEEDB", "fill-opacity": 0.9 }
+    },
+    {
+      "id": "water",
+      "type": "fill",
+      "source": "openmaptiles",
+      "source-layer": "water",
+      "paint": { "fill-color": "#CFEAF5" }
+    },
+    {
+      "id": "waterway",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "waterway",
+      "layout": { "line-cap": "round" },
+      "paint": {
+        "line-color": "#B6DDEB",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.6, 18, 5]
+      }
+    },
+    {
+      "id": "residential-areas",
+      "type": "fill",
+      "source": "openmaptiles",
+      "source-layer": "landuse",
+      "filter": ["==", ["get", "class"], "residential"],
+      "paint": { "fill-color": "#EFF1F3", "fill-opacity": 0.75 }
+    },
+    {
+      "id": "buildings",
+      "type": "fill",
+      "source": "openmaptiles",
+      "source-layer": "building",
+      "minzoom": 14,
+      "paint": { "fill-color": "#E1E5E9", "fill-outline-color": "#D6DBE0", "fill-opacity": 0.7 }
+    },
+    {
+      "id": "road-casing",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "filter": ["match", ["get", "class"], ["motorway", "trunk", "primary", "secondary", "tertiary", "minor", "service", "street"], true, false],
+      "layout": { "line-cap": "round", "line-join": "round" },
+      "paint": {
+        "line-color": ["match", ["get", "class"], ["motorway", "trunk"], "#CBD2DB", ["primary", "secondary"], "#D5DBE3", "#DDE2E8"],
+        "line-width": ["interpolate", ["linear"], ["zoom"], 10, 0.8, 14, 2.5, 18, 12]
+      }
+    },
+    {
+      "id": "roads",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "filter": ["match", ["get", "class"], ["motorway", "trunk", "primary", "secondary", "tertiary", "minor", "service", "street"], true, false],
+      "layout": { "line-cap": "round", "line-join": "round" },
+      "paint": {
+        "line-color": ["match", ["get", "class"], ["motorway", "trunk"], "#FFFFFF", ["primary", "secondary"], "#FFFFFF", "#FBFCFD"],
+        "line-width": ["interpolate", ["linear"], ["zoom"], 10, 0.35, 14, 1.5, 18, 8]
+      }
+    },
+    {
+      "id": "road-names",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "transportation_name",
+      "minzoom": 13,
+      "filter": ["match", ["get", "class"], ["primary", "secondary", "tertiary", "minor"], true, false],
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": ["coalesce", ["get", "name:pt"], ["get", "name:latin"], ["get", "name"]],
+        "text-font": ["Noto Sans Regular"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 13, 10, 17, 13],
+        "text-max-angle": 45
+      },
+      "paint": {
+        "text-color": "#69727D",
+        "text-halo-color": "#F4F6F8",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "place-labels",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "place",
+      "minzoom": 7,
+      "filter": ["match", ["get", "class"], ["city", "town", "village"], true, false],
+      "layout": {
+        "text-field": ["coalesce", ["get", "name:pt"], ["get", "name:latin"], ["get", "name"]],
+        "text-font": ["Noto Sans Bold"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 7, 11, 13, 17]
+      },
+      "paint": {
+        "text-color": "#354052",
+        "text-halo-color": "#F4F6F8",
+        "text-halo-width": 2
+      }
+    }
+  ]
+}

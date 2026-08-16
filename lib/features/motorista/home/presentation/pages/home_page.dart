@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../config/routes.dart';
+import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../injection_container/injection_container.dart';
 import '../../../../auth/domain/entities/usuario.dart';
 import '../bloc/home.bloc.dart';
@@ -71,19 +72,19 @@ class _HomeContentState extends State<_HomeContent> {
                     AppRoutes.motoristaConfiguracoes,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 28),
                 const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 23),
+                  padding: EdgeInsets.symmetric(horizontal: 25),
                   child: Text(
                     'Viagens agendadas',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 21,
                       fontWeight: FontWeight.w500,
                       color: HomeColors.darkBlue,
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 15),
                 SemanaSeletorWidget(
                   intervaloSemana: _resolverIntervaloSemana(state),
                   onSemanaAnterior: state is HomeCarregada
@@ -95,7 +96,7 @@ class _HomeContentState extends State<_HomeContent> {
                           context.read<HomeBloc>().add(HomeSemanaProxima())
                       : () {},
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 Expanded(child: _buildConteudo(context, state)),
               ],
             );
@@ -144,9 +145,10 @@ class _HomeContentState extends State<_HomeContent> {
 
       if (dias.isEmpty) {
         return const Center(
-          child: Text(
-            'Nenhuma viagem agendada para esta semana.',
-            style: TextStyle(fontSize: 12, color: HomeColors.textMediumGrey),
+          child: EmptyStateWidget(
+            icon: Icons.event_available_rounded,
+            mensagem: 'Nenhuma viagem agendada',
+            submensagem: 'Suas corridas para esta semana aparecerão aqui.',
           ),
         );
       }

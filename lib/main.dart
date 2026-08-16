@@ -6,11 +6,18 @@ import 'config/routes.dart';
 import 'features/auth/presentation/bloc/auth.bloc.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/domain/entities/usuario.dart';
+import 'core/maps/map_point.dart';
 import 'features/motorista/configuracoes/presentation/pages/configuracoes_page.dart';
 import 'features/motorista/corrida/presentation/pages/corrida_detalhe_page.dart';
 import 'features/motorista/home/presentation/pages/home_page.dart';
 import 'features/motorista/perfil/presentation/pages/perfil_page.dart';
+import 'features/passageiro/configuracoes/presentation/pages/configuracoes_page.dart';
+import 'features/passageiro/corrida/presentation/pages/corrida_andamento_page.dart';
 import 'features/passageiro/shared/presentation/pages/passageiro_shell_page.dart';
+import 'features/passageiro/solicitacao/presentation/pages/solicitar_viagem_page.dart';
+import 'features/passageiro/solicitacao/presentation/pages/solicitar_objeto_page.dart';
+import 'features/passageiro/solicitacoes/presentation/pages/detalhe_solicitacao_page.dart';
+import 'features/passageiro/solicitacoes/presentation/widgets/solicitacao_status.dart';
 import 'injection_container/injection_container.dart';
 
 Future<void> main() async {
@@ -45,6 +52,43 @@ class FrotaApp extends StatelessWidget {
           final usuario =
               ModalRoute.of(context)?.settings.arguments as Usuario?;
           return PassageiroShellPage(usuario: usuario);
+        },
+        AppRoutes.passageiroConfiguracoes: (_) =>
+            const PassageiroConfiguracoesPage(),
+        AppRoutes.passageiroSolicitarViagem: (_) =>
+            const SolicitarViagemPage(),
+        AppRoutes.passageiroSolicitarObjeto: (_) =>
+            const SolicitarObjetoPage(),
+        AppRoutes.passageiroCorridaAndamento: (context) {
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+          return CorridaAndamentoPage(
+            origem: args?['origem'] as String? ?? '',
+            destino: args?['destino'] as String? ?? '',
+            origemPoint: args?['origemPoint'] as MapPoint?,
+            destinoPoint: args?['destinoPoint'] as MapPoint?,
+          );
+        },
+        AppRoutes.passageiroDetalheSolicitacao: (context) {
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+          return DetalheSolicitacaoPage(
+            status: args?['status'] as SolicitacaoStatus? ??
+                SolicitacaoStatus.aprovada,
+            origem: args?['origem'] as String? ?? '',
+            destino: args?['destino'] as String? ?? '',
+            data: args?['data'] as String? ?? '',
+            horarioPartida: args?['horarioPartida'] as String? ?? '',
+            horarioChegada: args?['horarioChegada'] as String?,
+            valor: args?['valor'] as String?,
+            motivo: args?['motivo'] as String?,
+            motivoReprovacao: args?['motivoReprovacao'] as String?,
+            motorista: args?['motorista'] as String?,
+            placa: args?['placa'] as String?,
+            corridaRealizada: args?['corridaRealizada'] as bool? ?? false,
+            origemPoint: args?['origemPoint'] as MapPoint?,
+            destinoPoint: args?['destinoPoint'] as MapPoint?,
+          );
         },
       },
     );

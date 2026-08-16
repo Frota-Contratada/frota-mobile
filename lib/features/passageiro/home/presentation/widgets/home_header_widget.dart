@@ -21,7 +21,6 @@ class HomeHeaderWidget extends StatelessWidget {
     return shared.HomeHeaderWidget(
       nome: nome,
       subtitulo: 'Unidade Jaguapitã',
-      avatarAssetPath: 'assets/images/passageiro/avatar_placeholder.png',
       onConfiguracoes: onConfiguracoes,
     );
   }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../domain/entities/auth_token.dart';
 import '../../domain/entities/confirmar_pin_result.dart';
 import '../../domain/entities/verificacao_email_result.dart';
@@ -70,5 +72,47 @@ class AuthMapper {
       tipoToken: TipoToken.fromValue(dto.tipoToken),
       expirationDate: dto.expirationDate,
     );
+  }
+
+  static UsuarioModel usuarioFromAccessToken(
+    AuthToken token, {
+    UsuarioModel? usuarioBase,
+  }) {
+    final payload = _decodeJwtPayload(token.accessToken);
+    final rawId = payload['sub'];
+    final id = rawId is num ? rawId.toInt() : int.tryParse('$rawId');
+    if (id == null) {
+      throw const FormatException('Token de acesso sem identificador válido.');
+    }
+
+    final email = payload['email'] as String? ?? usuarioBase?.email ?? '';
+    final perfis = payload['perfis'] is List
+        ? List<dynamic>.from(payload['perfis'] as List)
+        : const <dynamic>[];
+
+    return UsuarioModel.fromJson({
+      'id': id,
+      'nome': usuarioBase?.nome ?? payload['nome'] as String? ?? email,
+      'email': email,
+      'cpf': usuarioBase?.cpf,
+      'dataAtivacao': usuarioBase?.dataAtivacao?.toIso8601String(),
+      'dataDesativacao': usuarioBase?.dataDesativacao?.toIso8601String(),
+      'perfis': perfis,
+    });
+  }
+
+  static Map<String, dynamic> _decodeJwtPayload(String token) {
+    final segments = token.split('.');
+    if (segments.length != 3) {
+      throw const FormatException('Token de acesso inválido.');
+    }
+
+    final normalized = base64Url.normalize(segments[1]);
+    final payload = utf8.decode(base64Url.decode(normalized));
+    final decoded = jsonDecode(payload);
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException('Payload do token de acesso inválido.');
+    }
+    return decoded;
   }
 }

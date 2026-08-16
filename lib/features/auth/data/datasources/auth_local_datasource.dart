@@ -8,6 +8,7 @@ abstract class AuthLocalDatasource {
   Future<void> salvarUsuarioPendente(UsuarioModel usuario);
   Future<UsuarioModel?> getUsuarioPendente();
   Future<void> removerSessao();
+  Future<AuthToken?> getAuthToken();
   Future<void> salvarAuthToken(AuthToken token);
   Future<String?> getSignUpToken();
   Future<void> salvarSignUpToken(String token);
@@ -58,6 +59,32 @@ class AuthLocalDatasourceImpl implements AuthLocalDatasource {
     await sharedPreferences.remove(_keyAuthToken);
     await sharedPreferences.remove(_keySignUpToken);
     await sharedPreferences.remove(_keyRedefinirSenhaToken);
+  }
+
+  @override
+  Future<AuthToken?> getAuthToken() async {
+    final json = sharedPreferences.getString(_keyAuthToken);
+    if (json == null) return null;
+
+    try {
+      final data = jsonDecode(json) as Map<String, dynamic>;
+      final accessToken = data['accessToken'] as String?;
+      final refreshToken = data['refreshToken'] as String?;
+      final expirationDate = data['expirationDate'] as String?;
+      if (accessToken == null ||
+          refreshToken == null ||
+          expirationDate == null) {
+        return null;
+      }
+
+      return AuthToken(
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        expirationDate: DateTime.parse(expirationDate),
+      );
+    } on Object {
+      return null;
+    }
   }
 
   @override

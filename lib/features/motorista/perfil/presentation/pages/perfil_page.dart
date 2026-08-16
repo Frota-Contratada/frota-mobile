@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/widgets/app_colors.dart';
+import '../../../../../config/routes.dart';
 import '../../../../../core/widgets/corrida_card_base_widget.dart';
+import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../core/widgets/perfil_page_base.dart';
 import '../../../../../core/widgets/timeline_dia_widget.dart';
 import '../../../../auth/domain/entities/usuario.dart';
@@ -69,6 +70,16 @@ class _MotoristPerfilPageState extends State<MotoristPerfilPage> {
               )
               .toList();
 
+    if (corridasFiltradas.isEmpty) {
+      return [
+        const EmptyStateWidget(
+          icon: Icons.search_off_rounded,
+          mensagem: 'Nenhum resultado encontrado',
+          submensagem: 'Tente buscar por outro destino ou limpe o filtro.',
+        ),
+      ];
+    }
+
     return [
       TimelineDiaWidget(
         labelDia: 'Ontem - 20/04',
@@ -76,18 +87,10 @@ class _MotoristPerfilPageState extends State<MotoristPerfilPage> {
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: CorridaCardBaseWidget(
-              origem: corridasFiltradas.isNotEmpty
-                  ? corridasFiltradas[0].origem
-                  : '',
-              destino: corridasFiltradas.isNotEmpty
-                  ? corridasFiltradas[0].destino
-                  : '',
-              horarioPartida: corridasFiltradas.isNotEmpty
-                  ? corridasFiltradas[0].horario
-                  : '',
-              onVerDetalhes: () {
-                // TODO: navegar para detalhe da corrida
-              },
+              origem: corridasFiltradas[0].origem,
+              destino: corridasFiltradas[0].destino,
+              horarioPartida: corridasFiltradas[0].horario,
+              onVerDetalhes: () => _navegarDetalhe(corridasFiltradas[0]),
             ),
           ),
         ],
@@ -103,22 +106,27 @@ class _MotoristPerfilPageState extends State<MotoristPerfilPage> {
                 origem: corridasFiltradas[1].origem,
                 destino: corridasFiltradas[1].destino,
                 horarioPartida: corridasFiltradas[1].horario,
-                onVerDetalhes: () {},
+                onVerDetalhes: () => _navegarDetalhe(corridasFiltradas[1]),
               ),
             ),
           if (corridasFiltradas.length > 2)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 0),
-              child: CorridaCardBaseWidget(
-                origem: corridasFiltradas[2].origem,
-                destino: corridasFiltradas[2].destino,
-                horarioPartida: corridasFiltradas[2].horario,
-                onVerDetalhes: () {},
-              ),
+            CorridaCardBaseWidget(
+              origem: corridasFiltradas[2].origem,
+              destino: corridasFiltradas[2].destino,
+              horarioPartida: corridasFiltradas[2].horario,
+              onVerDetalhes: () => _navegarDetalhe(corridasFiltradas[2]),
             ),
         ],
       ),
     ];
+  }
+
+  void _navegarDetalhe(_CorridaMock corrida) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.motoristaCorridaDetalhe,
+      arguments: corrida.destino, // corridaId mock
+    );
   }
 }
 

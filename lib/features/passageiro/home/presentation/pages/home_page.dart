@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../../config/routes.dart';
+import '../../../../../core/widgets/empty_state_widget.dart';
+import '../../../../../core/widgets/map_picker_page.dart';
 import '../../../../../injection_container/injection_container.dart';
 import '../../../../auth/domain/entities/usuario.dart';
 import '../../../shared/presentation/theme/passageiro_colors.dart';
+import '../../../solicitacoes/presentation/widgets/solicitacao_status.dart';
 import '../bloc/home.bloc.dart';
 import '../utils/semana_util.dart';
 import '../widgets/home_header_widget.dart';
@@ -66,9 +70,9 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     HomeHeaderWidget(usuario: usuarioAtual),
-                    const SizedBox(height: 20),
-                    const MapaBuscaWidget(),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 30),
+                    MapaBuscaWidget(onBuscarLocal: _abrirBuscaLocal),
+                    const SizedBox(height: 30),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 25),
                       child: Text(
@@ -81,7 +85,16 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    const SolicitacaoCardsWidget(),
+                    SolicitacaoCardsWidget(
+                      onViagem: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.passageiroSolicitarViagem,
+                      ),
+                      onObjeto: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.passageiroSolicitarObjeto,
+                      ),
+                    ),
                     const SizedBox(height: 30),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 25),
@@ -108,7 +121,7 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
                               .add(PassageiroHomeSemanaProxima())
                           : () {},
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 28),
                   ],
                 ),
               ),
@@ -160,13 +173,11 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
 
       if (dias.isEmpty) {
         return const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 25, vertical: 24),
-          child: Text(
-            'Nenhuma viagem agendada para esta semana.',
-            style: TextStyle(
-              fontSize: 14,
-              color: PassageiroColors.textMediumGrey,
-            ),
+          padding: EdgeInsets.symmetric(horizontal: 25),
+          child: EmptyStateWidget(
+            icon: Icons.event_available_rounded,
+            mensagem: 'Nenhuma viagem agendada',
+            submensagem: 'Suas viagens para esta semana aparecerão aqui.',
           ),
         );
       }
@@ -181,6 +192,32 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
               dia: diaEntry.key,
               viagens: diaEntry.value,
               isUltimoDia: index == dias.length - 1,
+              onVerDetalhes: (viagem) {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.passageiroDetalheSolicitacao,
+                  arguments: {
+                    'status': SolicitacaoStatus.aprovada,
+                    'origem': viagem.origem,
+                    'destino': viagem.destino,
+                    'data': '17/03/2026',
+                    'horarioPartida': _formatarHorario(viagem.dataHoraPartida),
+                    'horarioChegada': '20h00',
+                    'valor': 'R\$68,90',
+                    'motivo': 'Preciso ir ao aeroporto para viagem de trabalho',
+                  },
+                );
+              },
+              onViagemEmAndamento: (viagem) {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.passageiroCorridaAndamento,
+                  arguments: {
+                    'origem': viagem.origem,
+                    'destino': viagem.destino,
+                  },
+                );
+              },
             );
           }).toList(),
         ),
@@ -188,6 +225,15 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
     }
 
     return const SizedBox.shrink();
+  }
+
+  Future<void> _abrirBuscaLocal() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const MapPickerPage(title: 'Buscar local'),
+      ),
+    );
   }
 
   Usuario? _resolverUsuario(PassageiroHomeState state) {
@@ -215,5 +261,9 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
     final inicio = SemanaUtil.inicioSemanaAtual();
     final fim = SemanaUtil.fimSemanaUtil(inicio);
     return SemanaUtil.formatarIntervaloSemana(inicio, fim);
+  }
+
+  String _formatarHorario(DateTime dt) {
+    return '${dt.hour.toString().padLeft(2, '0')}h${dt.minute.toString().padLeft(2, '0')}';
   }
 }

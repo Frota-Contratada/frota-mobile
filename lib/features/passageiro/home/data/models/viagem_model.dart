@@ -1,4 +1,3 @@
-import '../../domain/entities/status_viagem.dart';
 import '../../domain/entities/viagem.dart';
 import '../dtos/response/viagem_response_dto.dart';
 import '../mappers/home_mapper.dart';
