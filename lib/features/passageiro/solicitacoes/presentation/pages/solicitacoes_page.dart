@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../../config/app_assets.dart';
 import '../../../../../config/routes.dart';
 import '../../../../../core/widgets/app_colors.dart';
+import '../../../../../core/widgets/icone_configuracoes_button.dart';
 import '../../../../auth/domain/entities/usuario.dart';
 import '../widgets/solicitacao_card_widget.dart';
 import '../widgets/solicitacao_status.dart';
@@ -33,7 +33,12 @@ class SolicitacoesPage extends StatelessWidget {
                     AppRoutes.passageiroConfiguracoes,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 25),
+                  child: Divider(color: AppColors.borderGrey, height: 1),
+                ),
+                const SizedBox(height: 16),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25),
                   child: Row(
@@ -48,11 +53,25 @@ class SolicitacoesPage extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Image.asset(
-                        AppAssets.iconFiltro,
-                        width: 21,
-                        height: 14,
-                        fit: BoxFit.contain,
+                      const SizedBox(width: 10),
+                      Material(
+                        color: AppColors.primaryBlue,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          onTap: () {
+                            // TODO: implementar filtro
+                          },
+                          customBorder: const CircleBorder(),
+                          child: const SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: Icon(
+                              Icons.tune,
+                              color: AppColors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -171,15 +190,7 @@ class _SolicitacoesHeader extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            onPressed: onConfiguracoes,
-            icon: Image.asset(
-              AppAssets.iconConfig,
-              width: 27,
-              height: 30,
-              fit: BoxFit.contain,
-            ),
-          ),
+          IconeConfiguracoesButton(onPressed: onConfiguracoes),
         ],
       ),
     );
@@ -235,7 +246,7 @@ class _GrupoSolicitacoes extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         ...solicitacoes.map(
           (s) => Padding(
             padding: const EdgeInsets.only(bottom: 16),

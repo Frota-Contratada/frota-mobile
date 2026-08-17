@@ -4,6 +4,7 @@ import 'package:geocoding/geocoding.dart';
 import '../maps/map_point.dart';
 import 'app_colors.dart';
 import 'app_map_widget.dart';
+import 'busca_barra_widget.dart';
 
 /// Seleciona um ponto por toque no mapa ou por busca de endereço.
 class MapPickerPage extends StatefulWidget {
@@ -86,6 +87,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
   }
 
   Future<void> _searchAddress() async {
+    if (_resolvingAddress) return;
     final query = _addressController.text.trim();
     if (query.isEmpty) {
       _showMessage('Digite um endereço para buscar.');
@@ -154,54 +156,37 @@ class _MapPickerPageState extends State<MapPickerPage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _addressController,
-                    textInputAction: TextInputAction.search,
-                    onChanged: (_) {
-                      if (_selectedPoint != null) {
+            padding: const EdgeInsets.fromLTRB(25, 10, 25, 8),
+            child: BuscaBarraWidget(
+              controller: _addressController,
+              hintText: 'Rua, número, cidade',
+              onChanged: (_) {
+                setState(() {
+                  if (_selectedPoint != null) {
+                    _selectedPoint = null;
+                    _selectedAddress = null;
+                  }
+                });
+              },
+              onSubmitted: (_) => _searchAddress(),
+              suffixIcon: _addressController.text.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        color: AppColors.textGrey,
+                        size: 20,
+                      ),
+                      onPressed: () {
                         setState(() {
+                          _addressController.clear();
                           _selectedPoint = null;
                           _selectedAddress = null;
                         });
-                      }
-                    },
-                    onSubmitted: (_) => _searchAddress(),
-                    decoration: InputDecoration(
-                      labelText: 'Digite o endereço',
-                      hintText: 'Rua, número, cidade',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _addressController.text.isEmpty
-                          ? null
-                          : IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                setState(() {
-                                  _addressController.clear();
-                                  _selectedPoint = null;
-                                  _selectedAddress = null;
-                                });
-                              },
-                            ),
-                      filled: true,
-                      fillColor: AppColors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
+                      },
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: _resolvingAddress ? null : _searchAddress,
-                  icon: const Icon(Icons.arrow_forward_rounded),
-                  tooltip: 'Buscar endereço',
-                ),
-              ],
+              onBotaoAcao: _searchAddress,
+              iconeBotaoAcao: Icons.arrow_forward_rounded,
             ),
           ),
           Expanded(

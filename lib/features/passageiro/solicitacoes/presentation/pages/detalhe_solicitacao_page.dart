@@ -3,6 +3,7 @@ import '../../../../../config/app_assets.dart';
 import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/app_map_widget.dart';
+import '../../../../../core/widgets/origem_destino_trajeto_widget.dart';
 import '../widgets/solicitacao_status.dart';
 
 /// Página de detalhes de uma solicitação do passageiro.
@@ -109,31 +110,9 @@ class DetalheSolicitacaoPage extends StatelessWidget {
                             const SizedBox(height: 12),
                           ],
 
-                          // Origem
-                          _buildInfoRow(
-                            iconWidget: Container(
-                              width: 12,
-                              height: 12,
-                              decoration: const BoxDecoration(
-                                color: AppColors.primaryBlue,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            label: 'Origem',
-                            valor: origem,
-                          ),
-                          _buildLinhaConectora(),
-                          // Destino
-                          _buildInfoRow(
-                            iconWidget: Image.asset(
-                              AppAssets.iconDestino,
-                              width: 12,
-                              height: 15,
-                              fit: BoxFit.contain,
-                              color: AppColors.primaryBlue,
-                            ),
-                            label: 'Destino',
-                            valor: destino,
+                          OrigemDestinoTrajetoWidget(
+                            origem: origem,
+                            destino: destino,
                           ),
                           const SizedBox(height: 20),
 
@@ -354,18 +333,6 @@ class DetalheSolicitacaoPage extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildLinhaConectora() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 5),
-      child: Container(
-        width: 2,
-        height: 20,
-        margin: const EdgeInsets.symmetric(vertical: 2),
-        color: AppColors.borderGrey,
-      ),
     );
   }
 

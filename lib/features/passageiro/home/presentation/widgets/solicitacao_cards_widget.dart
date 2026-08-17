@@ -34,7 +34,7 @@ class SolicitacaoCardsWidget extends StatelessWidget {
           Expanded(
             child: _SolicitacaoCard(
               titulo: 'Objeto',
-              subtitulo: 'Transporte um item',
+              subtitulo: 'Transporte um\nitem',
               corFundo: PassageiroColors.objetoCardBg,
               corTitulo: PassageiroColors.darkBlue,
               ilustracaoPath: PassageiroAssets.ilustracaoObjeto,

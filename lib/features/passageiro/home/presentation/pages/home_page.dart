@@ -69,7 +69,13 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    HomeHeaderWidget(usuario: usuarioAtual),
+                    HomeHeaderWidget(
+                      usuario: usuarioAtual,
+                      onConfiguracoes: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.passageiroConfiguracoes,
+                      ),
+                    ),
                     const SizedBox(height: 30),
                     MapaBuscaWidget(onBuscarLocal: _abrirBuscaLocal),
                     const SizedBox(height: 30),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../config/routes.dart';
+import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/corrida_card_base_widget.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../core/widgets/perfil_page_base.dart';
@@ -83,6 +84,8 @@ class _MotoristPerfilPageState extends State<MotoristPerfilPage> {
     return [
       TimelineDiaWidget(
         labelDia: 'Ontem - 20/04',
+        corIndicador: AppColors.timelineGrey,
+        corLabel: AppColors.textMediumGrey,
         cards: [
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
@@ -98,6 +101,8 @@ class _MotoristPerfilPageState extends State<MotoristPerfilPage> {
       TimelineDiaWidget(
         labelDia: 'Sexta-Feira 17/04',
         isUltimoDia: true,
+        corIndicador: AppColors.timelineGrey,
+        corLabel: AppColors.textMediumGrey,
         cards: [
           if (corridasFiltradas.length > 1)
             Padding(
