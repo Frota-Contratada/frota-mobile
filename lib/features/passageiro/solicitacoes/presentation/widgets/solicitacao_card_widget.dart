@@ -66,9 +66,11 @@ class SolicitacaoCardWidget extends StatelessWidget {
                                 children: [
                                   Image.asset(
                                     AppAssets.iconDestino,
-                                    width: 9,
-                                    height: 11,
+                                    width: 12,
+                                    height: 14,
                                     fit: BoxFit.contain,
+                                    color: AppColors.textGrey,
+                                    colorBlendMode: BlendMode.srcIn,
                                   ),
                                   const SizedBox(width: 6),
                                   Expanded(
@@ -98,10 +100,13 @@ class SolicitacaoCardWidget extends StatelessWidget {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
-                                  Icons.calendar_today_outlined,
-                                  size: 8,
-                                  color: AppColors.primaryBlue,
+                                Image.asset(
+                                  AppAssets.iconData,
+                                  width: 16,
+                                  height: 16,
+                                  fit: BoxFit.contain,
+                                  color: AppColors.textGrey,
+                                  colorBlendMode: BlendMode.srcIn,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -134,8 +139,8 @@ class SolicitacaoCardWidget extends StatelessWidget {
                                   Container(
                                     width: 9,
                                     height: 9,
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.primaryBlue,
+                                    decoration: BoxDecoration(
+                                      color: status.corIndicador,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -165,10 +170,13 @@ class SolicitacaoCardWidget extends StatelessWidget {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
-                                  Icons.schedule_outlined,
-                                  size: 8,
-                                  color: AppColors.primaryBlue,
+                                Image.asset(
+                                  AppAssets.iconHorario,
+                                  width: 16,
+                                  height: 16,
+                                  fit: BoxFit.contain,
+                                  color: AppColors.textGrey,
+                                  colorBlendMode: BlendMode.srcIn,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(

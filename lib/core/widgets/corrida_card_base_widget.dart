@@ -219,10 +219,13 @@ class _HorarioPartida extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(
-          Icons.schedule_outlined,
-          color: AppColors.primaryBlue,
-          size: 16,
+        Image.asset(
+          AppAssets.iconHorario,
+          width: 16,
+          height: 16,
+          fit: BoxFit.contain,
+          color: AppColors.textGrey,
+          colorBlendMode: BlendMode.srcIn,
         ),
         const SizedBox(width: 4),
         Text(

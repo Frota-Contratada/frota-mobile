@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../config/app_assets.dart';
 import '../../../../../config/routes.dart';
 import '../../../../../core/widgets/app_colors.dart';
-import '../../../../../core/widgets/empty_state_widget.dart';
-import '../../../../../injection_container/injection_container.dart';
 import '../../../../auth/domain/entities/usuario.dart';
 import '../../../solicitacao/presentation/utils/solicitacao_formatters.dart';
 import '../../domain/entities/solicitacao.dart';
@@ -12,6 +9,9 @@ import '../bloc/solicitacoes.bloc.dart';
 import '../widgets/solicitacao_card_widget.dart';
 import '../widgets/solicitacao_status.dart';
 
+/// Página de Solicitações do passageiro.
+/// Exibe header com avatar/saudação/config, e lista de solicitações
+/// agrupadas por status (aprovadas, pendentes, reprovadas) com timeline.
 class SolicitacoesPage extends StatelessWidget {
   final Usuario? usuario;
 
@@ -38,105 +38,101 @@ class _SolicitacoesView extends StatelessWidget {
 
     return SafeArea(
       bottom: false,
-      child: RefreshIndicator(
-        onRefresh: () async {
-          context.read<SolicitacoesBloc>().add(const SolicitacoesCarregadas());
-        },
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SolicitacoesHeader(
-                    nome: nome,
-                    onConfiguracoes: () => Navigator.pushNamed(
-                      context,
-                      AppRoutes.passageiroConfiguracoes,
-                    ),
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SolicitacoesHeader(
+                  nome: nome,
+                  onConfiguracoes: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.passageiroConfiguracoes,
                   ),
-                  const SizedBox(height: 20),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 25),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Minhas solicitações',
-                            style: TextStyle(
-                              fontSize: 21,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.darkBlue,
-                            ),
+                ),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 25),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Minhas solicitações',
+                          style: TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.darkBlue,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      Image.asset(
+                        AppAssets.iconFiltro,
+                        width: 21,
+                        height: 14,
+                        fit: BoxFit.contain,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                ],
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(25, 0, 16, 24),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate(
+                _buildGruposSolicitacoes(),
               ),
             ),
-            BlocBuilder<SolicitacoesBloc, SolicitacoesState>(
-              builder: (context, state) {
-                if (state is SolicitacoesLoading ||
-                    state is SolicitacoesInitial) {
-                  return const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
+          ),
+        ],
+      ),
+    );
+  }
 
-                if (state is SolicitacoesErro) {
-                  return SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: EmptyStateWidget(
-                      icon: state.semConexao
-                          ? Icons.wifi_off_rounded
-                          : Icons.cloud_off_rounded,
-                      mensagem: state.semConexao
-                          ? 'Você está sem internet'
-                          : 'Não foi possível carregar suas solicitações',
-                      submensagem: state.mensagem,
-                    ),
-                  );
-                }
-
-                final carregada = state as SolicitacoesCarregada;
-                final grupos = carregada.porStatus;
-
-                if (grupos.isEmpty) {
-                  return const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: EmptyStateWidget(
-                      icon: Icons.inbox_rounded,
-                      mensagem: 'Você ainda não fez solicitações',
-                      submensagem:
-                          'Toque em solicitar na home para pedir uma corrida.',
-                    ),
-                  );
-                }
-
-                final entradas = grupos.entries.toList();
-
-                return SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(25, 0, 16, 24),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final entrada = entradas[index];
-
-                      return _GrupoSolicitacoes(
-                        status: SolicitacaoStatus.deDominio(entrada.key),
-                        solicitacoes: entrada.value,
-                        isUltimo: index == entradas.length - 1,
-                      );
-                    }, childCount: entradas.length),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
+  List<Widget> _buildGruposSolicitacoes() {
+    // Dados mock conforme Figma
+    return [
+      _GrupoSolicitacoes(
+        label: 'Solicitações aprovadas',
+        corIndicador: SolicitacaoStatus.aprovada.corIndicador,
+        solicitacoes: [
+          _SolicitacaoMock(
+            destino: 'Rod PR-340 - km 2.5, Jaguapitã',
+            status: SolicitacaoStatus.aprovada,
+            data: '30/04',
+            horario: '20h30',
+          ),
+        ],
+        isUltimo: false,
+      ),
+      _GrupoSolicitacoes(
+        label: 'Solicitações pendentes',
+        corIndicador: SolicitacaoStatus.pendente.corIndicador,
+        solicitacoes: [
+          _SolicitacaoMock(
+            destino: 'Rua das Flores, 123 - Vila Rosa',
+            status: SolicitacaoStatus.pendente,
+            data: '02/05',
+            horario: '20h30',
+          ),
+        ],
+        isUltimo: false,
+      ),
+      _GrupoSolicitacoes(
+        label: 'Solicitações reprovadas',
+        corIndicador: SolicitacaoStatus.reprovada.corIndicador,
+        solicitacoes: [
+          _SolicitacaoMock(
+            destino: 'Rod PR-340 - km 2.5, Jaguapitã',
+            status: SolicitacaoStatus.reprovada,
+            data: '02/05',
+            horario: '20h30',
+          ),
+        ],
+        isUltimo: true,
       ),
     );
   }
@@ -179,15 +175,7 @@ class _SolicitacoesHeader extends StatelessWidget {
               ),
             ),
           ),
-          IconButton(
-            onPressed: onConfiguracoes,
-            icon: Image.asset(
-              AppAssets.iconConfig,
-              width: 27,
-              height: 30,
-              fit: BoxFit.contain,
-            ),
-          ),
+          IconeConfiguracoesButton(onPressed: onConfiguracoes),
         ],
       ),
     );
@@ -203,14 +191,16 @@ class _SolicitacoesHeader extends StatelessWidget {
 }
 
 class _GrupoSolicitacoes extends StatelessWidget {
-  final SolicitacaoStatus status;
-  final List<Solicitacao> solicitacoes;
+  final String label;
+  final List<_SolicitacaoMock> solicitacoes;
   final bool isUltimo;
+  final Color corIndicador;
 
   const _GrupoSolicitacoes({
     required this.status,
     required this.solicitacoes,
     required this.isUltimo,
+    required this.corIndicador,
   });
 
   @override
@@ -228,7 +218,7 @@ class _GrupoSolicitacoes extends StatelessWidget {
                   height: 10,
                   margin: const EdgeInsets.only(top: 5),
                   decoration: BoxDecoration(
-                    color: status.corIndicador,
+                    color: corIndicador,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -248,7 +238,7 @@ class _GrupoSolicitacoes extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  status.labelGrupo,
+                  label,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -259,16 +249,34 @@ class _GrupoSolicitacoes extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 ...solicitacoes.map(
-                  (solicitacao) => Padding(
+                  (s) => Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: SolicitacaoCardWidget(
-                      destino: solicitacao.destino.descricao,
-                      status: status,
-                      data: _dataCurta(solicitacao.dataCorrida),
-                      horarioPartida: formatarHorarioSolicitacao(
-                        solicitacao.dataCorrida,
-                      ),
-                      onVerDetalhes: () => _abrirDetalhe(context, solicitacao),
+                      destino: s.destino,
+                      status: s.status,
+                      data: s.data,
+                      horarioPartida: s.horario,
+                      onVerDetalhes: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.passageiroDetalheSolicitacao,
+                          arguments: {
+                            'status': s.status,
+                            'origem': 'Rod PR-340 - km 2.5, Jaguapitã',
+                            'destino': s.destino,
+                            'data': '17/03/2026',
+                            'horarioPartida': s.horario,
+                            'horarioChegada': '20h00',
+                            'valor': 'R\$68,90',
+                            'motivo':
+                                'Preciso ir ao aeroporto para viagem de trabalho',
+                            'motivoReprovacao': s.status ==
+                                    SolicitacaoStatus.reprovada
+                                ? 'Viagem vai exceder a verba do setor para corridas de táxi'
+                                : null,
+                          },
+                        );
+                      },
                     ),
                   ),
                 ),
