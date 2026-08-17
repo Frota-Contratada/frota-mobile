@@ -13,6 +13,7 @@ class BuscarSolicitacoesUsecase {
     DateTime? dataFim,
     int page = 1,
     int limit = 50,
+    bool historico = false,
   }) {
     return repository.buscarVarias(
       status: status,
@@ -20,6 +21,7 @@ class BuscarSolicitacoesUsecase {
       dataFim: dataFim,
       page: page,
       limit: limit,
+      historico: historico,
     );
   }
 }

@@ -85,11 +85,12 @@ class DetalheSolicitacaoCarregada extends DetalheSolicitacaoState {
 
 class DetalheSolicitacaoErro extends DetalheSolicitacaoState {
   final String mensagem;
+  final bool semConexao;
 
-  const DetalheSolicitacaoErro(this.mensagem);
+  const DetalheSolicitacaoErro(this.mensagem, {this.semConexao = false});
 
   @override
-  List<Object?> get props => [mensagem];
+  List<Object?> get props => [mensagem, semConexao];
 }
 
 class DetalheSolicitacaoBloc
@@ -135,9 +136,7 @@ class DetalheSolicitacaoBloc
         ),
       );
     } on Failure catch (e) {
-      emit(DetalheSolicitacaoErro(e.message));
-    } catch (e) {
-      emit(DetalheSolicitacaoErro(e.toString().replaceAll('Exception: ', '')));
+      emit(DetalheSolicitacaoErro(e.message, semConexao: e is NetworkFailure));
     }
   }
 

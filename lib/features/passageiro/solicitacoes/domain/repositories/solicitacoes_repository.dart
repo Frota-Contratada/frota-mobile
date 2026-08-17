@@ -9,6 +9,7 @@ abstract class SolicitacoesRepository {
     DateTime? dataFim,
     int page,
     int limit,
+    bool historico,
   });
 
   Future<Solicitacao> buscar(int id);

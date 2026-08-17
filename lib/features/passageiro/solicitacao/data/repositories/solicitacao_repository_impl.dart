@@ -1,5 +1,5 @@
 import '../../../../../core/error/exceptions.dart';
-import '../../../../../core/error/failures.dart';
+import '../../../../../core/error/failure_mapper.dart';
 import '../../../solicitacoes/domain/entities/solicitacao.dart';
 import '../../domain/entities/catalogos_solicitacao.dart';
 import '../../domain/entities/nova_solicitacao.dart';
@@ -31,7 +31,7 @@ class SolicitacaoRepositoryImpl implements SolicitacaoRepository {
     try {
       return await call();
     } on ServerException catch (e) {
-      throw ServerFailure(e.message);
+      throw mapServerException(e);
     }
   }
 }

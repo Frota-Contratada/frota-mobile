@@ -1,4 +1,5 @@
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/error/failure_mapper.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/auth_token.dart';
 import '../../domain/entities/confirmar_pin_result.dart';
@@ -162,7 +163,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       return await call();
     } on ServerException catch (e) {
-      throw ServerFailure(e.message);
+      throw mapServerException(e);
     } on CacheException catch (e) {
       throw CacheFailure(e.message);
     }

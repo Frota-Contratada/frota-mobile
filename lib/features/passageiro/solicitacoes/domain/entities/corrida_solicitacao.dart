@@ -9,6 +9,7 @@ class CorridaSolicitacao extends Equatable {
   final double kmPercorrido;
   final double valorFinal;
   final bool emAndamento;
+  final String status;
 
   const CorridaSolicitacao({
     required this.id,
@@ -17,6 +18,7 @@ class CorridaSolicitacao extends Equatable {
     required this.kmPercorrido,
     required this.valorFinal,
     required this.emAndamento,
+    required this.status,
     this.dataFim,
     this.motoristaNome,
   });
@@ -31,5 +33,6 @@ class CorridaSolicitacao extends Equatable {
     kmPercorrido,
     valorFinal,
     emAndamento,
+    status,
   ];
 }

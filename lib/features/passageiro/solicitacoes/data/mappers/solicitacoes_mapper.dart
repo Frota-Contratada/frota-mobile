@@ -88,6 +88,7 @@ class SolicitacoesMapper {
       kmPercorrido: dto.kmPercorrido,
       valorFinal: dto.valorFinal,
       emAndamento: dto.emAndamento,
+      status: dto.status,
     );
   }
 

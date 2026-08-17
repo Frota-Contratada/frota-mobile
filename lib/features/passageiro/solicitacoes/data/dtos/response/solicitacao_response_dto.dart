@@ -131,6 +131,7 @@ class CorridaResponseDto {
   final double kmPercorrido;
   final double valorFinal;
   final bool emAndamento;
+  final String status;
 
   const CorridaResponseDto({
     required this.id,
@@ -139,6 +140,7 @@ class CorridaResponseDto {
     required this.kmPercorrido,
     required this.valorFinal,
     required this.emAndamento,
+    required this.status,
     this.dataFim,
     this.motoristaNome,
   });
@@ -153,6 +155,7 @@ class CorridaResponseDto {
       kmPercorrido: (json['kmPercorrido'] as num?)?.toDouble() ?? 0,
       valorFinal: (json['valorFinal'] as num?)?.toDouble() ?? 0,
       emAndamento: json['emAndamento'] as bool? ?? false,
+      status: json['status'] as String? ?? 'I',
     );
   }
 }

@@ -91,8 +91,12 @@ class _SolicitacoesView extends StatelessWidget {
                   return SliverFillRemaining(
                     hasScrollBody: false,
                     child: EmptyStateWidget(
-                      icon: Icons.cloud_off_rounded,
-                      mensagem: 'Não foi possível carregar suas solicitações',
+                      icon: state.semConexao
+                          ? Icons.wifi_off_rounded
+                          : Icons.cloud_off_rounded,
+                      mensagem: state.semConexao
+                          ? 'Você está sem internet'
+                          : 'Não foi possível carregar suas solicitações',
                       submensagem: state.mensagem,
                     ),
                   );

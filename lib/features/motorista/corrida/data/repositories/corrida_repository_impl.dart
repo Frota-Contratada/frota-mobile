@@ -1,5 +1,5 @@
 import '../../../../../core/error/exceptions.dart';
-import '../../../../../core/error/failures.dart';
+import '../../../../../core/error/failure_mapper.dart';
 import '../../domain/entities/corrida_detalhe.dart';
 import '../../domain/repositories/corrida_repository.dart';
 import '../datasources/corrida_remote_datasource.dart';
@@ -27,7 +27,7 @@ class CorridaRepositoryImpl implements CorridaRepository {
     try {
       return await call();
     } on ServerException catch (e) {
-      throw ServerFailure(e.message);
+      throw mapServerException(e);
     }
   }
 }

@@ -34,13 +34,10 @@ void registerAuthDependencies(GetIt sl) {
   });
 
   sl.registerLazySingleton<AuthRemoteDatasource>(
-    () => AuthRemoteDatasourceFallback(
-      primary: AuthRemoteDatasourceImpl(
-        dio: sl(),
-        authBaseUrl: Env.authBaseUrl,
-        usuarioInfoBaseUrl: Env.usuarioInfoBaseUrl,
-      ),
-      mock: AuthRemoteDatasourceMock(),
+    () => AuthRemoteDatasourceImpl(
+      dio: sl(),
+      authBaseUrl: Env.authBaseUrl,
+      usuarioInfoBaseUrl: Env.usuarioInfoBaseUrl,
     ),
   );
 

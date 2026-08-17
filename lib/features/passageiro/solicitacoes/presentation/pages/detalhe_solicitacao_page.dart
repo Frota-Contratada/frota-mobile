@@ -87,8 +87,12 @@ class _DetalheSolicitacaoView extends StatelessWidget {
                   Expanded(
                     child: Center(
                       child: EmptyStateWidget(
-                        icon: Icons.cloud_off_rounded,
-                        mensagem: 'Não foi possível carregar a solicitação',
+                        icon: state.semConexao
+                            ? Icons.wifi_off_rounded
+                            : Icons.cloud_off_rounded,
+                        mensagem: state.semConexao
+                            ? 'Você está sem internet'
+                            : 'Não foi possível carregar a solicitação',
                         submensagem: state.mensagem,
                       ),
                     ),

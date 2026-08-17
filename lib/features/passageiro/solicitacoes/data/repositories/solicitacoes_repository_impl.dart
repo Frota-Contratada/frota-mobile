@@ -1,5 +1,5 @@
 import '../../../../../core/error/exceptions.dart';
-import '../../../../../core/error/failures.dart';
+import '../../../../../core/error/failure_mapper.dart';
 import '../../domain/entities/motivo.dart';
 import '../../domain/entities/solicitacao.dart';
 import '../../domain/entities/status_solicitacao.dart';
@@ -20,6 +20,7 @@ class SolicitacoesRepositoryImpl implements SolicitacoesRepository {
     DateTime? dataFim,
     int page = 1,
     int limit = 50,
+    bool historico = false,
   }) {
     return _handleRemoteCall(
       () => remoteDatasource.buscarVarias(
@@ -28,6 +29,7 @@ class SolicitacoesRepositoryImpl implements SolicitacoesRepository {
         dataFim: dataFim,
         page: page,
         limit: limit,
+        historico: historico,
       ),
     );
   }
@@ -61,7 +63,7 @@ class SolicitacoesRepositoryImpl implements SolicitacoesRepository {
     try {
       return await call();
     } on ServerException catch (e) {
-      throw ServerFailure(e.message);
+      throw mapServerException(e);
     }
   }
 }

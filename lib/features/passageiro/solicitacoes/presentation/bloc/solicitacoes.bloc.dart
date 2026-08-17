@@ -15,13 +15,13 @@ abstract class SolicitacoesEvent extends Equatable {
 class SolicitacoesCarregadas extends SolicitacoesEvent {
   final StatusSolicitacao? status;
 
-  /// Restringe a corridas com data anterior a agora, para o histórico.
-  final bool apenasPassadas;
+  /// Solicita ao backend somente corridas finalizadas ou canceladas.
+  final bool apenasHistorico;
 
-  const SolicitacoesCarregadas({this.status, this.apenasPassadas = false});
+  const SolicitacoesCarregadas({this.status, this.apenasHistorico = false});
 
   @override
-  List<Object?> get props => [status, apenasPassadas];
+  List<Object?> get props => [status, apenasHistorico];
 }
 
 abstract class SolicitacoesState extends Equatable {
@@ -85,16 +85,16 @@ class SolicitacoesCarregada extends SolicitacoesState {
   bool _ehTransporteDeItens(Solicitacao solicitacao) =>
       solicitacao.tipoCorrida.toLowerCase().contains('objeto');
 
-  /// Só conta o que de fato aconteceu: corrida atribuída e encerrada.
   bool _concluida(Solicitacao solicitacao) =>
-      solicitacao.corrida?.dataFim != null;
+      solicitacao.corrida?.status == 'F';
 
   int get totalViagens => solicitacoes
       .where((s) => _concluida(s) && !_ehTransporteDeItens(s))
       .length;
 
-  int get totalTransportes =>
-      solicitacoes.where((s) => _concluida(s) && _ehTransporteDeItens(s)).length;
+  int get totalTransportes => solicitacoes
+      .where((s) => _concluida(s) && _ehTransporteDeItens(s))
+      .length;
 
   @override
   List<Object?> get props => [solicitacoes, filtro];
@@ -102,11 +102,12 @@ class SolicitacoesCarregada extends SolicitacoesState {
 
 class SolicitacoesErro extends SolicitacoesState {
   final String mensagem;
+  final bool semConexao;
 
-  const SolicitacoesErro(this.mensagem);
+  const SolicitacoesErro(this.mensagem, {this.semConexao = false});
 
   @override
-  List<Object?> get props => [mensagem];
+  List<Object?> get props => [mensagem, semConexao];
 }
 
 class SolicitacoesBloc extends Bloc<SolicitacoesEvent, SolicitacoesState> {
@@ -126,16 +127,14 @@ class SolicitacoesBloc extends Bloc<SolicitacoesEvent, SolicitacoesState> {
     try {
       final pagina = await buscarSolicitacoesUsecase(
         status: event.status,
-        dataFim: event.apenasPassadas ? DateTime.now() : null,
+        historico: event.apenasHistorico,
       );
 
       emit(
         SolicitacoesCarregada(solicitacoes: pagina.itens, filtro: event.status),
       );
     } on Failure catch (e) {
-      emit(SolicitacoesErro(e.message));
-    } catch (e) {
-      emit(SolicitacoesErro(e.toString().replaceAll('Exception: ', '')));
+      emit(SolicitacoesErro(e.message, semConexao: e is NetworkFailure));
     }
   }
 }

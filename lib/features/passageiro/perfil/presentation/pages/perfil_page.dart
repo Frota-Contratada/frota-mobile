@@ -19,8 +19,9 @@ class PassageiroPerfilPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<SolicitacoesBloc>()
-        ..add(const SolicitacoesCarregadas(apenasPassadas: true)),
+      create: (_) =>
+          sl<SolicitacoesBloc>()
+            ..add(const SolicitacoesCarregadas(apenasHistorico: true)),
       child: _PerfilView(usuario: usuario),
     );
   }
@@ -58,10 +59,7 @@ class _PerfilViewState extends State<_PerfilView> {
     );
   }
 
-  List<Widget> _buildHistorico(
-    BuildContext context,
-    SolicitacoesState state,
-  ) {
+  List<Widget> _buildHistorico(BuildContext context, SolicitacoesState state) {
     if (state is SolicitacoesLoading || state is SolicitacoesInitial) {
       return const [
         Padding(
@@ -74,8 +72,12 @@ class _PerfilViewState extends State<_PerfilView> {
     if (state is SolicitacoesErro) {
       return [
         EmptyStateWidget(
-          icon: Icons.cloud_off_rounded,
-          mensagem: 'Não foi possível carregar seu histórico',
+          icon: state.semConexao
+              ? Icons.wifi_off_rounded
+              : Icons.cloud_off_rounded,
+          mensagem: state.semConexao
+              ? 'Você está sem internet'
+              : 'Não foi possível carregar seu histórico',
           submensagem: state.mensagem,
         ),
       ];
@@ -115,9 +117,7 @@ class _PerfilViewState extends State<_PerfilView> {
           final solicitacao = item.value;
 
           return Padding(
-            padding: EdgeInsets.only(
-              bottom: ultimo && ultimaDoDia ? 0 : 16,
-            ),
+            padding: EdgeInsets.only(bottom: ultimo && ultimaDoDia ? 0 : 16),
             child: CorridaCardBaseWidget(
               origem: solicitacao.origem.descricao,
               destino: solicitacao.destino.descricao,
