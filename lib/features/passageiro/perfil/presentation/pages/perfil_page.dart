@@ -53,6 +53,7 @@ class _PerfilViewState extends State<_PerfilView> {
           mostrarBotaoVoltar: false,
           onVoltar: () => Navigator.of(context).maybePop(),
           onBuscaChanged: (valor) => setState(() => _busca = valor),
+          onFiltroTap: () {},
           historicoContent: _buildHistorico(context, state),
         );
       },
