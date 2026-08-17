@@ -15,10 +15,13 @@ abstract class SolicitacoesEvent extends Equatable {
 class SolicitacoesCarregadas extends SolicitacoesEvent {
   final StatusSolicitacao? status;
 
-  const SolicitacoesCarregadas({this.status});
+  /// Restringe a corridas com data anterior a agora, para o histórico.
+  final bool apenasPassadas;
+
+  const SolicitacoesCarregadas({this.status, this.apenasPassadas = false});
 
   @override
-  List<Object?> get props => [status];
+  List<Object?> get props => [status, apenasPassadas];
 }
 
 abstract class SolicitacoesState extends Equatable {
@@ -60,6 +63,39 @@ class SolicitacoesCarregada extends SolicitacoesState {
     return mapa;
   }
 
+  Map<DateTime, List<Solicitacao>> get porDia {
+    final mapa = <DateTime, List<Solicitacao>>{};
+
+    for (final solicitacao in solicitacoes) {
+      final dia = DateTime(
+        solicitacao.dataCorrida.year,
+        solicitacao.dataCorrida.month,
+        solicitacao.dataCorrida.day,
+      );
+
+      mapa.putIfAbsent(dia, () => []).add(solicitacao);
+    }
+
+    final entradas = mapa.entries.toList()
+      ..sort((a, b) => b.key.compareTo(a.key));
+
+    return Map.fromEntries(entradas);
+  }
+
+  bool _ehTransporteDeItens(Solicitacao solicitacao) =>
+      solicitacao.tipoCorrida.toLowerCase().contains('objeto');
+
+  /// Só conta o que de fato aconteceu: corrida atribuída e encerrada.
+  bool _concluida(Solicitacao solicitacao) =>
+      solicitacao.corrida?.dataFim != null;
+
+  int get totalViagens => solicitacoes
+      .where((s) => _concluida(s) && !_ehTransporteDeItens(s))
+      .length;
+
+  int get totalTransportes =>
+      solicitacoes.where((s) => _concluida(s) && _ehTransporteDeItens(s)).length;
+
   @override
   List<Object?> get props => [solicitacoes, filtro];
 }
@@ -88,7 +124,10 @@ class SolicitacoesBloc extends Bloc<SolicitacoesEvent, SolicitacoesState> {
     emit(SolicitacoesLoading());
 
     try {
-      final pagina = await buscarSolicitacoesUsecase(status: event.status);
+      final pagina = await buscarSolicitacoesUsecase(
+        status: event.status,
+        dataFim: event.apenasPassadas ? DateTime.now() : null,
+      );
 
       emit(
         SolicitacoesCarregada(solicitacoes: pagina.itens, filtro: event.status),

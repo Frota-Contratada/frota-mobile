@@ -16,12 +16,16 @@ class SolicitacoesRepositoryImpl implements SolicitacoesRepository {
   @override
   Future<PaginaSolicitacoes> buscarVarias({
     StatusSolicitacao? status,
+    DateTime? dataInicio,
+    DateTime? dataFim,
     int page = 1,
     int limit = 50,
   }) {
     return _handleRemoteCall(
       () => remoteDatasource.buscarVarias(
         status: status,
+        dataInicio: dataInicio,
+        dataFim: dataFim,
         page: page,
         limit: limit,
       ),

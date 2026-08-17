@@ -10,6 +10,8 @@ import '../mappers/solicitacoes_mapper.dart';
 abstract class SolicitacoesRemoteDatasource {
   Future<PaginaSolicitacoes> buscarVarias({
     StatusSolicitacao? status,
+    DateTime? dataInicio,
+    DateTime? dataFim,
     int page,
     int limit,
   });
@@ -36,6 +38,8 @@ class SolicitacoesRemoteDatasourceImpl implements SolicitacoesRemoteDatasource {
   @override
   Future<PaginaSolicitacoes> buscarVarias({
     StatusSolicitacao? status,
+    DateTime? dataInicio,
+    DateTime? dataFim,
     int page = 1,
     int limit = 50,
   }) async {
@@ -46,6 +50,9 @@ class SolicitacoesRemoteDatasourceImpl implements SolicitacoesRemoteDatasource {
           'page': page,
           'limit': limit,
           if (status != null) 'status': status.codigo,
+          if (dataInicio != null)
+            'dataInicio': dataInicio.toUtc().toIso8601String(),
+          if (dataFim != null) 'dataFim': dataFim.toUtc().toIso8601String(),
         },
       );
 

@@ -9,9 +9,17 @@ class BuscarSolicitacoesUsecase {
 
   Future<PaginaSolicitacoes> call({
     StatusSolicitacao? status,
+    DateTime? dataInicio,
+    DateTime? dataFim,
     int page = 1,
     int limit = 50,
   }) {
-    return repository.buscarVarias(status: status, page: page, limit: limit);
+    return repository.buscarVarias(
+      status: status,
+      dataInicio: dataInicio,
+      dataFim: dataFim,
+      page: page,
+      limit: limit,
+    );
   }
 }

@@ -5,6 +5,8 @@ import '../entities/status_solicitacao.dart';
 abstract class SolicitacoesRepository {
   Future<PaginaSolicitacoes> buscarVarias({
     StatusSolicitacao? status,
+    DateTime? dataInicio,
+    DateTime? dataFim,
     int page,
     int limit,
   });
