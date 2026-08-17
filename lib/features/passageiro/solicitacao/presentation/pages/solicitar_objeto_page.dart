@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../config/app_assets.dart';
 import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/app_map_widget.dart';
 import '../../../../../core/widgets/map_picker_page.dart';
+import '../bloc/criar_solicitacao.bloc.dart';
 import '../utils/solicitacao_formatters.dart';
 import '../widgets/solicitacao_input_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
+import '../widgets/solicitacao_centros_custo_picker_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
-import '../widgets/solicitacao_tags_input_widget.dart';
 import 'solicitar_objeto_step2_page.dart';
 
 class SolicitarObjetoPage extends StatefulWidget {
@@ -254,7 +256,6 @@ class _SolicitarObjetoPageState extends State<SolicitarObjetoPage> {
     );
   }
 
-  /// Linha com ícone à esquerda + conteúdo do campo.
   Widget _buildFieldRow({
     required String iconAsset,
     required Widget child,
@@ -282,18 +283,18 @@ class _SolicitarObjetoPageState extends State<SolicitarObjetoPage> {
     );
   }
 
-  /// Centros de custo são digitados manualmente: cada número confirmado vira
-  /// uma tag removível, e é possível adicionar quantos forem necessários.
   Widget _buildCentroCustoField() {
+    final state = context.watch<CriarSolicitacaoBloc>().state;
+
     return _buildFieldRow(
       iconAsset: AppAssets.iconCusto,
       destacado: _centrosCusto.isNotEmpty,
-      child: SolicitacaoTagsInputWidget(
-        label: 'digite o número do centro de custo',
-        helperText: 'confirme no teclado para adicionar outro centro de custo',
-        values: _centrosCusto,
-        onAdded: (value) => setState(() => _centrosCusto.add(value)),
-        onRemoved: (index) => setState(() => _centrosCusto.removeAt(index)),
+      child: SolicitacaoCentrosCustoPickerWidget(
+        disponiveis: state.catalogos.centrosCustoSelecionaveis,
+        selecionados: _centrosCusto,
+        carregando: state.carregandoCatalogos,
+        onAdicionado: (numero) => setState(() => _centrosCusto.add(numero)),
+        onRemovido: (index) => setState(() => _centrosCusto.removeAt(index)),
       ),
     );
   }
@@ -388,17 +389,22 @@ class _SolicitarObjetoPageState extends State<SolicitarObjetoPage> {
   }
 
   void _avancar() {
+    final bloc = context.read<CriarSolicitacaoBloc>();
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => SolicitarObjetoStep2Page(
-          origem: _origem!,
-          destino: _destino!,
-          data: _data!,
-          horario: _horario!,
-          centrosCusto: List<String>.of(_centrosCusto),
-          origemPoint: _origemPoint,
-          destinoPoint: _destinoPoint,
+        builder: (_) => BlocProvider.value(
+          value: bloc,
+          child: SolicitarObjetoStep2Page(
+            origem: _origem!,
+            destino: _destino!,
+            data: _data!,
+            horario: _horario!,
+            centrosCusto: List<String>.of(_centrosCusto),
+            origemPoint: _origemPoint,
+            destinoPoint: _destinoPoint,
+          ),
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../domain/entities/auth_token.dart';
 import '../../domain/entities/confirmar_pin_result.dart';
 import '../../domain/entities/usuario.dart';
 import '../../domain/entities/verificacao_email_result.dart';
@@ -60,11 +61,7 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       await localDatasource.salvarAuthToken(authToken);
 
-      final usuarioBase = await localDatasource.getUsuarioPendente();
-      final usuario = AuthMapper.usuarioFromAccessToken(
-        authToken,
-        usuarioBase: usuarioBase,
-      );
+      final usuario = await _carregarUsuarioAutenticado(authToken);
       await localDatasource.salvarUsuario(usuario);
       return usuario;
     });
@@ -145,6 +142,19 @@ class AuthRepositoryImpl implements AuthRepository {
       await localDatasource.removerSessao();
     } on CacheException catch (e) {
       throw CacheFailure(e.message);
+    }
+  }
+
+  Future<UsuarioModel> _carregarUsuarioAutenticado(AuthToken authToken) async {
+    try {
+      return await remoteDatasource.buscarUsuarioAtual();
+    } on ServerException {
+      final usuarioBase = await localDatasource.getUsuarioPendente();
+
+      return AuthMapper.usuarioFromAccessToken(
+        authToken,
+        usuarioBase: usuarioBase,
+      );
     }
   }
 

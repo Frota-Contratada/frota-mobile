@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../config/app_assets.dart';
 import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/app_map_widget.dart';
+import '../bloc/criar_solicitacao.bloc.dart';
+import '../utils/solicitacao_formatters.dart';
 import '../widgets/solicitacao_confirmacao_dialog.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
@@ -86,15 +89,21 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
                       valores: [horario],
                       iconAsset: AppAssets.iconHorario,
                     ),
-                    _buildInfoItem(
-                      label: 'Horário de chegada',
-                      valores: const ['20h00'],
-                      iconAsset: AppAssets.iconHorario,
-                    ),
-                    _buildInfoItem(
-                      label: 'Valor da corrida',
-                      valores: const [r'R$68,90'],
-                      iconAsset: AppAssets.iconCusto,
+                    BlocBuilder<CriarSolicitacaoBloc, CriarSolicitacaoState>(
+                      builder: (context, state) => Column(
+                        children: [
+                          _buildInfoItem(
+                            label: 'Horário de chegada',
+                            valores: [_chegadaEstimada(state)],
+                            iconAsset: AppAssets.iconHorario,
+                          ),
+                          _buildInfoItem(
+                            label: 'Valor da corrida',
+                            valores: [_valorEstimado(state)],
+                            iconAsset: AppAssets.iconCusto,
+                          ),
+                        ],
+                      ),
                     ),
                     _buildInfoItem(
                       label: 'Motivo da corrida',
@@ -123,14 +132,22 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
                       iconAsset: AppAssets.iconFuncionario,
                     ),
                     const SizedBox(height: 26),
-                    SolicitacaoPrimaryButtonWidget(
-                      label: 'Enviar solicitação',
-                      backgroundColor: AppColors.accentGreen,
-                      foregroundColor: AppColors.darkBlue,
-                      width: 175,
-                      height: 45,
-                      fontSize: 14,
-                      onPressed: () => _enviarSolicitacao(context),
+                    BlocConsumer<CriarSolicitacaoBloc, CriarSolicitacaoState>(
+                      listener: _reagirAoEnvio,
+                      builder: (context, state) =>
+                          SolicitacaoPrimaryButtonWidget(
+                            label: state.enviando
+                                ? 'Enviando...'
+                                : 'Enviar solicitação',
+                            backgroundColor: AppColors.accentGreen,
+                            foregroundColor: AppColors.darkBlue,
+                            width: 175,
+                            height: 45,
+                            fontSize: 14,
+                            onPressed: state.enviando
+                                ? null
+                                : () => _enviarSolicitacao(context),
+                          ),
                     ),
                   ],
                 ),
@@ -253,13 +270,49 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
   }
 
   void _enviarSolicitacao(BuildContext context) {
+    context.read<CriarSolicitacaoBloc>().add(
+      SolicitacaoEnviada(
+        RascunhoSolicitacao(
+          data: data,
+          horario: horario,
+          motivoNome: motivo,
+          veiculoNome: veiculo,
+          centrosCusto: centrosCusto,
+          cpfsAcompanhantes: acompanhantes,
+          origemDescricao: origem,
+          origemPoint: origemPoint,
+          destinoDescricao: destino,
+          destinoPoint: destinoPoint,
+          paradasDescricao: paradas,
+          paradaPoints: paradaPoints,
+        ),
+      ),
+    );
+  }
+
+  void _reagirAoEnvio(BuildContext context, CriarSolicitacaoState state) {
+    if (state.erro != null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(state.erro!)));
+      return;
+    }
+
+    final criada = state.criada;
+
+    if (criada == null) return;
+
+    final chegada = criada.dataChegadaEstimada;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => SolicitacaoConfirmacaoDialog(
         titulo: 'Sua viagem foi solicitada!',
         mensagem:
-            'Agora é só esperar os responsáveis aprovarem sua solicitação!',
+            'Valor estimado de ${_moeda(criada.valorEstimado)}'
+            '${chegada == null ? '' : ' com chegada prevista às ${formatarHorarioSolicitacao(chegada)}'}.'
+            ' Agora é só esperar os responsáveis aprovarem sua solicitação!',
         submensagem:
             'Você pode acompanhar o status da sua solicitação através da aba ‘solicitações’ aqui no aplicativo',
         onFechar: () =>
@@ -267,4 +320,25 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
       ),
     );
   }
+
+  String _chegadaEstimada(CriarSolicitacaoState state) {
+    if (state.simulando) return 'calculando...';
+
+    final simulacao = state.simulacao;
+
+    return simulacao == null
+        ? 'não disponível'
+        : formatarHorarioSolicitacao(simulacao.dataChegadaEstimada);
+  }
+
+  String _valorEstimado(CriarSolicitacaoState state) {
+    if (state.simulando) return 'calculando...';
+
+    final simulacao = state.simulacao;
+
+    return simulacao == null ? 'não disponível' : _moeda(simulacao.valorEstimado);
+  }
+
+  String _moeda(double valor) =>
+      'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
 }

@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../config/app_assets.dart';
 import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/app_map_widget.dart';
+import '../bloc/criar_solicitacao.bloc.dart';
 import '../widgets/solicitacao_dropdown_options_widget.dart';
 import '../widgets/solicitacao_input_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
+import '../widgets/solicitacao_centros_custo_picker_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
-import '../widgets/solicitacao_tags_input_widget.dart';
 import '../widgets/solicitacao_text_field_widget.dart';
 import 'solicitar_viagem_revisao_page.dart';
 
@@ -43,8 +45,6 @@ class SolicitarViagemStep2Page extends StatefulWidget {
 }
 
 class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
-  static const _veiculos = <String>['Moto', 'Carro', 'Van'];
-
   final List<String> _centrosCusto = <String>[];
   String? _veiculo;
   bool _veiculoExpandido = false;
@@ -170,8 +170,6 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
     );
   }
 
-  /// Linha com ícone à esquerda + conteúdo do campo, alinhados ao restante
-  /// dos formulários de solicitação.
   Widget _buildFieldRow({
     required String iconAsset,
     required Widget child,
@@ -222,7 +220,6 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
     );
   }
 
-  /// Campo de seleção + lista de opções expansível, alinhada ao input.
   Widget _buildSelectField({
     required Widget field,
     required bool isOpen,
@@ -252,26 +249,34 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
     );
   }
 
-  /// Centros de custo são digitados manualmente: cada número confirmado vira
-  /// uma tag removível, e é possível adicionar quantos forem necessários.
   Widget _buildCentroCustoField() {
+    final state = context.watch<CriarSolicitacaoBloc>().state;
+
     return _buildFieldRow(
       iconAsset: AppAssets.iconCusto,
       destacado: _centrosCusto.isNotEmpty,
-      child: SolicitacaoTagsInputWidget(
-        label: 'digite o número do centro de custo',
-        helperText: 'confirme no teclado para adicionar outro centro de custo',
-        values: _centrosCusto,
-        onAdded: (value) => setState(() => _centrosCusto.add(value)),
-        onRemoved: (index) => setState(() => _centrosCusto.removeAt(index)),
+      iconHeight: 48,
+      child: SolicitacaoCentrosCustoPickerWidget(
+        disponiveis: state.catalogos.centrosCustoSelecionaveis,
+        selecionados: _centrosCusto,
+        carregando: state.carregandoCatalogos,
+        onAdicionado: (numero) => setState(() => _centrosCusto.add(numero)),
+        onRemovido: (index) => setState(() => _centrosCusto.removeAt(index)),
       ),
     );
   }
 
   Widget _buildVehicleField() {
+    // Os tipos vêm de GET /solicitacoes/tipos-veiculo.
+    final veiculos = context
+        .watch<CriarSolicitacaoBloc>()
+        .state
+        .catalogos
+        .nomesTiposVeiculo;
+
     return _buildSelectField(
       isOpen: _veiculoExpandido,
-      options: _veiculos,
+      options: veiculos,
       selected: _veiculo,
       onSelected: (value) => setState(() {
         _veiculo = value;
@@ -348,8 +353,6 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
   }
 
   Widget _buildCpfInput(int index) {
-    // Com dois ou mais acompanhantes todas as linhas reservam o espaço do
-    // botão de remover, para que os campos fiquem do mesmo tamanho.
     final reservaEspacoRemover = _cpfAcompanhanteControllers.length > 1;
     final podeRemover = index > 0;
 
@@ -447,26 +450,50 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
   }
 
   void _avancar() {
+    final bloc = context.read<CriarSolicitacaoBloc>();
+    final acompanhantes = _cpfAcompanhanteControllers
+        .map((controller) => controller.text.trim())
+        .where((cpf) => cpf.isNotEmpty)
+        .toList(growable: false);
+
+    bloc.add(
+      SimulacaoSolicitada(
+        RascunhoSolicitacao(
+          data: widget.data,
+          horario: widget.horario,
+          motivoNome: widget.motivo,
+          veiculoNome: _veiculo,
+          centrosCusto: List<String>.of(_centrosCusto),
+          cpfsAcompanhantes: acompanhantes,
+          origemDescricao: widget.origem,
+          origemPoint: widget.origemPoint,
+          destinoDescricao: widget.destino,
+          destinoPoint: widget.destinoPoint,
+          paradasDescricao: widget.paradas,
+          paradaPoints: widget.paradaPoints,
+        ),
+      ),
+    );
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => SolicitarViagemRevisaoPage(
-          origem: widget.origem,
-          destino: widget.destino,
-          paradas: widget.paradas,
-          data: widget.data,
-          horario: widget.horario,
-          motivo: widget.motivo,
-          centrosCusto: List<String>.of(_centrosCusto),
-          veiculo: _veiculo!,
-          acompanhantes: _cpfAcompanhanteControllers
-              .map((controller) => controller.text.trim())
-              .where((cpf) => cpf.isNotEmpty)
-              .toList(growable: false),
-
-          origemPoint: widget.origemPoint,
-          paradaPoints: widget.paradaPoints,
-          destinoPoint: widget.destinoPoint,
+        builder: (_) => BlocProvider.value(
+          value: bloc,
+          child: SolicitarViagemRevisaoPage(
+            origem: widget.origem,
+            destino: widget.destino,
+            paradas: widget.paradas,
+            data: widget.data,
+            horario: widget.horario,
+            motivo: widget.motivo,
+            centrosCusto: List<String>.of(_centrosCusto),
+            veiculo: _veiculo!,
+            acompanhantes: acompanhantes,
+            origemPoint: widget.origemPoint,
+            paradaPoints: widget.paradaPoints,
+            destinoPoint: widget.destinoPoint,
+          ),
         ),
       ),
     );

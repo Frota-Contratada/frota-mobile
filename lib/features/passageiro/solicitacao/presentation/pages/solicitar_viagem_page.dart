@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../../config/app_assets.dart';
 import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/app_map_widget.dart';
 import '../../../../../core/widgets/map_picker_page.dart';
+import '../bloc/criar_solicitacao.bloc.dart';
 import '../utils/solicitacao_formatters.dart';
 import '../widgets/solicitacao_dropdown_options_widget.dart';
 import '../widgets/solicitacao_input_widget.dart';
@@ -20,8 +23,6 @@ class SolicitarViagemPage extends StatefulWidget {
 }
 
 class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
-  static const _motivos = <String>['Viagem de trabalho', 'Emergência'];
-
   final _origemController = TextEditingController();
   final _destinoController = TextEditingController();
   final _dataController = TextEditingController();
@@ -405,8 +406,24 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
   }
 
   Widget _buildMotivoOptions() {
+    final motivos = context
+        .watch<CriarSolicitacaoBloc>()
+        .state
+        .catalogos
+        .nomesMotivosViagem;
+
+    if (motivos.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Text(
+          'Carregando motivos...',
+          style: TextStyle(fontSize: 12, color: AppColors.textGrey),
+        ),
+      );
+    }
+
     return SolicitacaoDropdownOptionsWidget(
-      options: _motivos,
+      options: motivos,
       selected: _motivo,
       optionIcons: const [
         AppAssets.iconMotivo,
@@ -547,21 +564,27 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
   }
 
   void _avancar() {
+    final bloc = context.read<CriarSolicitacaoBloc>();
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => SolicitarViagemStep2Page(
-          origem: _origemController.text.trim(),
-          destino: _destinoController.text.trim(),
-          paradas: [
-            for (final controller in _paradaControllers) controller.text.trim(),
-          ],
-          origemPoint: _origemPoint,
-          paradaPoints: _paradaPoints.whereType<MapPoint>().toList(),
-          destinoPoint: _destinoPoint,
-          data: _dataController.text,
-          horario: _horarioController.text,
-          motivo: _motivo!,
+        builder: (_) => BlocProvider.value(
+          value: bloc,
+          child: SolicitarViagemStep2Page(
+            origem: _origemController.text.trim(),
+            destino: _destinoController.text.trim(),
+            paradas: [
+              for (final controller in _paradaControllers)
+                controller.text.trim(),
+            ],
+            origemPoint: _origemPoint,
+            paradaPoints: _paradaPoints.whereType<MapPoint>().toList(),
+            destinoPoint: _destinoPoint,
+            data: _dataController.text,
+            horario: _horarioController.text,
+            motivo: _motivo!,
+          ),
         ),
       ),
     );

@@ -9,19 +9,14 @@ class ViagemModel extends Viagem {
     required super.origem,
     required super.destino,
     super.status,
+    super.dataChegadaEstimada,
+    super.tipoCorrida,
+    super.valorEstimado,
+    super.motoristaNome,
+    super.placaVeiculo,
   });
 
   factory ViagemModel.fromJson(Map<String, dynamic> json) {
     return HomeMapper.toViagemModel(ViagemResponseDto.fromJson(json));
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'data_hora_partida': dataHoraPartida.toIso8601String(),
-      'origem': origem,
-      'destino': destino,
-      'status': status.name,
-    };
   }
 }

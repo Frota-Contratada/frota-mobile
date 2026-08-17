@@ -4,6 +4,8 @@ import 'auth_injection.dart';
 import 'motorista_corrida_injection.dart';
 import 'motorista_home_injection.dart';
 import 'passageiro_home_injection.dart';
+import 'passageiro_solicitacao_injection.dart';
+import 'passageiro_solicitacoes_injection.dart';
 
 final sl = GetIt.instance;
 
@@ -17,4 +19,6 @@ Future<void> initDependencies() async {
   registerMotoristaHomeDependencies(sl);
   registerMotoristaCorridaDependencies(sl);
   registerPassageiroHomeDependencies(sl);
+  registerPassageiroSolicitacoesDependencies(sl);
+  registerPassageiroSolicitacaoDependencies(sl);
 }

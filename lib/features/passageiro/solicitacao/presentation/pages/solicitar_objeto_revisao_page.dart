@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../config/app_assets.dart';
 import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/app_map_widget.dart';
+import '../bloc/criar_solicitacao.bloc.dart';
+import '../utils/solicitacao_formatters.dart';
 import '../widgets/solicitacao_confirmacao_dialog.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
@@ -111,15 +114,44 @@ class SolicitarObjetoRevisaoPage extends StatelessWidget {
                       iconAsset: AppAssets.iconVeiculo,
                       valores: [veiculo],
                     ),
+                    const SizedBox(height: 16),
+                    _buildSectionTitle('6.', 'Estimativa'),
+                    const SizedBox(height: 8),
+                    BlocBuilder<CriarSolicitacaoBloc, CriarSolicitacaoState>(
+                      builder: (context, state) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionValue(
+                            iconAsset: AppAssets.iconCusto,
+                            valores: [_valorEstimado(state)],
+                          ),
+                          const SizedBox(height: 8),
+                          _buildSectionValue(
+                            iconAsset: AppAssets.iconHorario,
+                            valores: [
+                              'Chegada prevista: ${_chegadaEstimada(state)}',
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 26),
-                    SolicitacaoPrimaryButtonWidget(
-                      label: 'Enviar solicitação',
-                      backgroundColor: AppColors.accentGreen,
-                      foregroundColor: AppColors.darkBlue,
-                      width: 194,
-                      height: 48,
-                      fontSize: 14,
-                      onPressed: () => _enviarSolicitacao(context),
+                    BlocConsumer<CriarSolicitacaoBloc, CriarSolicitacaoState>(
+                      listener: _reagirAoEnvio,
+                      builder: (context, state) =>
+                          SolicitacaoPrimaryButtonWidget(
+                            label: state.enviando
+                                ? 'Enviando...'
+                                : 'Enviar solicitação',
+                            backgroundColor: AppColors.accentGreen,
+                            foregroundColor: AppColors.darkBlue,
+                            width: 194,
+                            height: 48,
+                            fontSize: 14,
+                            onPressed: state.enviando
+                                ? null
+                                : () => _enviarSolicitacao(context),
+                          ),
                     ),
                   ],
                 ),
@@ -200,7 +232,6 @@ class SolicitarObjetoRevisaoPage extends StatelessWidget {
     );
   }
 
-  /// Valor de uma seção, com o ícone correspondente centralizado à esquerda.
   Widget _buildSectionValue({
     required String iconAsset,
     required List<String> valores,
@@ -218,13 +249,47 @@ class SolicitarObjetoRevisaoPage extends StatelessWidget {
   }
 
   void _enviarSolicitacao(BuildContext context) {
+    context.read<CriarSolicitacaoBloc>().add(
+      SolicitacaoEnviada(
+        RascunhoSolicitacao(
+          data: data,
+          horario: horario,
+          motivoNome: objeto,
+          veiculoNome: veiculo,
+          centrosCusto: centrosCusto,
+          origemDescricao: origem,
+          origemPoint: origemPoint,
+          destinoDescricao: destino,
+          destinoPoint: destinoPoint,
+          objeto: true,
+        ),
+      ),
+    );
+  }
+
+  void _reagirAoEnvio(BuildContext context, CriarSolicitacaoState state) {
+    if (state.erro != null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(state.erro!)));
+      return;
+    }
+
+    final criada = state.criada;
+
+    if (criada == null) return;
+
+    final chegada = criada.dataChegadaEstimada;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => SolicitacaoConfirmacaoDialog(
         titulo: 'Seu transporte foi solicitado!',
         mensagem:
-            'Agora é só esperar os responsáveis aprovarem sua solicitação!',
+            'Valor estimado de ${_moeda(criada.valorEstimado)}'
+            '${chegada == null ? '' : ' com chegada prevista às ${formatarHorarioSolicitacao(chegada)}'}.'
+            ' Agora é só esperar os responsáveis aprovarem sua solicitação!',
         submensagem:
             'Você pode acompanhar o status da sua solicitação através da aba ‘solicitações’ aqui no aplicativo',
         onFechar: () =>
@@ -232,4 +297,27 @@ class SolicitarObjetoRevisaoPage extends StatelessWidget {
       ),
     );
   }
+
+  String _chegadaEstimada(CriarSolicitacaoState state) {
+    if (state.simulando) return 'calculando...';
+
+    final simulacao = state.simulacao;
+
+    return simulacao == null
+        ? 'não disponível'
+        : formatarHorarioSolicitacao(simulacao.dataChegadaEstimada);
+  }
+
+  String _valorEstimado(CriarSolicitacaoState state) {
+    if (state.simulando) return 'calculando...';
+
+    final simulacao = state.simulacao;
+
+    return simulacao == null
+        ? 'Valor não disponível'
+        : 'Valor estimado: ${_moeda(simulacao.valorEstimado)}';
+  }
+
+  String _moeda(double valor) =>
+      'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
 }
