@@ -1,12 +1,12 @@
 class SemanaUtil {
   static DateTime inicioSemanaAtual([DateTime? referencia]) {
     final data = referencia ?? DateTime.now();
-    final diasDesdeSegunda = data.weekday - DateTime.monday;
-    return DateTime(data.year, data.month, data.day - diasDesdeSegunda);
+    final diasDesdeDomingo = data.weekday % DateTime.daysPerWeek;
+    return DateTime(data.year, data.month, data.day - diasDesdeDomingo);
   }
 
   static DateTime fimSemanaUtil(DateTime inicioSemana) {
-    return inicioSemana.add(const Duration(days: 4));
+    return inicioSemana.add(const Duration(days: 6));
   }
 
   static String formatarIntervaloSemana(DateTime inicio, DateTime fim) {
