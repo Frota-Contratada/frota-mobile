@@ -69,7 +69,13 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    HomeHeaderWidget(usuario: usuarioAtual),
+                    HomeHeaderWidget(
+                      usuario: usuarioAtual,
+                      onConfiguracoes: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.passageiroConfiguracoes,
+                      ),
+                    ),
                     const SizedBox(height: 30),
                     MapaBuscaWidget(onBuscarLocal: _abrirBuscaLocal),
                     const SizedBox(height: 30),
@@ -183,7 +189,7 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
       }
 
       return Padding(
-        padding: const EdgeInsets.fromLTRB(25, 0, 16, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 25),
         child: Column(
           children: dias.asMap().entries.map((entry) {
             final index = entry.key;

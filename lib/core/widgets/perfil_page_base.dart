@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../config/app_assets.dart';
 import 'app_colors.dart';
+import 'busca_barra_widget.dart';
 
 /// Estrutura base compartilhada da página de perfil entre motorista e passageiro.
 /// Inclui: avatar, nome, subtítulo, KPIs, histórico com busca e filtro, e timeline de cards.
 class PerfilPageBase extends StatelessWidget {
+  static const double _espacamentoAbaixoDaLinha = 16;
+
   final String nome;
   final String subtitulo;
   final String? unidade;
@@ -42,13 +45,12 @@ class PerfilPageBase extends StatelessWidget {
         child: Column(
           children: [
             if (mostrarBotaoVoltar) _PerfilHeader(onVoltar: onVoltar),
-            if (!mostrarBotaoVoltar) _PerfilHeaderSemVoltar(),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
                     _AvatarSection(
                       nome: nome,
                       subtitulo: subtitulo,
@@ -60,12 +62,12 @@ class PerfilPageBase extends StatelessWidget {
                       padding: EdgeInsets.symmetric(horizontal: 25),
                       child: Divider(color: AppColors.borderGrey, height: 1),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: _espacamentoAbaixoDaLinha),
                     _KpiSection(
                       viagensFinalizadas: viagensFinalizadas,
                       transportesDeItens: transportesDeItens,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: _espacamentoAbaixoDaLinha),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 25),
                       child: Text(
@@ -78,15 +80,18 @@ class PerfilPageBase extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    _BuscaFiltroSection(
-                      buscaTexto: buscaTexto,
-                      onBuscaChanged: onBuscaChanged,
-                      onFiltroTap: onFiltroTap,
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: _espacamentoAbaixoDaLinha),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(25, 0, 16, 24),
+                      padding: const EdgeInsets.symmetric(horizontal: 25),
+                      child: BuscaBarraWidget(
+                        hintText: 'Buscar por destino',
+                        onChanged: onBuscaChanged,
+                        onBotaoAcao: onFiltroTap,
+                      ),
+                    ),
+                    const SizedBox(height: _espacamentoAbaixoDaLinha),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(25, 0, 25, 24),
                       child: Column(children: historicoContent),
                     ),
                   ],
@@ -135,23 +140,6 @@ class _PerfilHeader extends StatelessWidget {
   }
 }
 
-class _PerfilHeaderSemVoltar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(25, 16, 25, 0),
-      child: Text(
-        'Meu perfil',
-        style: TextStyle(
-          fontSize: 21,
-          fontWeight: FontWeight.w500,
-          color: AppColors.darkBlue,
-        ),
-      ),
-    );
-  }
-}
-
 class _AvatarSection extends StatelessWidget {
   final String nome;
   final String subtitulo;
@@ -167,39 +155,47 @@ class _AvatarSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 25),
+      child: Row(
         children: [
           _buildAvatar(),
-          const SizedBox(height: 14),
-          Text(
-            nome,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.darkBlue,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  nome,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkBlue,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitulo,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textMediumGrey,
+                  ),
+                ),
+                if (unidade != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    unidade!,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textMediumGrey,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            subtitulo,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textMediumGrey,
-            ),
-          ),
-          if (unidade != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              unidade!,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textMediumGrey,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -210,8 +206,8 @@ class _AvatarSection extends StatelessWidget {
       return ClipOval(
         child: Image.asset(
           avatarAssetPath!,
-          width: 84,
-          height: 84,
+          width: 64,
+          height: 64,
           fit: BoxFit.cover,
           errorBuilder: (_, _, _) => _buildAvatarFallback(),
         ),
@@ -222,14 +218,14 @@ class _AvatarSection extends StatelessWidget {
 
   Widget _buildAvatarFallback() {
     return CircleAvatar(
-      radius: 42,
+      radius: 32,
       backgroundColor: AppColors.primaryBlue,
       child: Text(
         _iniciais(nome),
         style: const TextStyle(
           color: AppColors.white,
           fontWeight: FontWeight.w600,
-          fontSize: 24,
+          fontSize: 20,
         ),
       ),
     );
@@ -258,29 +254,45 @@ class _KpiSection extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25),
       child: IntrinsicHeight(
-        child: Row(
+        child: Stack(
           children: [
-            Expanded(
-              child: _KpiItem(
-                valor: viagensFinalizadas.toString().padLeft(2, '0'),
-                label: 'Viagens finalizadas',
-                bgColor: AppColors.kpiBlueBg,
-                iconAsset: AppAssets.iconViagensFinalizadas,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: _KpiItem(
+                      valor: viagensFinalizadas.toString().padLeft(2, '0'),
+                      label: 'Viagens finalizadas',
+                      bgColor: AppColors.kpiBlueBg,
+                      iconAsset: AppAssets.iconViagensFinalizadas,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: _KpiItem(
+                      valor: transportesDeItens.toString().padLeft(2, '0'),
+                      label: 'Transportes de itens',
+                      bgColor: AppColors.kpiOrangeBg,
+                      iconAsset: AppAssets.iconTransporteItens,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Container(
-              width: 1,
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              color: AppColors.borderGrey,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _KpiItem(
-                valor: transportesDeItens.toString().padLeft(2, '0'),
-                label: 'Transportes de itens',
-                bgColor: AppColors.kpiOrangeBg,
-                iconAsset: AppAssets.iconTransporteItens,
+            const Positioned.fill(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Spacer(),
+                  ColoredBox(
+                    color: AppColors.borderGrey,
+                    child: SizedBox(width: 1),
+                  ),
+                  Spacer(),
+                ],
               ),
             ),
           ],
@@ -306,19 +318,20 @@ class _KpiItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 49,
-          height: 49,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
             color: bgColor,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
             child: Image.asset(
               iconAsset,
-              width: 25,
-              height: 25,
+              width: 18,
+              height: 18,
               fit: BoxFit.contain,
             ),
           ),
@@ -327,7 +340,7 @@ class _KpiItem extends StatelessWidget {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 valor,
@@ -335,103 +348,29 @@ class _KpiItem extends StatelessWidget {
                   fontSize: 21,
                   fontWeight: FontWeight.w500,
                   color: AppColors.darkBlue,
+                  height: 1,
                 ),
               ),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.kpiTextGrey,
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.kpiTextGrey,
+                    height: 1.2,
+                  ),
                 ),
               ),
             ],
           ),
         ),
       ],
-    );
-  }
-}
-
-class _BuscaFiltroSection extends StatelessWidget {
-  final String? buscaTexto;
-  final ValueChanged<String>? onBuscaChanged;
-  final VoidCallback? onFiltroTap;
-
-  const _BuscaFiltroSection({
-    this.buscaTexto,
-    this.onBuscaChanged,
-    this.onFiltroTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 25),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 50,
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: const [
-                  BoxShadow(
-                    color: AppColors.searchShadow,
-                    blurRadius: 2,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 10),
-                  Image.asset(
-                    AppAssets.iconBusca,
-                    width: 21,
-                    height: 21,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      onChanged: onBuscaChanged,
-                      decoration: const InputDecoration(
-                        hintText: 'Buscar por destino',
-                        hintStyle: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w300,
-                          color: AppColors.inputPlaceholder,
-                        ),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
-                        isDense: true,
-                      ),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: AppColors.darkBlue,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 18),
-          GestureDetector(
-            onTap: onFiltroTap,
-            child: Image.asset(
-              AppAssets.iconFiltro,
-              width: 21,
-              height: 14,
-              fit: BoxFit.contain,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

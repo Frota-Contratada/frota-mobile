@@ -134,7 +134,7 @@ class _MotoristaConfiguracoesPageState
             ),
           ),
           child: const Text(
-            'Sair do app',
+            'Sair da conta',
             style: TextStyle(
               fontSize: 21,
               fontWeight: FontWeight.w600,

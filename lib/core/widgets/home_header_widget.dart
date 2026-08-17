@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_assets.dart';
 import 'app_colors.dart';
+import 'icone_configuracoes_button.dart';
 
 /// Header compartilhado entre as home pages de motorista e passageiro.
 /// Exibe avatar, saudação, subtítulo (transportadora/unidade) e ícone de configurações.
@@ -57,15 +58,7 @@ class HomeHeaderWidget extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            onPressed: onConfiguracoes,
-            icon: Image.asset(
-              AppAssets.iconConfig,
-              width: 27,
-              height: 30,
-              fit: BoxFit.contain,
-            ),
-          ),
+          IconeConfiguracoesButton(onPressed: onConfiguracoes),
         ],
       ),
     );
