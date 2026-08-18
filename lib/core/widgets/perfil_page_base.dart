@@ -1,10 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../../config/app_assets.dart';
 import 'app_colors.dart';
 import 'busca_barra_widget.dart';
 
-/// Estrutura base compartilhada da página de perfil entre motorista e passageiro.
-/// Inclui: avatar, nome, subtítulo, KPIs, histórico com busca e filtro, e timeline de cards.
 class PerfilPageBase extends StatelessWidget {
   static const double _espacamentoAbaixoDaLinha = 16;
 
@@ -12,6 +12,7 @@ class PerfilPageBase extends StatelessWidget {
   final String subtitulo;
   final String? unidade;
   final String? avatarAssetPath;
+  final String? avatarDataUrl;
   final int viagensFinalizadas;
   final int transportesDeItens;
   final VoidCallback onVoltar;
@@ -31,6 +32,7 @@ class PerfilPageBase extends StatelessWidget {
     required this.onVoltar,
     this.mostrarBotaoVoltar = true,
     this.avatarAssetPath,
+    this.avatarDataUrl,
     this.buscaTexto,
     this.onBuscaChanged,
     this.onFiltroTap,
@@ -56,6 +58,7 @@ class PerfilPageBase extends StatelessWidget {
                       subtitulo: subtitulo,
                       unidade: unidade,
                       avatarAssetPath: avatarAssetPath,
+                      avatarDataUrl: avatarDataUrl,
                     ),
                     const SizedBox(height: 16),
                     const Padding(
@@ -145,12 +148,14 @@ class _AvatarSection extends StatelessWidget {
   final String subtitulo;
   final String? unidade;
   final String? avatarAssetPath;
+  final String? avatarDataUrl;
 
   const _AvatarSection({
     required this.nome,
     required this.subtitulo,
     this.unidade,
     this.avatarAssetPath,
+    this.avatarDataUrl,
   });
 
   @override
@@ -202,6 +207,25 @@ class _AvatarSection extends StatelessWidget {
   }
 
   Widget _buildAvatar() {
+    if (avatarDataUrl != null) {
+      final separador = avatarDataUrl!.indexOf(',');
+      if (separador >= 0) {
+        try {
+          final bytes = base64Decode(avatarDataUrl!.substring(separador + 1));
+          return ClipOval(
+            child: Image.memory(
+              bytes,
+              width: 64,
+              height: 64,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => _buildAvatarFallback(),
+            ),
+          );
+        } on FormatException {
+        }
+      }
+    }
+
     if (avatarAssetPath != null) {
       return ClipOval(
         child: Image.asset(

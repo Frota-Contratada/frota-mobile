@@ -4,10 +4,7 @@ import 'corrida_colors.dart';
 class CorridaHeaderWidget extends StatelessWidget {
   final VoidCallback onVoltar;
 
-  const CorridaHeaderWidget({
-    super.key,
-    required this.onVoltar,
-  });
+  const CorridaHeaderWidget({super.key, required this.onVoltar});
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +22,7 @@ class CorridaHeaderWidget extends StatelessWidget {
               child: const SizedBox(
                 width: 30,
                 height: 30,
-                child: Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                  size: 18,
-                ),
+                child: Icon(Icons.arrow_back, color: Colors.white, size: 18),
               ),
             ),
           ),

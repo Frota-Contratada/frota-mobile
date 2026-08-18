@@ -1,3 +1,4 @@
+import '../entities/corrida_detalhe.dart';
 import '../repositories/corrida_repository.dart';
 
 class IniciarCorridaUsecase {
@@ -5,7 +6,7 @@ class IniciarCorridaUsecase {
 
   IniciarCorridaUsecase(this.repository);
 
-  Future<void> call(String corridaId) {
+  Future<CorridaDetalhe> call(String corridaId) {
     return repository.iniciarCorrida(corridaId);
   }
 }

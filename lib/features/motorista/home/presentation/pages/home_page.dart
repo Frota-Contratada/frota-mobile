@@ -63,10 +63,8 @@ class _HomeContentState extends State<_HomeContent> {
               children: [
                 HomeHeaderWidget(
                   usuario: usuarioAtual,
-                  onAvatarTap: () => Navigator.pushNamed(
-                    context,
-                    AppRoutes.motoristaPerfil,
-                  ),
+                  onAvatarTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.motoristaPerfil),
                   onConfiguracoes: () => Navigator.pushNamed(
                     context,
                     AppRoutes.motoristaConfiguracoes,
@@ -88,12 +86,10 @@ class _HomeContentState extends State<_HomeContent> {
                 SemanaSeletorWidget(
                   intervaloSemana: _resolverIntervaloSemana(state),
                   onSemanaAnterior: state is HomeCarregada
-                      ? () =>
-                          context.read<HomeBloc>().add(HomeSemanaAnterior())
+                      ? () => context.read<HomeBloc>().add(HomeSemanaAnterior())
                       : () {},
                   onSemanaProxima: state is HomeCarregada
-                      ? () =>
-                          context.read<HomeBloc>().add(HomeSemanaProxima())
+                      ? () => context.read<HomeBloc>().add(HomeSemanaProxima())
                       : () {},
                 ),
                 const SizedBox(height: 24),

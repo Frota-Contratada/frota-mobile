@@ -26,7 +26,9 @@ class CorridaDetalheConteudoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final valorFormatado = CorridaFormatUtil.formatarValor(corrida.valorEstimado);
+    final valorFormatado = CorridaFormatUtil.formatarValor(
+      corrida.valorEstimado,
+    );
 
     final dataFormatada =
         '${corrida.dataHoraPartida.day.toString().padLeft(2, '0')}/'

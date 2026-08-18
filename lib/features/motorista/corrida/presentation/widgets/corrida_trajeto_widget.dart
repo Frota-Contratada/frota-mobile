@@ -13,9 +13,6 @@ class CorridaTrajetoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OrigemDestinoTrajetoWidget(
-      origem: origem,
-      destino: destino,
-    );
+    return OrigemDestinoTrajetoWidget(origem: origem, destino: destino);
   }
 }

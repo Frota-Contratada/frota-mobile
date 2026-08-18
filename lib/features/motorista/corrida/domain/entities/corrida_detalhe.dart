@@ -23,13 +23,13 @@ class CorridaDetalhe extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        dataHoraPartida,
-        origem,
-        destino,
-        nomePassageiro,
-        valorEstimado,
-        ehProxima,
-        minutosRestantes,
-      ];
+    id,
+    dataHoraPartida,
+    origem,
+    destino,
+    nomePassageiro,
+    valorEstimado,
+    ehProxima,
+    minutosRestantes,
+  ];
 }

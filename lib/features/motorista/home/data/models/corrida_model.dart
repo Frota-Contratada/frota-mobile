@@ -19,11 +19,11 @@ class CorridaModel extends Corrida {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'data_hora_partida': dataHoraPartida.toIso8601String(),
+      'dataHoraPartida': dataHoraPartida.toIso8601String(),
       'origem': origem,
       'destino': destino,
-      'eh_proxima': ehProxima,
-      'minutos_restantes': minutosRestantes,
+      'ehProxima': ehProxima,
+      'minutosRestantes': minutosRestantes,
     };
   }
 }

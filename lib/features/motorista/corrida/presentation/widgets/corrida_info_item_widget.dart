@@ -18,11 +18,7 @@ class CorridaInfoItemWidget extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 12,
-          height: 18,
-          child: Center(child: icon),
-        ),
+        SizedBox(width: 12, height: 18, child: Center(child: icon)),
         const SizedBox(width: 10),
         Expanded(
           child: Column(

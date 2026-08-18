@@ -106,16 +106,13 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final BuscarViagensPorSemanaUsecase buscarViagensPorSemanaUsecase;
 
   HomeBloc({required this.buscarViagensPorSemanaUsecase})
-      : super(HomeInitial()) {
+    : super(HomeInitial()) {
     on<HomeIniciada>(_onIniciada);
     on<HomeSemanaAnterior>(_onSemanaAnterior);
     on<HomeSemanaProxima>(_onSemanaProxima);
   }
 
-  Future<void> _onIniciada(
-    HomeIniciada event,
-    Emitter<HomeState> emit,
-  ) async {
+  Future<void> _onIniciada(HomeIniciada event, Emitter<HomeState> emit) async {
     final inicioSemana = SemanaUtil.inicioSemanaAtual();
     final fimSemana = SemanaUtil.fimSemanaUtil(inicioSemana);
     await _carregarViagens(
@@ -133,8 +130,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     final estadoAtual = state;
     if (estadoAtual is! HomeCarregada) return;
 
-    final inicioSemana =
-        estadoAtual.inicioSemana.subtract(const Duration(days: 7));
+    final inicioSemana = estadoAtual.inicioSemana.subtract(
+      const Duration(days: 7),
+    );
     final fimSemana = SemanaUtil.fimSemanaUtil(inicioSemana);
     await _carregarViagens(
       emit,
@@ -167,37 +165,45 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     required DateTime fimSemana,
     Usuario? usuario,
   }) async {
-    emit(HomeLoading(
-      inicioSemana: inicioSemana,
-      fimSemana: fimSemana,
-      usuario: usuario,
-    ));
+    emit(
+      HomeLoading(
+        inicioSemana: inicioSemana,
+        fimSemana: fimSemana,
+        usuario: usuario,
+      ),
+    );
 
     try {
       final corridas = await buscarViagensPorSemanaUsecase(
         inicioSemana: inicioSemana,
         fimSemana: fimSemana,
       );
-      emit(HomeCarregada(
-        corridas: corridas,
-        inicioSemana: inicioSemana,
-        fimSemana: fimSemana,
-        usuario: usuario,
-      ));
+      emit(
+        HomeCarregada(
+          corridas: corridas,
+          inicioSemana: inicioSemana,
+          fimSemana: fimSemana,
+          usuario: usuario,
+        ),
+      );
     } on Failure catch (e) {
-      emit(HomeErro(
-        mensagem: e.message,
-        inicioSemana: inicioSemana,
-        fimSemana: fimSemana,
-        usuario: usuario,
-      ));
+      emit(
+        HomeErro(
+          mensagem: e.message,
+          inicioSemana: inicioSemana,
+          fimSemana: fimSemana,
+          usuario: usuario,
+        ),
+      );
     } catch (e) {
-      emit(HomeErro(
-        mensagem: e.toString().replaceAll('Exception: ', ''),
-        inicioSemana: inicioSemana,
-        fimSemana: fimSemana,
-        usuario: usuario,
-      ));
+      emit(
+        HomeErro(
+          mensagem: e.toString().replaceAll('Exception: ', ''),
+          inicioSemana: inicioSemana,
+          fimSemana: fimSemana,
+          usuario: usuario,
+        ),
+      );
     }
   }
 }

@@ -46,8 +46,8 @@ class _CorridaDetalheContentState extends State<_CorridaDetalheContent> {
         return;
       }
       context.read<CorridaBloc>().add(
-            CorridaDetalheSolicitado(corridaId: corridaId),
-          );
+        CorridaDetalheSolicitado(corridaId: corridaId),
+      );
     });
   }
 
@@ -128,8 +128,8 @@ class _CorridaDetalheContentState extends State<_CorridaDetalheContent> {
               onVoltar: () => Navigator.of(context).pop(),
               onIniciarCorrida: corrida.ehProxima
                   ? () => context.read<CorridaBloc>().add(
-                        CorridaIniciarSolicitado(corridaId: corrida.id),
-                      )
+                      CorridaIniciarSolicitado(corridaId: corrida.id),
+                    )
                   : null,
               isIniciando: state is CorridaIniciando,
             );

@@ -72,10 +72,7 @@ class CorridaErro extends CorridaState {
   final String mensagem;
   final CorridaDetalhe? corrida;
 
-  const CorridaErro({
-    required this.mensagem,
-    this.corrida,
-  });
+  const CorridaErro({required this.mensagem, this.corrida});
 
   @override
   List<Object?> get props => [mensagem, corrida];
@@ -105,9 +102,7 @@ class CorridaBloc extends Bloc<CorridaEvent, CorridaState> {
     } on Failure catch (e) {
       emit(CorridaErro(mensagem: e.message));
     } catch (e) {
-      emit(CorridaErro(
-        mensagem: e.toString().replaceAll('Exception: ', ''),
-      ));
+      emit(CorridaErro(mensagem: e.toString().replaceAll('Exception: ', '')));
     }
   }
 
@@ -121,18 +116,17 @@ class CorridaBloc extends Bloc<CorridaEvent, CorridaState> {
     emit(CorridaIniciando(corrida: corridaAtual));
 
     try {
-      await iniciarCorridaUsecase(event.corridaId);
-      emit(CorridaIniciada(corrida: corridaAtual));
+      final corrida = await iniciarCorridaUsecase(event.corridaId);
+      emit(CorridaIniciada(corrida: corrida));
     } on Failure catch (e) {
-      emit(CorridaErro(
-        mensagem: e.message,
-        corrida: corridaAtual,
-      ));
+      emit(CorridaErro(mensagem: e.message, corrida: corridaAtual));
     } catch (e) {
-      emit(CorridaErro(
-        mensagem: e.toString().replaceAll('Exception: ', ''),
-        corrida: corridaAtual,
-      ));
+      emit(
+        CorridaErro(
+          mensagem: e.toString().replaceAll('Exception: ', ''),
+          corrida: corridaAtual,
+        ),
+      );
     }
   }
 

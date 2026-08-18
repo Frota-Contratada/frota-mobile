@@ -120,10 +120,9 @@ class _MotoristaConfiguracoesPageState
         child: ElevatedButton(
           onPressed: () {
             // TODO: implementar logout
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              '/login',
-              (route) => false,
-            );
+            Navigator.of(
+              context,
+            ).pushNamedAndRemoveUntil('/login', (route) => false);
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: MotoristaColors.logoutButton,
@@ -135,10 +134,7 @@ class _MotoristaConfiguracoesPageState
           ),
           child: const Text(
             'Sair da conta',
-            style: TextStyle(
-              fontSize: 21,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -176,8 +172,7 @@ class _NotificacaoToggle extends StatelessWidget {
             ),
             child: AnimatedAlign(
               duration: const Duration(milliseconds: 200),
-              alignment:
-                  ativo ? Alignment.centerRight : Alignment.centerLeft,
+              alignment: ativo ? Alignment.centerRight : Alignment.centerLeft,
               child: Container(
                 width: 16,
                 height: 16,

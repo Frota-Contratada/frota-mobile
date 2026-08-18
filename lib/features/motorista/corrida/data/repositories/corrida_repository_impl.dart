@@ -11,16 +11,12 @@ class CorridaRepositoryImpl implements CorridaRepository {
 
   @override
   Future<CorridaDetalhe> buscarDetalhes(String corridaId) {
-    return _handleRemoteCall(
-      () => remoteDatasource.buscarDetalhes(corridaId),
-    );
+    return _handleRemoteCall(() => remoteDatasource.buscarDetalhes(corridaId));
   }
 
   @override
-  Future<void> iniciarCorrida(String corridaId) {
-    return _handleRemoteCall(
-      () => remoteDatasource.iniciarCorrida(corridaId),
-    );
+  Future<CorridaDetalhe> iniciarCorrida(String corridaId) {
+    return _handleRemoteCall(() => remoteDatasource.iniciarCorrida(corridaId));
   }
 
   Future<T> _handleRemoteCall<T>(Future<T> Function() call) async {
