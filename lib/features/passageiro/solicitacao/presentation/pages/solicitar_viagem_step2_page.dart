@@ -516,10 +516,11 @@ class _RadioOption extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 15,
-            height: 15,
+            width: 20,
+            height: 20,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
@@ -530,8 +531,8 @@ class _RadioOption extends StatelessWidget {
             child: selected
                 ? Center(
                     child: Container(
-                      width: 8,
-                      height: 8,
+                      width: 10,
+                      height: 10,
                       decoration: const BoxDecoration(
                         color: AppColors.primaryBlue,
                         shape: BoxShape.circle,
