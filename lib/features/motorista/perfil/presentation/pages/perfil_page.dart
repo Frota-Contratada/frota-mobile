@@ -4,12 +4,14 @@ import '../../../../../config/routes.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/corrida_card_base_widget.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
+import '../../../../../core/widgets/historico_filtro.dart';
 import '../../../../../core/widgets/perfil_page_base.dart';
 import '../../../../../core/widgets/timeline_dia_widget.dart';
 import '../../../../../injection_container/injection_container.dart';
 import '../../../../auth/domain/entities/usuario.dart';
 import '../../domain/entities/motorista_perfil.dart';
 import '../bloc/motorista_perfil.bloc.dart';
+import '../../../../passageiro/shared/presentation/widgets/filtro_historico_bottom_sheet.dart';
 
 class MotoristPerfilPage extends StatelessWidget {
   final Usuario? usuario;
@@ -37,6 +39,7 @@ class _PerfilView extends StatefulWidget {
 
 class _PerfilViewState extends State<_PerfilView> {
   String _busca = '';
+  HistoricoFiltro _filtro = const HistoricoFiltro();
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +57,7 @@ class _PerfilViewState extends State<_PerfilView> {
           mostrarBotaoVoltar: false,
           onVoltar: () => Navigator.of(context).maybePop(),
           onBuscaChanged: (valor) => setState(() => _busca = valor),
-          onFiltroTap: () {},
+          onFiltroTap: () => _abrirFiltros(context),
           historicoContent: _buildHistorico(context, state),
         );
       },
@@ -89,7 +92,7 @@ class _PerfilViewState extends State<_PerfilView> {
     }
 
     final perfil = (state as MotoristaPerfilCarregada).perfil;
-    final porDia = _filtrarPorBusca(perfil.historico);
+    final porDia = _filtrarHistorico(perfil.historico);
 
     if (porDia.isEmpty) {
       return [
@@ -97,12 +100,12 @@ class _PerfilViewState extends State<_PerfilView> {
           icon: _busca.isEmpty
               ? Icons.history_rounded
               : Icons.search_off_rounded,
-          mensagem: _busca.isEmpty
+          mensagem: _busca.isEmpty && _filtro.estaLimpo
               ? 'Você ainda não tem corridas anteriores'
               : 'Nenhum resultado encontrado',
-          submensagem: _busca.isEmpty
+          submensagem: _busca.isEmpty && _filtro.estaLimpo
               ? null
-              : 'Tente buscar por outro destino ou limpe o filtro.',
+              : 'Tente buscar por outro destino ou limpe os filtros.',
         ),
       ];
     }
@@ -140,20 +143,34 @@ class _PerfilViewState extends State<_PerfilView> {
     }).toList();
   }
 
-  Map<DateTime, List<MotoristaHistorico>> _filtrarPorBusca(
+  Future<void> _abrirFiltros(BuildContext context) async {
+    final resultado = await FiltroHistoricoBottomSheet.show(
+      context,
+      inicial: _filtro,
+    );
+
+    if (!mounted || resultado == null) return;
+    setState(() => _filtro = resultado);
+  }
+
+  Map<DateTime, List<MotoristaHistorico>> _filtrarHistorico(
     List<MotoristaHistorico> historico,
   ) {
     final termo = _busca.trim().toLowerCase();
-    final filtradas = termo.isEmpty
-        ? historico
-        : historico
-              .where(
-                (corrida) =>
-                    corrida.origem.toLowerCase().contains(termo) ||
-                    corrida.destino.toLowerCase().contains(termo) ||
-                    corrida.tipoCorrida.toLowerCase().contains(termo),
-              )
-              .toList();
+    final filtradas = _filtro.ordenar(
+      historico.where((corrida) {
+        final buscaCoincide =
+            termo.isEmpty ||
+            corrida.origem.toLowerCase().contains(termo) ||
+            corrida.destino.toLowerCase().contains(termo) ||
+            corrida.tipoCorrida.toLowerCase().contains(termo);
+
+        return buscaCoincide &&
+            _filtro.correspondeTipo(corrida.tipoCorrida) &&
+            _filtro.correspondeData(corrida.dataHoraPartida);
+      }),
+      (corrida) => corrida.dataHoraPartida,
+    );
 
     final mapa = <DateTime, List<MotoristaHistorico>>{};
     for (final corrida in filtradas) {
@@ -165,9 +182,15 @@ class _PerfilViewState extends State<_PerfilView> {
       mapa.putIfAbsent(dia, () => []).add(corrida);
     }
 
-    return Map.fromEntries(
-      mapa.entries.toList()..sort((a, b) => b.key.compareTo(a.key)),
-    );
+    final entradas = mapa.entries.toList()
+      ..sort((a, b) {
+        final comparacao = a.key.compareTo(b.key);
+        return _filtro.ordenacao == HistoricoOrdenacao.maisRecente
+            ? -comparacao
+            : comparacao;
+      });
+
+    return Map.fromEntries(entradas);
   }
 
   String _formatarDia(DateTime data) {

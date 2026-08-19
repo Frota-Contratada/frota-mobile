@@ -14,14 +14,21 @@ abstract class SolicitacoesEvent extends Equatable {
 
 class SolicitacoesCarregadas extends SolicitacoesEvent {
   final StatusSolicitacao? status;
+  final DateTime? dataInicio;
+  final DateTime? dataFim;
 
   /// Solicita ao backend somente corridas finalizadas ou canceladas.
   final bool apenasHistorico;
 
-  const SolicitacoesCarregadas({this.status, this.apenasHistorico = false});
+  const SolicitacoesCarregadas({
+    this.status,
+    this.dataInicio,
+    this.dataFim,
+    this.apenasHistorico = false,
+  });
 
   @override
-  List<Object?> get props => [status, apenasHistorico];
+  List<Object?> get props => [status, dataInicio, dataFim, apenasHistorico];
 }
 
 abstract class SolicitacoesState extends Equatable {
@@ -127,6 +134,8 @@ class SolicitacoesBloc extends Bloc<SolicitacoesEvent, SolicitacoesState> {
     try {
       final pagina = await buscarSolicitacoesUsecase(
         status: event.status,
+        dataInicio: event.dataInicio,
+        dataFim: event.dataFim,
         historico: event.apenasHistorico,
       );
 

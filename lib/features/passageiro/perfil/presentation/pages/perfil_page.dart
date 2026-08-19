@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../config/routes.dart';
 import '../../../../../core/widgets/corrida_card_base_widget.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
+import '../../../../../core/widgets/historico_filtro.dart';
 import '../../../../../core/widgets/perfil_page_base.dart';
 import '../../../../../core/widgets/timeline_dia_widget.dart';
 import '../../../../../injection_container/injection_container.dart';
@@ -10,6 +11,7 @@ import '../../../../auth/domain/entities/usuario.dart';
 import '../../../home/presentation/utils/semana_util.dart';
 import '../../../solicitacoes/domain/entities/solicitacao.dart';
 import '../../../solicitacoes/presentation/bloc/solicitacoes.bloc.dart';
+import '../../../shared/presentation/widgets/filtro_historico_bottom_sheet.dart';
 
 class PassageiroPerfilPage extends StatelessWidget {
   final Usuario? usuario;
@@ -38,6 +40,7 @@ class _PerfilView extends StatefulWidget {
 
 class _PerfilViewState extends State<_PerfilView> {
   String _busca = '';
+  HistoricoFiltro _filtro = const HistoricoFiltro();
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +56,7 @@ class _PerfilViewState extends State<_PerfilView> {
           mostrarBotaoVoltar: false,
           onVoltar: () => Navigator.of(context).maybePop(),
           onBuscaChanged: (valor) => setState(() => _busca = valor),
-          onFiltroTap: () {},
+          onFiltroTap: () => _abrirFiltros(context),
           historicoContent: _buildHistorico(context, state),
         );
       },
@@ -85,7 +88,7 @@ class _PerfilViewState extends State<_PerfilView> {
     }
 
     final carregada = state as SolicitacoesCarregada;
-    final porDia = _filtrarPorBusca(carregada.porDia);
+    final porDia = _filtrarHistorico(carregada.solicitacoes);
 
     if (porDia.isEmpty) {
       return [
@@ -93,12 +96,12 @@ class _PerfilViewState extends State<_PerfilView> {
           icon: _busca.isEmpty
               ? Icons.history_rounded
               : Icons.search_off_rounded,
-          mensagem: _busca.isEmpty
+          mensagem: _busca.isEmpty && _filtro.estaLimpo
               ? 'Você ainda não tem corridas anteriores'
               : 'Nenhum resultado encontrado',
-          submensagem: _busca.isEmpty
+          submensagem: _busca.isEmpty && _filtro.estaLimpo
               ? null
-              : 'Tente buscar por outro destino ou limpe o filtro.',
+              : 'Tente buscar por outro destino ou limpe os filtros.',
         ),
       ];
     }
@@ -137,26 +140,62 @@ class _PerfilViewState extends State<_PerfilView> {
     }).toList();
   }
 
-  Map<DateTime, List<Solicitacao>> _filtrarPorBusca(
-    Map<DateTime, List<Solicitacao>> porDia,
+  Future<void> _abrirFiltros(BuildContext context) async {
+    final bloc = context.read<SolicitacoesBloc>();
+    final resultado = await FiltroHistoricoBottomSheet.show(
+      context,
+      inicial: _filtro,
+    );
+
+    if (!mounted || resultado == null) return;
+    setState(() => _filtro = resultado);
+    bloc.add(
+      SolicitacoesCarregadas(
+        apenasHistorico: true,
+        dataInicio: _filtro.dataInicio,
+        dataFim: _filtro.dataFim,
+      ),
+    );
+  }
+
+  Map<DateTime, List<Solicitacao>> _filtrarHistorico(
+    List<Solicitacao> solicitacoes,
   ) {
-    if (_busca.trim().isEmpty) return porDia;
+    final termo = _busca.trim().toLowerCase();
+    final filtradas = _filtro.ordenar(
+      solicitacoes.where((solicitacao) {
+        final buscaCoincide =
+            termo.isEmpty ||
+            solicitacao.destino.descricao.toLowerCase().contains(termo) ||
+            solicitacao.origem.descricao.toLowerCase().contains(termo) ||
+            solicitacao.tipoCorrida.toLowerCase().contains(termo);
 
-    final termo = _busca.toLowerCase();
-    final resultado = <DateTime, List<Solicitacao>>{};
+        return buscaCoincide &&
+            _filtro.correspondeTipo(solicitacao.tipoCorrida) &&
+            _filtro.correspondeData(solicitacao.dataCorrida) &&
+            _filtro.correspondeStatus(solicitacao.status.codigo);
+      }),
+      (solicitacao) => solicitacao.dataCorrida,
+    );
 
-    porDia.forEach((dia, solicitacoes) {
-      final encontradas = solicitacoes
-          .where(
-            (solicitacao) =>
-                solicitacao.destino.descricao.toLowerCase().contains(termo) ||
-                solicitacao.origem.descricao.toLowerCase().contains(termo),
-          )
-          .toList();
+    final mapa = <DateTime, List<Solicitacao>>{};
+    for (final solicitacao in filtradas) {
+      final dia = DateTime(
+        solicitacao.dataCorrida.year,
+        solicitacao.dataCorrida.month,
+        solicitacao.dataCorrida.day,
+      );
+      mapa.putIfAbsent(dia, () => []).add(solicitacao);
+    }
 
-      if (encontradas.isNotEmpty) resultado[dia] = encontradas;
-    });
+    final entradas = mapa.entries.toList()
+      ..sort((a, b) {
+        final comparacao = a.key.compareTo(b.key);
+        return _filtro.ordenacao == HistoricoOrdenacao.maisRecente
+            ? -comparacao
+            : comparacao;
+      });
 
-    return resultado;
+    return Map.fromEntries(entradas);
   }
 }

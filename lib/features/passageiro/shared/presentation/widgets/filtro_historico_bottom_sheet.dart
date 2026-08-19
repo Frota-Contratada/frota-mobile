@@ -1,186 +1,274 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/widgets/app_colors.dart';
+import '../../../../../core/widgets/historico_filtro.dart';
 
-/// Bottom sheet de filtro para o histórico de corridas.
-/// Permite filtrar por ordenação, tipo de corrida e período.
+class FiltroStatusOpcao {
+  final String codigo;
+  final String label;
+
+  const FiltroStatusOpcao({required this.codigo, required this.label});
+}
+
+/// Bottom sheet compartilhado para filtros de solicitações e históricos.
+///
+/// O modal sempre sobe pela parte inferior, possui conteúdo rolável e devolve
+/// o filtro somente quando o usuário aplica ou limpa as opções.
 class FiltroHistoricoBottomSheet extends StatefulWidget {
-  final VoidCallback? onAplicar;
-  final VoidCallback? onLimpar;
+  final HistoricoFiltro inicial;
+  final bool mostrarStatus;
+  final List<FiltroStatusOpcao> statusOpcoes;
+  final String titulo;
 
   const FiltroHistoricoBottomSheet({
     super.key,
-    this.onAplicar,
-    this.onLimpar,
+    this.inicial = const HistoricoFiltro(),
+    this.mostrarStatus = false,
+    this.statusOpcoes = const [],
+    this.titulo = 'Filtrar registros no histórico',
   });
 
   @override
-  State<FiltroHistoricoBottomSheet> createState() => _FiltroHistoricoBottomSheetState();
+  State<FiltroHistoricoBottomSheet> createState() =>
+      _FiltroHistoricoBottomSheetState();
 
-  static Future<void> show(BuildContext context) {
-    return showModalBottomSheet(
+  static Future<HistoricoFiltro?> show(
+    BuildContext context, {
+    HistoricoFiltro inicial = const HistoricoFiltro(),
+    bool mostrarStatus = false,
+    List<FiltroStatusOpcao> statusOpcoes = const [],
+    String titulo = 'Filtrar registros no histórico',
+  }) {
+    return showModalBottomSheet<HistoricoFiltro>(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => FiltroHistoricoBottomSheet(
+        inicial: inicial,
+        mostrarStatus: mostrarStatus,
+        statusOpcoes: statusOpcoes,
+        titulo: titulo,
       ),
-      builder: (_) => const FiltroHistoricoBottomSheet(),
     );
   }
 }
 
-class _FiltroHistoricoBottomSheetState extends State<FiltroHistoricoBottomSheet> {
-  String _ordenacao = 'Mais recente';
-  String _tipoCorrida = 'Todas';
-  DateTimeRange? _periodo;
+class _FiltroHistoricoBottomSheetState
+    extends State<FiltroHistoricoBottomSheet> {
+  late HistoricoOrdenacao _ordenacao;
+  late HistoricoTipo _tipo;
+  late HistoricoPeriodo _periodo;
+  late String? _statusCodigo;
+
+  @override
+  void initState() {
+    super.initState();
+    _ordenacao = widget.inicial.ordenacao;
+    _tipo = widget.inicial.tipo;
+    _periodo = widget.inicial.periodo;
+    _statusCodigo = widget.inicial.statusCodigo;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(25, 24, 25, 32),
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Filtrar registros no histórico',
-            style: TextStyle(
-              fontSize: 21,
-              fontWeight: FontWeight.w500,
-              color: AppColors.darkBlue,
-            ),
-          ),
-          const SizedBox(height: 24),
+    final alturaMaxima = MediaQuery.sizeOf(context).height * .84;
 
-          // Ordenar por
-          const Text(
-            'Ordenar por',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.darkBlue),
-          ),
-          const SizedBox(height: 12),
-          _buildChipGroup(
-            options: ['Mais recente', 'Mais antiga'],
-            selected: _ordenacao,
-            onSelected: (v) => setState(() => _ordenacao = v),
-          ),
-          const SizedBox(height: 24),
-
-          // Tipo de corrida
-          const Text(
-            'Tipo de corrida',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.darkBlue),
-          ),
-          const SizedBox(height: 12),
-          _buildChipGroup(
-            options: ['Todas', 'Viagem', 'Objeto'],
-            selected: _tipoCorrida,
-            onSelected: (v) => setState(() => _tipoCorrida = v),
-          ),
-          const SizedBox(height: 24),
-
-          // Período
-          const Text(
-            'Período',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.darkBlue),
-          ),
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: _selecionarPeriodo,
-            child: Container(
-              height: 45,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.borderGrey),
-                borderRadius: BorderRadius.circular(10),
-                color: AppColors.white,
+    return Material(
+      color: AppColors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: alturaMaxima),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(25, 24, 25, 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.titulo,
+                style: const TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.darkBlue,
+                ),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _periodo != null
-                          ? '${_formatDate(_periodo!.start)} - ${_formatDate(_periodo!.end)}'
-                          : 'Selecione o período',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: _periodo != null ? AppColors.darkBlue : AppColors.textGrey,
-                      ),
+              const SizedBox(height: 24),
+              _tituloSecao('Ordenar por'),
+              const SizedBox(height: 12),
+              _buildChipGroup(
+                options: const [
+                  _FiltroOpcao<HistoricoOrdenacao>(
+                    label: 'Mais recente',
+                    value: HistoricoOrdenacao.maisRecente,
+                  ),
+                  _FiltroOpcao<HistoricoOrdenacao>(
+                    label: 'Mais antiga',
+                    value: HistoricoOrdenacao.maisAntiga,
+                  ),
+                ],
+                selected: _ordenacao,
+                onSelected: (valor) => setState(() => _ordenacao = valor),
+              ),
+              const SizedBox(height: 24),
+              _tituloSecao('Tipo de corrida'),
+              const SizedBox(height: 12),
+              _buildChipGroup(
+                options: const [
+                  _FiltroOpcao<HistoricoTipo>(
+                    label: 'Viagem',
+                    value: HistoricoTipo.viagem,
+                  ),
+                  _FiltroOpcao<HistoricoTipo>(
+                    label: 'Transporte de itens',
+                    value: HistoricoTipo.transporteItens,
+                  ),
+                ],
+                selected: _tipo,
+                onSelected: (valor) => setState(
+                  () => _tipo = _tipo == valor ? HistoricoTipo.todos : valor,
+                ),
+              ),
+              if (widget.mostrarStatus && widget.statusOpcoes.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                _tituloSecao('Status'),
+                const SizedBox(height: 12),
+                _buildStatusChips(),
+              ],
+              const SizedBox(height: 24),
+              _tituloSecao('Período'),
+              const SizedBox(height: 12),
+              _buildChipGroup(
+                options: const [
+                  _FiltroOpcao<HistoricoPeriodo>(
+                    label: 'Hoje',
+                    value: HistoricoPeriodo.hoje,
+                  ),
+                  _FiltroOpcao<HistoricoPeriodo>(
+                    label: 'Ontem',
+                    value: HistoricoPeriodo.ontem,
+                  ),
+                  _FiltroOpcao<HistoricoPeriodo>(
+                    label: 'Últimos 7 dias',
+                    value: HistoricoPeriodo.ultimos7,
+                  ),
+                  _FiltroOpcao<HistoricoPeriodo>(
+                    label: 'Últimos 15 dias',
+                    value: HistoricoPeriodo.ultimos15,
+                  ),
+                  _FiltroOpcao<HistoricoPeriodo>(
+                    label: 'Últimos 30 dias',
+                    value: HistoricoPeriodo.ultimos30,
+                  ),
+                ],
+                selected: _periodo,
+                onSelected: (valor) => setState(
+                  () => _periodo = _periodo == valor
+                      ? HistoricoPeriodo.todos
+                      : valor,
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(
+                    context,
+                    HistoricoFiltro(
+                      ordenacao: _ordenacao,
+                      tipo: _tipo,
+                      periodo: _periodo,
+                      statusCodigo: _statusCodigo,
                     ),
                   ),
-                  const Icon(Icons.calendar_today, size: 16, color: AppColors.textGrey),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // Botão aplicar
-          Center(
-            child: SizedBox(
-              width: 245,
-              height: 60,
-              child: ElevatedButton(
-                onPressed: () {
-                  widget.onAplicar?.call();
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  foregroundColor: AppColors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: AppColors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: const Text(
+                    'Aplicar Filtros',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
                 ),
-                child: const Text('Aplicar Filtros', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: GestureDetector(
-              onTap: () {
-                widget.onLimpar?.call();
-                Navigator.pop(context);
-              },
-              child: const Text(
-                'Limpar filtros',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textMediumGrey),
+              const SizedBox(height: 12),
+              Center(
+                child: TextButton(
+                  onPressed: () =>
+                      Navigator.pop(context, const HistoricoFiltro()),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.textMediumGrey,
+                  ),
+                  child: const Text(
+                    'Limpar filtros',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildChipGroup({
-    required List<String> options,
-    required String selected,
-    required ValueChanged<String> onSelected,
+  Widget _tituloSecao(String texto) => Text(
+    texto,
+    style: const TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      color: AppColors.darkBlue,
+    ),
+  );
+
+  Widget _buildStatusChips() {
+    return _buildChipGroup(
+      options: [
+        const _FiltroOpcao<String>(label: 'Todos', value: ''),
+        ...widget.statusOpcoes.map(
+          (status) =>
+              _FiltroOpcao<String>(label: status.label, value: status.codigo),
+        ),
+      ],
+      selected: _statusCodigo ?? '',
+      onSelected: (valor) =>
+          setState(() => _statusCodigo = valor.isEmpty ? null : valor),
+    );
+  }
+
+  Widget _buildChipGroup<T>({
+    required List<_FiltroOpcao<T>> options,
+    required T selected,
+    required ValueChanged<T> onSelected,
   }) {
     return Wrap(
       spacing: 10,
+      runSpacing: 10,
       children: options.map((option) {
-        final isSelected = option == selected;
+        final isSelected = option.value == selected;
         return GestureDetector(
-          onTap: () => onSelected(option),
+          onTap: () => onSelected(option.value),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: isSelected ? AppColors.primaryBlue : AppColors.white,
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: isSelected ? AppColors.primaryBlue : AppColors.borderGrey,
+                color: isSelected
+                    ? AppColors.primaryBlue
+                    : AppColors.primaryBlue,
               ),
             ),
             child: Text(
-              option,
+              option.label,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: isSelected ? AppColors.white : AppColors.darkBlue,
+                color: isSelected ? AppColors.white : AppColors.primaryBlue,
               ),
             ),
           ),
@@ -188,20 +276,11 @@ class _FiltroHistoricoBottomSheetState extends State<FiltroHistoricoBottomSheet>
       }).toList(),
     );
   }
+}
 
-  void _selecionarPeriodo() async {
-    final resultado = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2024),
-      lastDate: DateTime(2027),
-      locale: const Locale('pt', 'BR'),
-    );
-    if (resultado != null) {
-      setState(() => _periodo = resultado);
-    }
-  }
+class _FiltroOpcao<T> {
+  final String label;
+  final T value;
 
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-  }
+  const _FiltroOpcao({required this.label, required this.value});
 }

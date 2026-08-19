@@ -3,11 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../config/routes.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
+import '../../../../../core/widgets/historico_filtro.dart';
 import '../../../../../core/widgets/icone_configuracoes_button.dart';
+import '../../../shared/presentation/widgets/filtro_historico_bottom_sheet.dart';
 import '../../../../../injection_container/injection_container.dart';
 import '../../../../auth/domain/entities/usuario.dart';
 import '../../../solicitacao/presentation/utils/solicitacao_formatters.dart';
 import '../../domain/entities/solicitacao.dart';
+import '../../domain/entities/status_solicitacao.dart';
 import '../bloc/solicitacoes.bloc.dart';
 import '../widgets/solicitacao_card_widget.dart';
 import '../widgets/solicitacao_status.dart';
@@ -29,21 +32,26 @@ class SolicitacoesPage extends StatelessWidget {
   }
 }
 
-class _SolicitacoesView extends StatelessWidget {
+class _SolicitacoesView extends StatefulWidget {
   final Usuario? usuario;
 
   const _SolicitacoesView({this.usuario});
 
   @override
+  State<_SolicitacoesView> createState() => _SolicitacoesViewState();
+}
+
+class _SolicitacoesViewState extends State<_SolicitacoesView> {
+  HistoricoFiltro _filtro = const HistoricoFiltro();
+
+  @override
   Widget build(BuildContext context) {
-    final nome = usuario?.nome ?? 'Passageiro';
+    final nome = widget.usuario?.nome ?? 'Passageiro';
 
     return SafeArea(
       bottom: false,
       child: RefreshIndicator(
-        onRefresh: () async {
-          context.read<SolicitacoesBloc>().add(const SolicitacoesCarregadas());
-        },
+        onRefresh: () async => _carregar(context),
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
@@ -82,7 +90,7 @@ class _SolicitacoesView extends StatelessWidget {
                           color: AppColors.primaryBlue,
                           shape: const CircleBorder(),
                           child: InkWell(
-                            onTap: () {},
+                            onTap: () => _abrirFiltros(context),
                             customBorder: const CircleBorder(),
                             child: const SizedBox(
                               width: 32,
@@ -128,16 +136,16 @@ class _SolicitacoesView extends StatelessWidget {
                 }
 
                 final carregada = state as SolicitacoesCarregada;
-                final grupos = carregada.porStatus;
+                final grupos = _agruparSolicitacoes(carregada.solicitacoes);
 
                 if (grupos.isEmpty) {
                   return const SliverFillRemaining(
                     hasScrollBody: false,
                     child: EmptyStateWidget(
                       icon: Icons.inbox_rounded,
-                      mensagem: 'Você ainda não fez solicitações',
+                      mensagem: 'Nenhuma solicitação encontrada',
                       submensagem:
-                          'Toque em solicitar na home para pedir uma corrida.',
+                          'Ajuste os filtros ou toque em solicitar na home.',
                     ),
                   );
                 }
@@ -153,6 +161,7 @@ class _SolicitacoesView extends StatelessWidget {
                       return _GrupoSolicitacoes(
                         status: SolicitacaoStatus.deDominio(entrada.key),
                         solicitacoes: entrada.value,
+                        onRecarregar: () => _carregar(context),
                       );
                     }, childCount: entradas.length),
                   ),
@@ -162,6 +171,74 @@ class _SolicitacoesView extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Map<StatusSolicitacao, List<Solicitacao>> _agruparSolicitacoes(
+    List<Solicitacao> solicitacoes,
+  ) {
+    final filtradas = _filtro.ordenar(
+      solicitacoes.where(
+        (solicitacao) =>
+            _filtro.correspondeTipo(solicitacao.tipoCorrida) &&
+            _filtro.correspondeData(solicitacao.dataCorrida) &&
+            _filtro.correspondeStatus(solicitacao.status.codigo),
+      ),
+      (solicitacao) => solicitacao.dataCorrida,
+    );
+
+    final grupos = <StatusSolicitacao, List<Solicitacao>>{};
+    for (final solicitacao in filtradas) {
+      grupos.putIfAbsent(solicitacao.status, () => []).add(solicitacao);
+    }
+
+    const ordem = [
+      StatusSolicitacao.aprovada,
+      StatusSolicitacao.pendente,
+      StatusSolicitacao.reprovada,
+      StatusSolicitacao.cancelada,
+    ];
+
+    return {
+      for (final status in ordem)
+        if (grupos[status]?.isNotEmpty ?? false) status: grupos[status]!,
+    };
+  }
+
+  Future<void> _abrirFiltros(BuildContext context) async {
+    final bloc = context.read<SolicitacoesBloc>();
+    final resultado = await FiltroHistoricoBottomSheet.show(
+      context,
+      inicial: _filtro,
+    );
+
+    if (!mounted || resultado == null) return;
+    setState(() => _filtro = resultado);
+    bloc.add(
+      SolicitacoesCarregadas(
+        status: _statusSelecionado,
+        dataInicio: _filtro.dataInicio,
+        dataFim: _filtro.dataFim,
+      ),
+    );
+  }
+
+  void _carregar(BuildContext context) {
+    context.read<SolicitacoesBloc>().add(
+      SolicitacoesCarregadas(
+        status: _statusSelecionado,
+        dataInicio: _filtro.dataInicio,
+        dataFim: _filtro.dataFim,
+      ),
+    );
+  }
+
+  StatusSolicitacao? get _statusSelecionado {
+    final codigo = _filtro.statusCodigo;
+    if (codigo == null) return null;
+    return StatusSolicitacao.values.firstWhere(
+      (status) => status.codigo == codigo,
+      orElse: () => StatusSolicitacao.pendente,
     );
   }
 }
@@ -235,8 +312,13 @@ class _SolicitacoesHeader extends StatelessWidget {
 class _GrupoSolicitacoes extends StatelessWidget {
   final SolicitacaoStatus status;
   final List<Solicitacao> solicitacoes;
+  final VoidCallback onRecarregar;
 
-  const _GrupoSolicitacoes({required this.status, required this.solicitacoes});
+  const _GrupoSolicitacoes({
+    required this.status,
+    required this.solicitacoes,
+    required this.onRecarregar,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -291,15 +373,13 @@ class _GrupoSolicitacoes extends StatelessWidget {
     BuildContext context,
     Solicitacao solicitacao,
   ) async {
-    final bloc = context.read<SolicitacoesBloc>();
-
     await Navigator.pushNamed(
       context,
       AppRoutes.passageiroDetalheSolicitacao,
       arguments: solicitacao.id,
     );
 
-    bloc.add(const SolicitacoesCarregadas());
+    onRecarregar();
   }
 
   String _dataCurta(DateTime data) {
