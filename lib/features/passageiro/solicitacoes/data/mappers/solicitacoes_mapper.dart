@@ -61,7 +61,12 @@ class SolicitacoesMapper {
   }
 
   static Motivo toMotivo(CatalogoItemResponseDto dto) {
-    return Motivo(id: dto.id, nome: dto.nome, tipo: dto.tipo);
+    return Motivo(
+      id: dto.id,
+      nome: dto.nome,
+      tipo: dto.tipo,
+      capacidadePassageiros: dto.capacidadePassageiros,
+    );
   }
 
   static EnderecoSolicitacao _toEndereco(EnderecoResponseDto dto) {

@@ -40,11 +40,13 @@ class CatalogoItemResponseDto {
   final int id;
   final String nome;
   final String? tipo;
+  final int? capacidadePassageiros;
 
   const CatalogoItemResponseDto({
     required this.id,
     required this.nome,
     this.tipo,
+    this.capacidadePassageiros,
   });
 
   factory CatalogoItemResponseDto.fromJson(Map<String, dynamic> json) {
@@ -52,6 +54,7 @@ class CatalogoItemResponseDto {
       id: (json['id'] as num?)?.toInt() ?? 0,
       nome: json['nome'] as String? ?? '',
       tipo: json['tipo'] as String?,
+      capacidadePassageiros: (json['capacidadePassageiros'] as num?)?.toInt(),
     );
   }
 }

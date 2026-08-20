@@ -7,6 +7,7 @@ import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../injection_container/injection_container.dart';
 import '../../../solicitacao/presentation/utils/solicitacao_formatters.dart';
 import '../../domain/entities/motivo.dart';
+import '../../domain/entities/rateio_centro_custo.dart';
 import '../../domain/entities/solicitacao.dart';
 import '../bloc/detalhe_solicitacao.bloc.dart';
 import '../widgets/solicitacao_status.dart';
@@ -118,6 +119,13 @@ class _Conteudo extends StatelessWidget {
 
   Solicitacao get solicitacao => state.solicitacao;
   bool get corridaRealizada => solicitacao.corrida?.dataFim != null;
+
+  String _formatarCentroCusto(RateioCentroCusto rateio) {
+    final nome = rateio.centroCustoNome?.trim();
+    if (nome == null || nome.isEmpty) return rateio.centroCustoId.toString();
+
+    return '$nome (${rateio.centroCustoId})';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -345,11 +353,7 @@ class _Conteudo extends StatelessWidget {
                               ? 'Centros de custo'
                               : 'Centro de custo',
                           valor: solicitacao.centrosCusto
-                              .map(
-                                (rateio) =>
-                                    rateio.centroCustoNome ??
-                                    rateio.centroCustoId.toString(),
-                              )
+                              .map(_formatarCentroCusto)
                               .join(', '),
                         ),
                         const SizedBox(height: 20),

@@ -37,5 +37,6 @@ class NovaSolicitacao {
     'origem': origem.toJson(),
     'destino': destino.toJson(),
     'paradas': paradas.map((parada) => parada.toJson()).toList(),
+    'cpfsAcompanhantes': cpfsAcompanhantes,
   };
 }

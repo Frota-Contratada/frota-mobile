@@ -11,12 +11,16 @@ import '../bloc/criar_solicitacao.bloc.dart';
 import '../utils/solicitacao_formatters.dart';
 import '../widgets/solicitacao_dropdown_options_widget.dart';
 import '../widgets/solicitacao_input_widget.dart';
+import '../widgets/solicitacao_horario_field_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
+import 'solicitar_viagem_route_args.dart';
 import 'solicitar_viagem_step2_page.dart';
 
 class SolicitarViagemPage extends StatefulWidget {
-  const SolicitarViagemPage({super.key});
+  final SolicitarViagemRouteArgs? routeArgs;
+
+  const SolicitarViagemPage({super.key, this.routeArgs});
 
   @override
   State<SolicitarViagemPage> createState() => _SolicitarViagemPageState();
@@ -33,9 +37,58 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
   MapPoint? _destinoPoint;
   final List<MapPoint?> _paradaPoints = [];
   DateTime? _dataSelecionada;
-  TimeOfDay? _horarioSelecionado;
+  String? _horarioErro;
   String? _motivo;
   bool _motivosExpandidos = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final draft = context.read<CriarSolicitacaoBloc>().state.rascunho;
+    _origemController.text = draft.origemDescricao;
+    _destinoController.text = draft.destinoDescricao;
+    _dataController.text = draft.data;
+    _horarioController.text = draft.horario;
+    _origemPoint = draft.origemPoint;
+    _destinoPoint = draft.destinoPoint;
+
+    final destinoInicial = widget.routeArgs?.destinoInicial;
+    if (destinoInicial != null) {
+      _destinoController.text = _descricaoDoPonto(destinoInicial);
+      _destinoPoint = destinoInicial.point;
+    }
+
+    _dataSelecionada = _parseData(draft.data);
+    _horarioErro = _validarHorario(draft.horario, _dataSelecionada);
+    _motivo = draft.motivoNome;
+
+    final quantidadeParadas =
+        draft.paradasDescricao.length > draft.paradaPoints.length
+        ? draft.paradasDescricao.length
+        : draft.paradaPoints.length;
+    for (var index = 0; index < quantidadeParadas; index++) {
+      _paradaControllers.add(
+        TextEditingController(
+          text: index < draft.paradasDescricao.length
+              ? draft.paradasDescricao[index]
+              : '',
+        ),
+      );
+      _paradaPoints.add(
+        index < draft.paradaPoints.length ? draft.paradaPoints[index] : null,
+      );
+    }
+  }
+
+  String _descricaoDoPonto(MapSelectionResult selection) {
+    final address = selection.address?.trim();
+    if (address != null && address.isNotEmpty) return address;
+
+    return '${selection.point.latitude.toStringAsFixed(5)}, '
+        '${selection.point.longitude.toStringAsFixed(5)}';
+  }
+
+  DateTime? _parseData(String value) => parseDataSolicitacao(value);
 
   @override
   void dispose() {
@@ -51,76 +104,91 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      body: Column(
-        children: [
-          SizedBox(
-            height: 189,
-            width: double.infinity,
-            child: AppMapWidget(
-              showAttribution: false,
-              origin: _origemPoint,
-              viaPoints: _paradaPoints.whereType<MapPoint>().toList(),
-              destination: _destinoPoint,
-            ),
-          ),
-          Expanded(
-            child: Container(
+    return PopScope<void>(
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) return;
+
+        context.read<CriarSolicitacaoBloc>().add(
+          const SolicitacaoRascunhoDescartado(),
+        );
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.white,
+        body: Column(
+          children: [
+            SizedBox(
+              height: 189,
               width: double.infinity,
-              transform: Matrix4.translationValues(0, -21, 0),
-              decoration: const BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+              child: AppMapWidget(
+                showAttribution: false,
+                origin: _origemPoint,
+                viaPoints: _paradaPoints.whereType<MapPoint>().toList(),
+                destination: _destinoPoint,
               ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(25, 24, 25, 40),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(
-                      title: 'Solicitar viagem',
-                      subtitle: 'Preencha os campos abaixo para prosseguir',
-                    ),
-                    const SizedBox(height: 16),
-                    const SolicitacaoModalidadeChipWidget(modalidade: 'Táxi'),
-                    const SizedBox(height: 12),
-                    _buildSectionTitle('1.', 'Trajeto'),
-                    const SizedBox(height: 8),
-                    _buildTrajetoSection(),
-                    const SizedBox(height: 20),
-                    _buildSectionTitle('2.', 'Data e horário de partida'),
-                    const SizedBox(height: 8),
-                    _buildIconInput(
-                      iconAsset: AppAssets.iconData,
-                      label: 'data',
-                      value: _dataController.text,
-                      onTap: _selecionarData,
-                    ),
-                    const SizedBox(height: 10),
-                    _buildIconInput(
-                      iconAsset: AppAssets.iconHorario,
-                      label: 'horário',
-                      value: _horarioController.text,
-                      onTap: _selecionarHorario,
-                    ),
-                    const SizedBox(height: 20),
-                    _buildSectionTitle('3.', 'Motivo da corrida'),
-                    const SizedBox(height: 8),
-                    _buildMotivoInput(),
-                    const SizedBox(height: 30),
-                    SolicitacaoPrimaryButtonWidget(
-                      label: 'Avançar',
-                      onPressed: _podeAvancar() ? _avancar : null,
-                    ),
-                  ],
+            ),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                transform: Matrix4.translationValues(0, -21, 0),
+                decoration: const BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(25, 24, 25, 40),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(
+                        title: 'Solicitar viagem',
+                        subtitle: 'Preencha os campos abaixo para prosseguir',
+                      ),
+                      const SizedBox(height: 16),
+                      SolicitacaoModalidadeChipWidget(
+                        modalidade: _modalidadeLabel,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildSectionTitle('1.', 'Trajeto'),
+                      const SizedBox(height: 8),
+                      _buildTrajetoSection(),
+                      const SizedBox(height: 20),
+                      _buildSectionTitle('2.', 'Data e horário de partida'),
+                      const SizedBox(height: 8),
+                      _buildIconInput(
+                        iconAsset: AppAssets.iconData,
+                        label: 'data',
+                        value: _dataController.text,
+                        onTap: _selecionarData,
+                      ),
+                      const SizedBox(height: 10),
+                      _buildHorarioInput(),
+                      const SizedBox(height: 20),
+                      _buildSectionTitle('3.', 'Motivo da corrida'),
+                      const SizedBox(height: 8),
+                      _buildMotivoInput(),
+                      const SizedBox(height: 30),
+                      SolicitacaoPrimaryButtonWidget(
+                        label: 'Avançar',
+                        onPressed: _podeAvancar() ? _avancar : null,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  String get _modalidadeLabel {
+    final modalidade =
+        widget.routeArgs?.modalidade ?? SolicitarViagemModalidade.taxi;
+
+    return switch (modalidade) {
+      SolicitarViagemModalidade.taxi => 'Táxi',
+    };
   }
 
   Widget _buildHeader({required String title, required String subtitle}) {
@@ -355,6 +423,37 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
     );
   }
 
+  Widget _buildHorarioInput() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 20,
+          height: 48,
+          child: Center(
+            child: Image.asset(
+              AppAssets.iconHorario,
+              width: 16,
+              height: 16,
+              fit: BoxFit.contain,
+              color: _horarioErro == null
+                  ? AppColors.borderGrey
+                  : Colors.red.shade700,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: SolicitacaoHorarioFieldWidget(
+            controller: _horarioController,
+            errorText: _horarioErro,
+            onChanged: _aoAlterarHorario,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildMotivoInput() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -437,11 +536,16 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
     final temParadasValidas = _paradaControllers.every(
       (controller) => controller.text.trim().isNotEmpty,
     );
+    final data = _dataSelecionada;
+    final horario = parseHorarioSolicitacao(_horarioController.text);
+
     return _origemController.text.trim().isNotEmpty &&
         _destinoController.text.trim().isNotEmpty &&
         temParadasValidas &&
-        _dataController.text.isNotEmpty &&
-        _horarioController.text.isNotEmpty &&
+        data != null &&
+        horario != null &&
+        _horarioErro == null &&
+        dataHoraSolicitacaoValida(data, horario) &&
         _motivo != null;
   }
 
@@ -526,34 +630,53 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
       confirmText: 'Confirmar',
     );
     if (!mounted || data == null) return;
+
+    final horario = parseHorarioSolicitacao(_horarioController.text);
+    final horarioInvalido =
+        horario != null && !dataHoraSolicitacaoValida(data, horario);
+
     setState(() {
       _dataSelecionada = data;
       _dataController.text = formatarDataSolicitacao(data);
+      if (horarioInvalido) {
+        _horarioController.clear();
+        _horarioErro = null;
+      } else {
+        _horarioErro = _validarHorario(_horarioController.text, data);
+      }
+    });
+
+    if (horarioInvalido) _mostrarErroDataHora();
+  }
+
+  void _aoAlterarHorario(String value) {
+    setState(() {
+      _horarioErro = _validarHorario(value, _dataSelecionada);
     });
   }
 
-  Future<void> _selecionarHorario() async {
-    final horario = await showTimePicker(
-      context: context,
-      initialTime: _horarioSelecionado ?? TimeOfDay.now(),
-      helpText: 'Selecione o horário da viagem',
-      cancelText: 'Cancelar',
-      confirmText: 'Confirmar',
-    );
-    if (!mounted || horario == null) return;
-    final agora = DateTime.now();
-    setState(() {
-      _horarioSelecionado = horario;
-      _horarioController.text = formatarHorarioSolicitacao(
-        DateTime(
-          agora.year,
-          agora.month,
-          agora.day,
-          horario.hour,
-          horario.minute,
+  String? _validarHorario(String value, DateTime? data) {
+    if (value.isEmpty || value.length < 5) return null;
+
+    final horario = parseHorarioSolicitacao(value);
+    if (horario == null) return 'Informe um horário entre 00:00 e 23:59.';
+
+    final dataBase = data ?? DateTime.now();
+    if (!dataHoraSolicitacaoValida(dataBase, horario)) {
+      return 'A data e o horário da corrida devem estar no futuro.';
+    }
+
+    return null;
+  }
+
+  void _mostrarErroDataHora() {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('A data e o horário da corrida devem estar no futuro.'),
         ),
       );
-    });
   }
 
   void _selecionarMotivo(String motivo) {
@@ -565,6 +688,21 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
 
   void _avancar() {
     final bloc = context.read<CriarSolicitacaoBloc>();
+    final draft = SolicitacaoDraft(
+      data: _dataController.text,
+      horario: _horarioController.text,
+      motivoNome: _motivo,
+      centrosCusto: bloc.state.rascunho.centrosCusto,
+      origemDescricao: _origemController.text.trim(),
+      origemPoint: _origemPoint,
+      destinoDescricao: _destinoController.text.trim(),
+      destinoPoint: _destinoPoint,
+      paradasDescricao: [
+        for (final controller in _paradaControllers) controller.text.trim(),
+      ],
+      paradaPoints: List<MapPoint?>.of(_paradaPoints),
+    );
+    bloc.add(SolicitacaoRascunhoAtualizado(draft));
 
     Navigator.push(
       context,

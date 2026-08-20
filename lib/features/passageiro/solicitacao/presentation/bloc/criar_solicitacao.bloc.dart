@@ -10,6 +10,7 @@ import '../../domain/entities/simulacao_solicitacao.dart';
 import '../../domain/usecases/buscar_catalogos_usecase.dart';
 import '../../domain/usecases/criar_solicitacao_usecase.dart';
 import '../../domain/usecases/simular_solicitacao_usecase.dart';
+import '../utils/solicitacao_formatters.dart';
 
 class RascunhoSolicitacao {
   final String data;
@@ -43,6 +44,92 @@ class RascunhoSolicitacao {
   });
 }
 
+class SolicitacaoDraft {
+  final String data;
+  final String horario;
+  final String? motivoNome;
+  final String? veiculoNome;
+  final List<String> centrosCusto;
+  final List<String> cpfsAcompanhantes;
+  final String origemDescricao;
+  final MapPoint? origemPoint;
+  final String destinoDescricao;
+  final MapPoint? destinoPoint;
+  final List<String> paradasDescricao;
+  final List<MapPoint?> paradaPoints;
+  final bool objeto;
+  final bool? viagemCompartilhada;
+
+  const SolicitacaoDraft({
+    this.data = '',
+    this.horario = '',
+    this.motivoNome,
+    this.veiculoNome,
+    this.centrosCusto = const [],
+    this.cpfsAcompanhantes = const [],
+    this.origemDescricao = '',
+    this.origemPoint,
+    this.destinoDescricao = '',
+    this.destinoPoint,
+    this.paradasDescricao = const [],
+    this.paradaPoints = const [],
+    this.objeto = false,
+    this.viagemCompartilhada,
+  });
+
+  SolicitacaoDraft copyWith({
+    String? data,
+    String? horario,
+    String? motivoNome,
+    String? veiculoNome,
+    List<String>? centrosCusto,
+    List<String>? cpfsAcompanhantes,
+    String? origemDescricao,
+    MapPoint? origemPoint,
+    String? destinoDescricao,
+    MapPoint? destinoPoint,
+    List<String>? paradasDescricao,
+    List<MapPoint?>? paradaPoints,
+    bool? objeto,
+    bool? viagemCompartilhada,
+  }) {
+    return SolicitacaoDraft(
+      data: data ?? this.data,
+      horario: horario ?? this.horario,
+      motivoNome: motivoNome ?? this.motivoNome,
+      veiculoNome: veiculoNome ?? this.veiculoNome,
+      centrosCusto: centrosCusto ?? this.centrosCusto,
+      cpfsAcompanhantes: cpfsAcompanhantes ?? this.cpfsAcompanhantes,
+      origemDescricao: origemDescricao ?? this.origemDescricao,
+      origemPoint: origemPoint ?? this.origemPoint,
+      destinoDescricao: destinoDescricao ?? this.destinoDescricao,
+      destinoPoint: destinoPoint ?? this.destinoPoint,
+      paradasDescricao: paradasDescricao ?? this.paradasDescricao,
+      paradaPoints: paradaPoints ?? this.paradaPoints,
+      objeto: objeto ?? this.objeto,
+      viagemCompartilhada: viagemCompartilhada ?? this.viagemCompartilhada,
+    );
+  }
+
+  RascunhoSolicitacao toRascunho() {
+    return RascunhoSolicitacao(
+      data: data,
+      horario: horario,
+      motivoNome: motivoNome,
+      veiculoNome: veiculoNome,
+      centrosCusto: List<String>.of(centrosCusto),
+      cpfsAcompanhantes: List<String>.of(cpfsAcompanhantes),
+      origemDescricao: origemDescricao,
+      origemPoint: origemPoint,
+      destinoDescricao: destinoDescricao,
+      destinoPoint: destinoPoint,
+      paradasDescricao: List<String>.of(paradasDescricao),
+      paradaPoints: paradaPoints.whereType<MapPoint>().toList(),
+      objeto: objeto,
+    );
+  }
+}
+
 abstract class CriarSolicitacaoEvent extends Equatable {
   const CriarSolicitacaoEvent();
 
@@ -52,6 +139,19 @@ abstract class CriarSolicitacaoEvent extends Equatable {
 
 class CatalogosSolicitados extends CriarSolicitacaoEvent {
   const CatalogosSolicitados();
+}
+
+class SolicitacaoRascunhoAtualizado extends CriarSolicitacaoEvent {
+  final SolicitacaoDraft rascunho;
+
+  const SolicitacaoRascunhoAtualizado(this.rascunho);
+
+  @override
+  List<Object?> get props => [rascunho];
+}
+
+class SolicitacaoRascunhoDescartado extends CriarSolicitacaoEvent {
+  const SolicitacaoRascunhoDescartado();
 }
 
 class SolicitacaoEnviada extends CriarSolicitacaoEvent {
@@ -80,6 +180,7 @@ class CriarSolicitacaoState extends Equatable {
   final String? erro;
   final SimulacaoSolicitacao? simulacao;
   final Solicitacao? criada;
+  final SolicitacaoDraft rascunho;
 
   const CriarSolicitacaoState({
     this.catalogos = const CatalogosSolicitacao(),
@@ -89,6 +190,7 @@ class CriarSolicitacaoState extends Equatable {
     this.erro,
     this.simulacao,
     this.criada,
+    this.rascunho = const SolicitacaoDraft(),
   });
 
   CriarSolicitacaoState copyWith({
@@ -99,6 +201,7 @@ class CriarSolicitacaoState extends Equatable {
     String? erro,
     SimulacaoSolicitacao? simulacao,
     Solicitacao? criada,
+    SolicitacaoDraft? rascunho,
   }) {
     return CriarSolicitacaoState(
       catalogos: catalogos ?? this.catalogos,
@@ -108,6 +211,7 @@ class CriarSolicitacaoState extends Equatable {
       erro: erro,
       simulacao: simulacao ?? this.simulacao,
       criada: criada ?? this.criada,
+      rascunho: rascunho ?? this.rascunho,
     );
   }
 
@@ -120,6 +224,7 @@ class CriarSolicitacaoState extends Equatable {
     erro,
     simulacao,
     criada,
+    rascunho,
   ];
 }
 
@@ -135,8 +240,24 @@ class CriarSolicitacaoBloc
     required this.criarSolicitacaoUsecase,
   }) : super(const CriarSolicitacaoState()) {
     on<CatalogosSolicitados>(_onCatalogosSolicitados);
+    on<SolicitacaoRascunhoAtualizado>(_onRascunhoAtualizado);
+    on<SolicitacaoRascunhoDescartado>(_onRascunhoDescartado);
     on<SimulacaoSolicitada>(_onSimulacaoSolicitada);
     on<SolicitacaoEnviada>(_onSolicitacaoEnviada);
+  }
+
+  void _onRascunhoAtualizado(
+    SolicitacaoRascunhoAtualizado event,
+    Emitter<CriarSolicitacaoState> emit,
+  ) {
+    emit(state.copyWith(rascunho: event.rascunho));
+  }
+
+  void _onRascunhoDescartado(
+    SolicitacaoRascunhoDescartado event,
+    Emitter<CriarSolicitacaoState> emit,
+  ) {
+    emit(state.copyWith(rascunho: const SolicitacaoDraft()));
   }
 
   Future<void> _onSimulacaoSolicitada(
@@ -305,32 +426,14 @@ class CriarSolicitacaoBloc
   }
 
   DateTime _combinarDataHorario(String data, String horario) {
-    final partesData = data.split('/');
-    final partesHorario = horario.split(':');
-
-    if (partesData.length != 3 || partesHorario.length != 2) {
-      throw const RascunhoInvalidoException(
-        'Informe a data e o horário da corrida.',
-      );
-    }
-
-    final dia = int.tryParse(partesData[0]);
-    final mes = int.tryParse(partesData[1]);
-    final ano = int.tryParse(partesData[2]);
-    final hora = int.tryParse(partesHorario[0]);
-    final minuto = int.tryParse(partesHorario[1]);
-
-    if (dia == null ||
-        mes == null ||
-        ano == null ||
-        hora == null ||
-        minuto == null) {
+    final dataHora = combinarDataHorarioSolicitacao(data, horario);
+    if (dataHora == null) {
       throw const RascunhoInvalidoException(
         'Data ou horário da corrida em formato inválido.',
       );
     }
 
-    return DateTime(ano, mes, dia, hora, minuto);
+    return dataHora;
   }
 }
 

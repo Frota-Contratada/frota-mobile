@@ -52,6 +52,18 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
   final List<TextEditingController> _cpfAcompanhanteControllers = [];
 
   @override
+  void initState() {
+    super.initState();
+    final draft = context.read<CriarSolicitacaoBloc>().state.rascunho;
+    _centrosCusto.addAll(draft.centrosCusto);
+    _veiculo = draft.veiculoNome;
+    _viagemCompartilhada = draft.viagemCompartilhada;
+    for (final cpf in draft.cpfsAcompanhantes) {
+      _cpfAcompanhanteControllers.add(TextEditingController(text: cpf));
+    }
+  }
+
+  @override
   void dispose() {
     _limparAcompanhantes();
     super.dispose();
@@ -435,6 +447,34 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
     _cpfAcompanhanteControllers.clear();
   }
 
+  int? _capacidadeDoVeiculo() {
+    if (_veiculo == null) return null;
+
+    final catalogos = context.read<CriarSolicitacaoBloc>().state.catalogos;
+
+    for (final tipo in catalogos.tiposVeiculo) {
+      if (tipo.nome == _veiculo) return tipo.capacidadePassageiros;
+    }
+
+    return null;
+  }
+
+  String? _mensagemCapacidade() {
+    final capacidade = _capacidadeDoVeiculo();
+    if (capacidade == null) return null;
+
+    final quantidadePassageiros =
+        1 +
+        _cpfAcompanhanteControllers
+            .where((controller) => controller.text.trim().isNotEmpty)
+            .length;
+
+    if (quantidadePassageiros <= capacidade) return null;
+
+    return 'O veículo $_veiculo comporta até $capacidade passageiros, '
+        'mas a viagem tem $quantidadePassageiros passageiros.';
+  }
+
   bool _podeAvancar() {
     final acompanhantesPreenchidos =
         _viagemCompartilhada != true ||
@@ -450,30 +490,38 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
   }
 
   void _avancar() {
+    final mensagemCapacidade = _mensagemCapacidade();
+    if (mensagemCapacidade != null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(mensagemCapacidade)));
+      return;
+    }
+
     final bloc = context.read<CriarSolicitacaoBloc>();
     final acompanhantes = _cpfAcompanhanteControllers
         .map((controller) => controller.text.trim())
         .where((cpf) => cpf.isNotEmpty)
         .toList(growable: false);
-
-    bloc.add(
-      SimulacaoSolicitada(
-        RascunhoSolicitacao(
-          data: widget.data,
-          horario: widget.horario,
-          motivoNome: widget.motivo,
-          veiculoNome: _veiculo,
-          centrosCusto: List<String>.of(_centrosCusto),
-          cpfsAcompanhantes: acompanhantes,
-          origemDescricao: widget.origem,
-          origemPoint: widget.origemPoint,
-          destinoDescricao: widget.destino,
-          destinoPoint: widget.destinoPoint,
-          paradasDescricao: widget.paradas,
-          paradaPoints: widget.paradaPoints,
-        ),
-      ),
+    final draft = bloc.state.rascunho.copyWith(
+      data: widget.data,
+      horario: widget.horario,
+      motivoNome: widget.motivo,
+      veiculoNome: _veiculo,
+      centrosCusto: List<String>.of(_centrosCusto),
+      cpfsAcompanhantes: acompanhantes,
+      origemDescricao: widget.origem,
+      origemPoint: widget.origemPoint,
+      destinoDescricao: widget.destino,
+      destinoPoint: widget.destinoPoint,
+      paradasDescricao: List<String>.of(widget.paradas),
+      paradaPoints: widget.paradaPoints
+          .map<MapPoint?>((point) => point)
+          .toList(),
+      viagemCompartilhada: _viagemCompartilhada,
     );
+    bloc.add(SolicitacaoRascunhoAtualizado(draft));
+    bloc.add(SimulacaoSolicitada(draft.toRascunho()));
 
     Navigator.push(
       context,

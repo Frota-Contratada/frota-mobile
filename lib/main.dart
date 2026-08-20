@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'config/env_loader.dart';
+import 'core/navigation/app_route_observer.dart';
 import 'config/themes.dart';
 import 'config/routes.dart';
 import 'features/auth/presentation/bloc/auth.bloc.dart';
@@ -16,6 +17,7 @@ import 'features/passageiro/corrida/presentation/pages/corrida_andamento_page.da
 import 'features/passageiro/shared/presentation/pages/passageiro_shell_page.dart';
 import 'features/passageiro/solicitacao/presentation/bloc/criar_solicitacao.bloc.dart';
 import 'features/passageiro/solicitacao/presentation/pages/solicitar_viagem_page.dart';
+import 'features/passageiro/solicitacao/presentation/pages/solicitar_viagem_route_args.dart';
 import 'features/passageiro/solicitacao/presentation/pages/solicitar_objeto_page.dart';
 import 'features/passageiro/solicitacoes/presentation/pages/detalhe_solicitacao_page.dart';
 import 'injection_container/injection_container.dart';
@@ -37,6 +39,7 @@ class FrotaApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       themeMode: ThemeMode.light,
+      navigatorObservers: [appRouteObserver],
       initialRoute: AppRoutes.login,
       routes: {
         AppRoutes.login: (_) => BlocProvider(
@@ -57,11 +60,18 @@ class FrotaApp extends StatelessWidget {
             const PassageiroConfiguracoesPage(),
         // O bloc é criado na entrada do wizard e repassado aos passos
         // seguintes, para que catálogos e envio compartilhem o mesmo estado.
-        AppRoutes.passageiroSolicitarViagem: (_) => BlocProvider(
-          create: (_) =>
-              sl<CriarSolicitacaoBloc>()..add(const CatalogosSolicitados()),
-          child: const SolicitarViagemPage(),
-        ),
+        AppRoutes.passageiroSolicitarViagem: (context) {
+          final arguments = ModalRoute.of(context)?.settings.arguments;
+          final routeArgs = arguments is SolicitarViagemRouteArgs
+              ? arguments
+              : null;
+
+          return BlocProvider(
+            create: (_) =>
+                sl<CriarSolicitacaoBloc>()..add(const CatalogosSolicitados()),
+            child: SolicitarViagemPage(routeArgs: routeArgs),
+          );
+        },
         AppRoutes.passageiroSolicitarObjeto: (_) => BlocProvider(
           create: (_) =>
               sl<CriarSolicitacaoBloc>()..add(const CatalogosSolicitados()),
@@ -74,6 +84,8 @@ class FrotaApp extends StatelessWidget {
           return CorridaAndamentoPage(
             origem: args?['origem'] as String? ?? '',
             destino: args?['destino'] as String? ?? '',
+            motoristaNome: args?['motoristaNome'] as String?,
+            placaVeiculo: args?['placaVeiculo'] as String?,
             origemPoint: args?['origemPoint'] as MapPoint?,
             destinoPoint: args?['destinoPoint'] as MapPoint?,
           );

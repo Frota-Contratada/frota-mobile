@@ -315,8 +315,12 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
             ' Agora é só esperar os responsáveis aprovarem sua solicitação!',
         submensagem:
             'Você pode acompanhar o status da sua solicitação através da aba ‘solicitações’ aqui no aplicativo',
-        onFechar: () =>
-            Navigator.of(context).popUntil((route) => route.isFirst),
+        onFechar: () {
+          context.read<CriarSolicitacaoBloc>().add(
+            const SolicitacaoRascunhoDescartado(),
+          );
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
       ),
     );
   }
@@ -336,7 +340,9 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
 
     final simulacao = state.simulacao;
 
-    return simulacao == null ? 'não disponível' : _moeda(simulacao.valorEstimado);
+    return simulacao == null
+        ? 'não disponível'
+        : _moeda(simulacao.valorEstimado);
   }
 
   String _moeda(double valor) =>

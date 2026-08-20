@@ -7,6 +7,8 @@ import '../../../../../core/widgets/app_map_widget.dart';
 class CorridaAndamentoPage extends StatelessWidget {
   final String origem;
   final String destino;
+  final String? motoristaNome;
+  final String? placaVeiculo;
   final int minutosAndamento;
   final bool motoristaPausado;
   final MapPoint? origemPoint;
@@ -16,6 +18,8 @@ class CorridaAndamentoPage extends StatelessWidget {
     super.key,
     required this.origem,
     required this.destino,
+    this.motoristaNome,
+    this.placaVeiculo,
     this.minutosAndamento = 10,
     this.motoristaPausado = false,
     this.origemPoint,
@@ -89,7 +93,8 @@ class CorridaAndamentoPage extends StatelessWidget {
                   // Trajeto
                   _buildTrajeto(),
                   const SizedBox(height: 20),
-                  // Status bar
+                  _buildMotoristaInfo(),
+                  const SizedBox(height: 20),
                   _buildStatusBar(),
                 ],
               ),
@@ -122,7 +127,11 @@ class CorridaAndamentoPage extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(vertical: 3),
                 color: AppColors.borderGrey,
               ),
-              const Icon(Icons.location_on, size: 15, color: AppColors.primaryBlue),
+              const Icon(
+                Icons.location_on,
+                size: 15,
+                color: AppColors.primaryBlue,
+              ),
             ],
           ),
         ),
@@ -133,20 +142,114 @@ class CorridaAndamentoPage extends StatelessWidget {
             children: [
               const Text(
                 'Origem',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: AppColors.textGrey),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textGrey,
+                ),
               ),
               Text(
                 origem,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: AppColors.darkBlue),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.darkBlue,
+                ),
               ),
               const SizedBox(height: 16),
               const Text(
                 'Destino',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: AppColors.textGrey),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textGrey,
+                ),
               ),
               Text(
                 destino,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: AppColors.darkBlue),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.darkBlue,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMotoristaInfo() {
+    final motorista = motoristaNome?.trim();
+    final placa = placaVeiculo?.trim();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderGrey),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Motorista e veículo',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.darkBlue,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildMotoristaInfoLine(
+            icon: Icons.person_outline_rounded,
+            label: 'Motorista',
+            value: motorista == null || motorista.isEmpty
+                ? 'Aguardando designação'
+                : motorista,
+          ),
+          const SizedBox(height: 10),
+          _buildMotoristaInfoLine(
+            icon: Icons.directions_car_outlined,
+            label: 'Placa do veículo',
+            value: placa == null || placa.isEmpty
+                ? 'Aguardando informação'
+                : placa,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMotoristaInfoLine({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppColors.primaryBlue),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 12, color: AppColors.textGrey),
+              ),
+              Text(
+                value,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.darkBlue,
+                ),
               ),
             ],
           ),

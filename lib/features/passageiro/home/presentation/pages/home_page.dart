@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../config/routes.dart';
+import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../core/widgets/map_picker_page.dart';
 import '../../../../../injection_container/injection_container.dart';
 import '../../../../auth/domain/entities/usuario.dart';
 import '../../../shared/presentation/theme/passageiro_colors.dart';
+import '../../../solicitacao/presentation/pages/solicitar_viagem_route_args.dart';
 import '../bloc/home.bloc.dart';
 import '../utils/semana_util.dart';
 import '../widgets/home_header_widget.dart';
@@ -49,8 +51,8 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<PassageiroHomeBloc>().add(
-            PassageiroHomeIniciada(usuario: widget.usuario),
-          );
+        PassageiroHomeIniciada(usuario: widget.usuario),
+      );
     });
   }
 
@@ -116,14 +118,14 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
                     SemanaSeletorWidget(
                       intervaloSemana: _resolverIntervaloSemana(state),
                       onSemanaAnterior: state is PassageiroHomeCarregada
-                          ? () => context
-                              .read<PassageiroHomeBloc>()
-                              .add(PassageiroHomeSemanaAnterior())
+                          ? () => context.read<PassageiroHomeBloc>().add(
+                              PassageiroHomeSemanaAnterior(),
+                            )
                           : () {},
                       onSemanaProxima: state is PassageiroHomeCarregada
-                          ? () => context
-                              .read<PassageiroHomeBloc>()
-                              .add(PassageiroHomeSemanaProxima())
+                          ? () => context.read<PassageiroHomeBloc>().add(
+                              PassageiroHomeSemanaProxima(),
+                            )
                           : () {},
                     ),
                     const SizedBox(height: 28),
@@ -163,8 +165,8 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
             ElevatedButton(
               onPressed: () {
                 context.read<PassageiroHomeBloc>().add(
-                      PassageiroHomeIniciada(usuario: state.usuario),
-                    );
+                  PassageiroHomeIniciada(usuario: state.usuario),
+                );
               },
               child: const Text('Tentar novamente'),
             ),
@@ -211,6 +213,8 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
                   arguments: {
                     'origem': viagem.origem,
                     'destino': viagem.destino,
+                    'motoristaNome': viagem.motoristaNome,
+                    'placaVeiculo': viagem.placaVeiculo,
                   },
                 );
               },
@@ -224,16 +228,28 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
   }
 
   Future<void> _abrirBuscaLocal() async {
-    await Navigator.push(
+    final result = await Navigator.push<MapSelectionResult>(
       context,
       MaterialPageRoute(
-        builder: (_) => const MapPickerPage(title: 'Buscar local'),
+        builder: (_) => const MapPickerPage(
+          title: 'Buscar local',
+          selectionKind: MapSelectionKind.destination,
+        ),
       ),
+    );
+    if (!mounted || result == null) return;
+
+    await Navigator.pushNamed(
+      context,
+      AppRoutes.passageiroSolicitarViagem,
+      arguments: SolicitarViagemRouteArgs(destinoInicial: result),
     );
   }
 
   Usuario? _resolverUsuario(PassageiroHomeState state) {
-    if (state is PassageiroHomeCarregada) return state.usuario ?? widget.usuario;
+    if (state is PassageiroHomeCarregada) {
+      return state.usuario ?? widget.usuario;
+    }
     if (state is PassageiroHomeLoading) return state.usuario ?? widget.usuario;
     if (state is PassageiroHomeErro) return state.usuario ?? widget.usuario;
     return widget.usuario;
@@ -258,5 +274,4 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
     final fim = SemanaUtil.fimSemanaUtil(inicio);
     return SemanaUtil.formatarIntervaloSemana(inicio, fim);
   }
-
 }

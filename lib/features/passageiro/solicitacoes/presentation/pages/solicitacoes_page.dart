@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../config/routes.dart';
+import '../../../../../core/navigation/app_route_observer.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../core/widgets/historico_filtro.dart';
@@ -41,8 +42,38 @@ class _SolicitacoesView extends StatefulWidget {
   State<_SolicitacoesView> createState() => _SolicitacoesViewState();
 }
 
-class _SolicitacoesViewState extends State<_SolicitacoesView> {
-  HistoricoFiltro _filtro = const HistoricoFiltro();
+class _SolicitacoesViewState extends State<_SolicitacoesView> with RouteAware {
+  ModalRoute<dynamic>? _observedRoute;
+  HistoricoFiltro _filtro = const HistoricoFiltro(
+    ordenacao: HistoricoOrdenacao.maisAntiga,
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route == null || route == _observedRoute) return;
+
+    if (_observedRoute != null) {
+      appRouteObserver.unsubscribe(this);
+    }
+
+    _observedRoute = route;
+    appRouteObserver.subscribe(this, route);
+  }
+
+  @override
+  void didPopNext() {
+    if (mounted) _carregar(context);
+  }
+
+  @override
+  void dispose() {
+    if (_observedRoute != null) {
+      appRouteObserver.unsubscribe(this);
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +192,6 @@ class _SolicitacoesViewState extends State<_SolicitacoesView> {
                       return _GrupoSolicitacoes(
                         status: SolicitacaoStatus.deDominio(entrada.key),
                         solicitacoes: entrada.value,
-                        onRecarregar: () => _carregar(context),
                       );
                     }, childCount: entradas.length),
                   ),
@@ -312,13 +342,8 @@ class _SolicitacoesHeader extends StatelessWidget {
 class _GrupoSolicitacoes extends StatelessWidget {
   final SolicitacaoStatus status;
   final List<Solicitacao> solicitacoes;
-  final VoidCallback onRecarregar;
 
-  const _GrupoSolicitacoes({
-    required this.status,
-    required this.solicitacoes,
-    required this.onRecarregar,
-  });
+  const _GrupoSolicitacoes({required this.status, required this.solicitacoes});
 
   @override
   Widget build(BuildContext context) {
@@ -369,17 +394,12 @@ class _GrupoSolicitacoes extends StatelessWidget {
     );
   }
 
-  Future<void> _abrirDetalhe(
-    BuildContext context,
-    Solicitacao solicitacao,
-  ) async {
-    await Navigator.pushNamed(
+  void _abrirDetalhe(BuildContext context, Solicitacao solicitacao) {
+    Navigator.pushNamed(
       context,
       AppRoutes.passageiroDetalheSolicitacao,
       arguments: solicitacao.id,
     );
-
-    onRecarregar();
   }
 
   String _dataCurta(DateTime data) {

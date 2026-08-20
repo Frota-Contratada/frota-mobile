@@ -5,9 +5,15 @@ class ItemCatalogo extends Equatable {
   final String nome;
 
   final String? tipo;
+  final int? capacidadePassageiros;
 
-  const ItemCatalogo({required this.id, required this.nome, this.tipo});
+  const ItemCatalogo({
+    required this.id,
+    required this.nome,
+    this.tipo,
+    this.capacidadePassageiros,
+  });
 
   @override
-  List<Object?> get props => [id, nome, tipo];
+  List<Object?> get props => [id, nome, tipo, capacidadePassageiros];
 }

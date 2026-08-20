@@ -38,11 +38,18 @@ class SolicitarObjetoStep2Page extends StatefulWidget {
 }
 
 class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
-
   String? _objeto;
   String? _veiculo;
   bool _objetoExpandido = false;
   bool _veiculoExpandido = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final draft = context.read<CriarSolicitacaoBloc>().state.rascunho;
+    _objeto = draft.motivoNome;
+    _veiculo = draft.veiculoNome;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -278,22 +285,20 @@ class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
 
   void _avancar() {
     final bloc = context.read<CriarSolicitacaoBloc>();
-    bloc.add(
-      SimulacaoSolicitada(
-        RascunhoSolicitacao(
-          data: widget.data,
-          horario: widget.horario,
-          motivoNome: _objeto,
-          veiculoNome: _veiculo,
-          centrosCusto: widget.centrosCusto,
-          origemDescricao: widget.origem,
-          origemPoint: widget.origemPoint,
-          destinoDescricao: widget.destino,
-          destinoPoint: widget.destinoPoint,
-          objeto: true,
-        ),
-      ),
+    final draft = bloc.state.rascunho.copyWith(
+      data: widget.data,
+      horario: widget.horario,
+      motivoNome: _objeto,
+      veiculoNome: _veiculo,
+      centrosCusto: List<String>.of(widget.centrosCusto),
+      origemDescricao: widget.origem,
+      origemPoint: widget.origemPoint,
+      destinoDescricao: widget.destino,
+      destinoPoint: widget.destinoPoint,
+      objeto: true,
     );
+    bloc.add(SolicitacaoRascunhoAtualizado(draft));
+    bloc.add(SimulacaoSolicitada(draft.toRascunho()));
 
     Navigator.push(
       context,
