@@ -19,6 +19,13 @@ class CorridaRepositoryImpl implements CorridaRepository {
     return _handleRemoteCall(() => remoteDatasource.iniciarCorrida(corridaId));
   }
 
+  @override
+  Future<CorridaDetalhe> recusarCorrida(String corridaId, String motivo) {
+    return _handleRemoteCall(
+      () => remoteDatasource.recusarCorrida(corridaId, motivo),
+    );
+  }
+
   Future<T> _handleRemoteCall<T>(Future<T> Function() call) async {
     try {
       return await call();

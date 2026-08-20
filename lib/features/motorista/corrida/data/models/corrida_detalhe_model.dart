@@ -12,6 +12,7 @@ class CorridaDetalheModel extends CorridaDetalhe {
     required super.valorEstimado,
     super.ehProxima,
     super.minutosRestantes,
+    super.motivoRecusa,
   });
 
   factory CorridaDetalheModel.fromJson(Map<String, dynamic> json) {
@@ -30,6 +31,7 @@ class CorridaDetalheModel extends CorridaDetalhe {
       'valorEstimado': valorEstimado,
       'ehProxima': ehProxima,
       'minutosRestantes': minutosRestantes,
+      'motivoRecusa': motivoRecusa,
     };
   }
 }

@@ -9,6 +9,7 @@ class CorridaDetalhe extends Equatable {
   final double valorEstimado;
   final bool ehProxima;
   final int? minutosRestantes;
+  final String? motivoRecusa;
 
   const CorridaDetalhe({
     required this.id,
@@ -19,6 +20,7 @@ class CorridaDetalhe extends Equatable {
     required this.valorEstimado,
     this.ehProxima = false,
     this.minutosRestantes,
+    this.motivoRecusa,
   });
 
   @override
@@ -31,5 +33,6 @@ class CorridaDetalhe extends Equatable {
     valorEstimado,
     ehProxima,
     minutosRestantes,
+    motivoRecusa,
   ];
 }

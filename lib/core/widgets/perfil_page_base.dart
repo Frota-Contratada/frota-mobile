@@ -17,6 +17,7 @@ class PerfilPageBase extends StatelessWidget {
   final int transportesDeItens;
   final VoidCallback onVoltar;
   final bool mostrarBotaoVoltar;
+  final bool mostrarLinhaAbaixoDoHeader;
   final String? buscaTexto;
   final ValueChanged<String>? onBuscaChanged;
   final VoidCallback? onFiltroTap;
@@ -31,6 +32,7 @@ class PerfilPageBase extends StatelessWidget {
     required this.transportesDeItens,
     required this.onVoltar,
     this.mostrarBotaoVoltar = true,
+    this.mostrarLinhaAbaixoDoHeader = false,
     this.avatarAssetPath,
     this.avatarDataUrl,
     this.buscaTexto,
@@ -46,7 +48,14 @@ class PerfilPageBase extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            if (mostrarBotaoVoltar) _PerfilHeader(onVoltar: onVoltar),
+            if (mostrarBotaoVoltar) ...[
+              _PerfilHeader(onVoltar: onVoltar),
+              if (mostrarLinhaAbaixoDoHeader)
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(25, 15, 25, 0),
+                  child: Divider(color: AppColors.borderGrey, height: 1),
+                ),
+            ],
             Expanded(
               child: SingleChildScrollView(
                 child: Column(

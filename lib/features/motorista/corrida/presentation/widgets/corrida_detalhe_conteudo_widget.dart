@@ -14,14 +14,18 @@ class CorridaDetalheConteudoWidget extends StatelessWidget {
   final CorridaDetalhe corrida;
   final VoidCallback onVoltar;
   final VoidCallback? onIniciarCorrida;
+  final VoidCallback? onRecusarCorrida;
   final bool isIniciando;
+  final bool isRecusando;
 
   const CorridaDetalheConteudoWidget({
     super.key,
     required this.corrida,
     required this.onVoltar,
     this.onIniciarCorrida,
+    this.onRecusarCorrida,
     this.isIniciando = false,
+    this.isRecusando = false,
   });
 
   @override
@@ -107,8 +111,33 @@ class CorridaDetalheConteudoWidget extends StatelessWidget {
         ),
         if (corrida.ehProxima) ...[
           CorridaIniciarButtonWidget(
-            onPressed: onIniciarCorrida,
+            onPressed: isRecusando ? null : onIniciarCorrida,
             isLoading: isIniciando,
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 83),
+            child: SizedBox(
+              height: 48,
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: isIniciando || isRecusando ? null : onRecusarCorrida,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red.shade700,
+                  side: BorderSide(color: Colors.red.shade700),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+                child: isRecusando
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Recusar corrida'),
+              ),
+            ),
           ),
           const SizedBox(height: 57),
         ],

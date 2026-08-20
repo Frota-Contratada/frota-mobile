@@ -35,6 +35,56 @@ class _CorridaDetalheContent extends StatefulWidget {
 }
 
 class _CorridaDetalheContentState extends State<_CorridaDetalheContent> {
+  Future<void> _abrirDialogoRecusa(String corridaId) async {
+    final controller = TextEditingController();
+    final motivo = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        String? erro;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Recusar corrida'),
+              content: TextField(
+                controller: controller,
+                maxLines: 4,
+                maxLength: 500,
+                decoration: InputDecoration(
+                  hintText: 'Informe o motivo da recusa',
+                  errorText: erro,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final valor = controller.text.trim();
+                    if (valor.length < 5) {
+                      setState(() => erro = 'Informe ao menos 5 caracteres');
+                      return;
+                    }
+                    Navigator.of(dialogContext).pop(valor);
+                  },
+                  child: const Text('Recusar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    controller.dispose();
+
+    if (!mounted || motivo == null) return;
+    context.read<CorridaBloc>().add(
+      CorridaRecusarSolicitado(corridaId: corridaId, motivo: motivo),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -62,6 +112,16 @@ class _CorridaDetalheContentState extends State<_CorridaDetalheContent> {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Corrida iniciada com sucesso!'),
+                  backgroundColor: CorridaColors.primaryBlue,
+                ),
+              );
+              Navigator.of(context).pop(true);
+            }
+
+            if (state is CorridaRecusada) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Corrida recusada com sucesso.'),
                   backgroundColor: CorridaColors.primaryBlue,
                 ),
               );
@@ -131,7 +191,11 @@ class _CorridaDetalheContentState extends State<_CorridaDetalheContent> {
                       CorridaIniciarSolicitado(corridaId: corrida.id),
                     )
                   : null,
+              onRecusarCorrida: corrida.ehProxima
+                  ? () => _abrirDialogoRecusa(corrida.id)
+                  : null,
               isIniciando: state is CorridaIniciando,
+              isRecusando: state is CorridaRecusando,
             );
           },
         ),

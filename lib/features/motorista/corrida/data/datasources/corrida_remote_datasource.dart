@@ -9,6 +9,8 @@ abstract class CorridaRemoteDatasource {
   Future<CorridaDetalheModel> buscarDetalhes(String corridaId);
 
   Future<CorridaDetalheModel> iniciarCorrida(String corridaId);
+
+  Future<CorridaDetalheModel> recusarCorrida(String corridaId, String motivo);
 }
 
 /// Mantido para testes locais de apresentação; a injeção usa a implementação real.
@@ -42,6 +44,24 @@ class CorridaRemoteDatasourceMock implements CorridaRemoteDatasource {
     }
     return corrida;
   }
+
+  @override
+  @override
+  Future<CorridaDetalheModel> recusarCorrida(
+    String corridaId,
+    String motivo,
+  ) async {
+    final corrida = await buscarDetalhes(corridaId);
+    return CorridaDetalheModel(
+      id: corrida.id,
+      dataHoraPartida: corrida.dataHoraPartida,
+      origem: corrida.origem,
+      destino: corrida.destino,
+      nomePassageiro: corrida.nomePassageiro,
+      valorEstimado: corrida.valorEstimado,
+      motivoRecusa: motivo,
+    );
+  }
 }
 
 class CorridaRemoteDatasourceImpl implements CorridaRemoteDatasource {
@@ -74,6 +94,22 @@ class CorridaRemoteDatasourceImpl implements CorridaRemoteDatasource {
       final dados = response.data?['response'];
       if (dados is Map<String, dynamic>) return _mapResponse(response.data);
       return buscarDetalhes(corridaId);
+    } on DioException catch (e) {
+      throw mapDioException(e);
+    }
+  }
+
+  @override
+  Future<CorridaDetalheModel> recusarCorrida(
+    String corridaId,
+    String motivo,
+  ) async {
+    try {
+      final response = await dio.post<Map<String, dynamic>>(
+        '$corridasBaseUrl/$corridaId/recusar',
+        data: {'motivo': motivo},
+      );
+      return _mapResponse(response.data);
     } on DioException catch (e) {
       throw mapDioException(e);
     }

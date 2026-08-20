@@ -7,6 +7,7 @@ class CorridaDetalheResponseDto {
   final double valorEstimado;
   final bool ehProxima;
   final int? minutosRestantes;
+  final String? motivoRecusa;
 
   const CorridaDetalheResponseDto({
     required this.id,
@@ -17,6 +18,7 @@ class CorridaDetalheResponseDto {
     required this.valorEstimado,
     this.ehProxima = false,
     this.minutosRestantes,
+    this.motivoRecusa,
   });
 
   factory CorridaDetalheResponseDto.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class CorridaDetalheResponseDto {
       valorEstimado: (json['valorEstimado'] as num?)?.toDouble() ?? 0,
       ehProxima: json['ehProxima'] as bool? ?? false,
       minutosRestantes: (json['minutosRestantes'] as num?)?.toInt(),
+      motivoRecusa: json['motivoRecusa'] as String?,
     );
   }
 }

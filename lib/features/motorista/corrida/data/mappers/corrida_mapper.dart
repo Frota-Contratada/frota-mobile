@@ -14,6 +14,7 @@ class CorridaMapper {
       valorEstimado: dto.valorEstimado,
       ehProxima: dto.ehProxima,
       minutosRestantes: dto.minutosRestantes,
+      motivoRecusa: dto.motivoRecusa,
     );
   }
 }
