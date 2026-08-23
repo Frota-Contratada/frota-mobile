@@ -524,10 +524,6 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
     return SolicitacaoDropdownOptionsWidget(
       options: motivos,
       selected: _motivo,
-      optionIcons: const [
-        AppAssets.iconMotivo,
-        AppAssets.iconMotivoInterrogacao,
-      ],
       onSelected: _selecionarMotivo,
     );
   }
