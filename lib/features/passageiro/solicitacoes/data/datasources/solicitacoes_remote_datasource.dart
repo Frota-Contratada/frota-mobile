@@ -15,6 +15,7 @@ abstract class SolicitacoesRemoteDatasource {
     int page,
     int limit,
     bool historico,
+    bool incluirAnteriores,
   });
 
   Future<Solicitacao> buscar(int id);
@@ -44,6 +45,7 @@ class SolicitacoesRemoteDatasourceImpl implements SolicitacoesRemoteDatasource {
     int page = 1,
     int limit = 50,
     bool historico = false,
+    bool incluirAnteriores = false,
   }) async {
     try {
       final response = await dio.get<Map<String, dynamic>>(
@@ -56,6 +58,7 @@ class SolicitacoesRemoteDatasourceImpl implements SolicitacoesRemoteDatasource {
             'dataInicio': dataInicio.toUtc().toIso8601String(),
           if (dataFim != null) 'dataFim': dataFim.toUtc().toIso8601String(),
           if (historico) 'historico': 'true',
+          if (incluirAnteriores) 'incluirAnteriores': 'true',
         },
       );
 

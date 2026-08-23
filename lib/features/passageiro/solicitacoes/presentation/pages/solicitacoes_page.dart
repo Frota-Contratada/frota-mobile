@@ -169,18 +169,6 @@ class _SolicitacoesViewState extends State<_SolicitacoesView> with RouteAware {
                 final carregada = state as SolicitacoesCarregada;
                 final grupos = _agruparSolicitacoes(carregada.solicitacoes);
 
-                if (grupos.isEmpty) {
-                  return const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: EmptyStateWidget(
-                      icon: Icons.inbox_rounded,
-                      mensagem: 'Nenhuma solicitação encontrada',
-                      submensagem:
-                          'Ajuste os filtros ou toque em solicitar na home.',
-                    ),
-                  );
-                }
-
                 final entradas = grupos.entries.toList();
 
                 return SliverPadding(
@@ -229,9 +217,14 @@ class _SolicitacoesViewState extends State<_SolicitacoesView> with RouteAware {
       StatusSolicitacao.cancelada,
     ];
 
+    final statusSelecionado = _statusSelecionado;
+    final statusVisiveis = statusSelecionado == null
+        ? ordem
+        : <StatusSolicitacao>[statusSelecionado];
+
     return {
-      for (final status in ordem)
-        if (grupos[status]?.isNotEmpty ?? false) status: grupos[status]!,
+      for (final status in statusVisiveis)
+        status: grupos[status] ?? const <Solicitacao>[],
     };
   }
 
@@ -240,6 +233,14 @@ class _SolicitacoesViewState extends State<_SolicitacoesView> with RouteAware {
     final resultado = await FiltroHistoricoBottomSheet.show(
       context,
       inicial: _filtro,
+      mostrarStatus: true,
+      statusOpcoes: const [
+        FiltroStatusOpcao(codigo: 'A', label: 'Aprovadas'),
+        FiltroStatusOpcao(codigo: 'P', label: 'Pendentes'),
+        FiltroStatusOpcao(codigo: 'R', label: 'Reprovadas'),
+        FiltroStatusOpcao(codigo: 'C', label: 'Canceladas'),
+      ],
+      titulo: 'Filtrar solicitações',
     );
 
     if (!mounted || resultado == null) return;
@@ -376,20 +377,45 @@ class _GrupoSolicitacoes extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        ...solicitacoes.map(
-          (solicitacao) => Padding(
+        if (solicitacoes.isEmpty)
+          Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            child: SolicitacaoCardWidget(
-              destino: solicitacao.destino.descricao,
-              status: status,
-              data: _dataCurta(solicitacao.dataCorrida),
-              horarioPartida: formatarHorarioSolicitacao(
-                solicitacao.dataCorrida,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  status.mensagemVazia,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textMediumGrey,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  status.submensagemVazia,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textMediumGrey,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          ...solicitacoes.map(
+            (solicitacao) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: SolicitacaoCardWidget(
+                destino: solicitacao.destino.descricao,
+                status: status,
+                data: _dataCurta(solicitacao.dataCorrida),
+                horarioPartida: formatarHorarioSolicitacao(
+                  solicitacao.dataCorrida,
+                ),
+                onVerDetalhes: () => _abrirDetalhe(context, solicitacao),
               ),
-              onVerDetalhes: () => _abrirDetalhe(context, solicitacao),
             ),
           ),
-        ),
       ],
     );
   }

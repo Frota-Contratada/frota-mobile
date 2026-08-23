@@ -10,6 +10,7 @@ abstract class SolicitacoesRepository {
     int page,
     int limit,
     bool historico,
+    bool incluirAnteriores,
   });
 
   Future<Solicitacao> buscar(int id);

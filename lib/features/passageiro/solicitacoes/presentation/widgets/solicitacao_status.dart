@@ -42,6 +42,22 @@ enum SolicitacaoStatus {
     }
   }
 
+  String get mensagemVazia {
+    switch (this) {
+      case SolicitacaoStatus.aprovada:
+        return 'Não há solicitações aprovadas';
+      case SolicitacaoStatus.pendente:
+        return 'Não há solicitações pendentes';
+      case SolicitacaoStatus.reprovada:
+        return 'Não há solicitações reprovadas';
+      case SolicitacaoStatus.cancelada:
+        return 'Não há solicitações canceladas';
+    }
+  }
+
+  String get submensagemVazia =>
+      'Nenhuma corrida deste status no período selecionado.';
+
   Color get cor {
     switch (this) {
       case SolicitacaoStatus.aprovada:

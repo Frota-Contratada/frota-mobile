@@ -21,6 +21,7 @@ class SolicitacoesRepositoryImpl implements SolicitacoesRepository {
     int page = 1,
     int limit = 50,
     bool historico = false,
+    bool incluirAnteriores = false,
   }) {
     return _handleRemoteCall(
       () => remoteDatasource.buscarVarias(
@@ -30,6 +31,7 @@ class SolicitacoesRepositoryImpl implements SolicitacoesRepository {
         page: page,
         limit: limit,
         historico: historico,
+        incluirAnteriores: incluirAnteriores,
       ),
     );
   }

@@ -14,6 +14,7 @@ class BuscarSolicitacoesUsecase {
     int page = 1,
     int limit = 50,
     bool historico = false,
+    bool incluirAnteriores = false,
   }) {
     return repository.buscarVarias(
       status: status,
@@ -22,6 +23,7 @@ class BuscarSolicitacoesUsecase {
       page: page,
       limit: limit,
       historico: historico,
+      incluirAnteriores: incluirAnteriores,
     );
   }
 }

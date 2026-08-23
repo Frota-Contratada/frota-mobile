@@ -137,6 +137,10 @@ class SolicitarObjetoRevisaoPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 26),
                     BlocConsumer<CriarSolicitacaoBloc, CriarSolicitacaoState>(
+                      listenWhen: (previous, current) =>
+                          (previous.criada == null && current.criada != null) ||
+                          (previous.erro != current.erro &&
+                              current.erro != null),
                       listener: _reagirAoEnvio,
                       builder: (context, state) =>
                           SolicitacaoPrimaryButtonWidget(
