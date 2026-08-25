@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'config/env_loader.dart';
+import 'core/navigation/app_route_observer.dart';
 import 'config/themes.dart';
 import 'config/routes.dart';
 import 'features/auth/presentation/bloc/auth.bloc.dart';
@@ -14,10 +15,11 @@ import 'features/motorista/perfil/presentation/pages/perfil_page.dart';
 import 'features/passageiro/configuracoes/presentation/pages/configuracoes_page.dart';
 import 'features/passageiro/corrida/presentation/pages/corrida_andamento_page.dart';
 import 'features/passageiro/shared/presentation/pages/passageiro_shell_page.dart';
+import 'features/passageiro/solicitacao/presentation/bloc/criar_solicitacao.bloc.dart';
 import 'features/passageiro/solicitacao/presentation/pages/solicitar_viagem_page.dart';
+import 'features/passageiro/solicitacao/presentation/pages/solicitar_viagem_route_args.dart';
 import 'features/passageiro/solicitacao/presentation/pages/solicitar_objeto_page.dart';
 import 'features/passageiro/solicitacoes/presentation/pages/detalhe_solicitacao_page.dart';
-import 'features/passageiro/solicitacoes/presentation/widgets/solicitacao_status.dart';
 import 'injection_container/injection_container.dart';
 
 Future<void> main() async {
@@ -37,12 +39,13 @@ class FrotaApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       themeMode: ThemeMode.light,
+      navigatorObservers: [appRouteObserver],
       initialRoute: AppRoutes.login,
       routes: {
         AppRoutes.login: (_) => BlocProvider(
-              create: (_) => sl<AuthBloc>(),
-              child: const LoginPage(),
-            ),
+          create: (_) => sl<AuthBloc>(),
+          child: const LoginPage(),
+        ),
         AppRoutes.motoristaHome: (_) => const HomePage(),
         AppRoutes.motoristaCorridaDetalhe: (_) => const CorridaDetalhePage(),
         AppRoutes.motoristaPerfil: (_) => const MotoristPerfilPage(),
@@ -55,39 +58,44 @@ class FrotaApp extends StatelessWidget {
         },
         AppRoutes.passageiroConfiguracoes: (_) =>
             const PassageiroConfiguracoesPage(),
-        AppRoutes.passageiroSolicitarViagem: (_) =>
-            const SolicitarViagemPage(),
-        AppRoutes.passageiroSolicitarObjeto: (_) =>
-            const SolicitarObjetoPage(),
+        // O bloc é criado na entrada do wizard e repassado aos passos
+        // seguintes, para que catálogos e envio compartilhem o mesmo estado.
+        AppRoutes.passageiroSolicitarViagem: (context) {
+          final arguments = ModalRoute.of(context)?.settings.arguments;
+          final routeArgs = arguments is SolicitarViagemRouteArgs
+              ? arguments
+              : null;
+
+          return BlocProvider(
+            create: (_) =>
+                sl<CriarSolicitacaoBloc>()..add(const CatalogosSolicitados()),
+            child: SolicitarViagemPage(routeArgs: routeArgs),
+          );
+        },
+        AppRoutes.passageiroSolicitarObjeto: (_) => BlocProvider(
+          create: (_) =>
+              sl<CriarSolicitacaoBloc>()..add(const CatalogosSolicitados()),
+          child: const SolicitarObjetoPage(),
+        ),
         AppRoutes.passageiroCorridaAndamento: (context) {
-          final args = ModalRoute.of(context)?.settings.arguments
-              as Map<String, dynamic>?;
+          final args =
+              ModalRoute.of(context)?.settings.arguments
+                  as Map<String, dynamic>?;
           return CorridaAndamentoPage(
             origem: args?['origem'] as String? ?? '',
             destino: args?['destino'] as String? ?? '',
+            motoristaNome: args?['motoristaNome'] as String?,
+            placaVeiculo: args?['placaVeiculo'] as String?,
             origemPoint: args?['origemPoint'] as MapPoint?,
             destinoPoint: args?['destinoPoint'] as MapPoint?,
           );
         },
         AppRoutes.passageiroDetalheSolicitacao: (context) {
-          final args = ModalRoute.of(context)?.settings.arguments
-              as Map<String, dynamic>?;
+          // A tela carrega os dados pelo id; telas que ainda usam mock passam
+          // outro tipo de argumento e caem no estado de indisponível.
+          final args = ModalRoute.of(context)?.settings.arguments;
           return DetalheSolicitacaoPage(
-            status: args?['status'] as SolicitacaoStatus? ??
-                SolicitacaoStatus.aprovada,
-            origem: args?['origem'] as String? ?? '',
-            destino: args?['destino'] as String? ?? '',
-            data: args?['data'] as String? ?? '',
-            horarioPartida: args?['horarioPartida'] as String? ?? '',
-            horarioChegada: args?['horarioChegada'] as String?,
-            valor: args?['valor'] as String?,
-            motivo: args?['motivo'] as String?,
-            motivoReprovacao: args?['motivoReprovacao'] as String?,
-            motorista: args?['motorista'] as String?,
-            placa: args?['placa'] as String?,
-            corridaRealizada: args?['corridaRealizada'] as bool? ?? false,
-            origemPoint: args?['origemPoint'] as MapPoint?,
-            destinoPoint: args?['destinoPoint'] as MapPoint?,
+            solicitacaoId: args is int ? args : null,
           );
         },
       },

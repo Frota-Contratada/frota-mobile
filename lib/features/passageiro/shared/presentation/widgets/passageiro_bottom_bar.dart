@@ -47,8 +47,8 @@ class PassageiroBottomBar extends StatelessWidget {
               child: _NavItem(
                 label: 'perfil',
                 iconPath: PassageiroAssets.bottomBarPerfil,
-                iconWidth: 33,
-                iconHeight: 35,
+                iconWidth: 28,
+                iconHeight: 30,
                 ativo: destinoAtivo == PassageiroNavDestino.perfil,
                 onTap: () => onDestinoSelecionado(PassageiroNavDestino.perfil),
               ),

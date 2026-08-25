@@ -7,13 +7,14 @@ class CorridaMapper {
   ) {
     return CorridaDetalheModel(
       id: dto.id,
-      dataHoraPartida: DateTime.parse(dto.dataHoraPartida),
+      dataHoraPartida: DateTime.parse(dto.dataHoraPartida).toLocal(),
       origem: dto.origem,
       destino: dto.destino,
       nomePassageiro: dto.nomePassageiro,
       valorEstimado: dto.valorEstimado,
       ehProxima: dto.ehProxima,
       minutosRestantes: dto.minutosRestantes,
+      motivoRecusa: dto.motivoRecusa,
     );
   }
 }

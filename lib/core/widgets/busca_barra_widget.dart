@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../config/app_assets.dart';
 import 'app_colors.dart';
 
-/// Barra de busca no padrão do Figma (Perfil): campo pílula com borda cinza
-/// e, opcionalmente, botão circular azul à direita, ambos com a mesma altura.
 class BuscaBarraWidget extends StatelessWidget {
   static const double altura = 40;
 
@@ -91,7 +89,7 @@ class BuscaBarraWidget extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (suffixIcon != null) suffixIcon!,
+                  ?suffixIcon,
                   const SizedBox(width: 12),
                 ],
               ),
@@ -108,11 +106,7 @@ class BuscaBarraWidget extends StatelessWidget {
                 child: SizedBox(
                   width: altura,
                   height: altura,
-                  child: Icon(
-                    iconeBotaoAcao,
-                    color: AppColors.white,
-                    size: 18,
-                  ),
+                  child: Icon(iconeBotaoAcao, color: AppColors.white, size: 18),
                 ),
               ),
             ),

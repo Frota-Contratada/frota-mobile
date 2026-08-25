@@ -33,16 +33,11 @@ void registerAuthDependencies(GetIt sl) {
     return dio;
   });
 
-  // A API é priorizada. O mock só entra para os usuários de teste quando
-  // a API estiver indisponível.
   sl.registerLazySingleton<AuthRemoteDatasource>(
-    () => AuthRemoteDatasourceFallback(
-      primary: AuthRemoteDatasourceImpl(
-        dio: sl(),
-        authBaseUrl: Env.authBaseUrl,
-        usuarioBaseUrl: Env.usuarioBaseUrl,
-      ),
-      mock: AuthRemoteDatasourceMock(),
+    () => AuthRemoteDatasourceImpl(
+      dio: sl(),
+      authBaseUrl: Env.authBaseUrl,
+      usuarioInfoBaseUrl: Env.usuarioInfoBaseUrl,
     ),
   );
 

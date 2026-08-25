@@ -12,6 +12,7 @@ class CorridaDetalheModel extends CorridaDetalhe {
     required super.valorEstimado,
     super.ehProxima,
     super.minutosRestantes,
+    super.motivoRecusa,
   });
 
   factory CorridaDetalheModel.fromJson(Map<String, dynamic> json) {
@@ -23,13 +24,14 @@ class CorridaDetalheModel extends CorridaDetalhe {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'data_hora_partida': dataHoraPartida.toIso8601String(),
+      'dataHoraPartida': dataHoraPartida.toIso8601String(),
       'origem': origem,
       'destino': destino,
-      'nome_passageiro': nomePassageiro,
-      'valor_estimado': valorEstimado,
-      'eh_proxima': ehProxima,
-      'minutos_restantes': minutosRestantes,
+      'nomePassageiro': nomePassageiro,
+      'valorEstimado': valorEstimado,
+      'ehProxima': ehProxima,
+      'minutosRestantes': minutosRestantes,
+      'motivoRecusa': motivoRecusa,
     };
   }
 }

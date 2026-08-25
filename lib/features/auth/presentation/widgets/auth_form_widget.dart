@@ -46,6 +46,7 @@ class AuthBottomCard extends StatelessWidget {
         color: AuthColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
       ),
+      clipBehavior: Clip.antiAlias,
       child: child,
     );
   }
@@ -59,15 +60,11 @@ class AuthBrandTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Image.asset(
-          'assets/icons/logo_seara_jbs.png',
-          height: 64,
-        ),
-      ],
+      children: [Image.asset('assets/icons/logo_seara_jbs.png', height: 64)],
     );
   }
 }
+
 // Input padrão com label acima
 class AppInput extends StatefulWidget {
   final String label;
@@ -113,10 +110,7 @@ class _AppInputState extends State<AppInput> {
 
         floatingLabelBehavior: FloatingLabelBehavior.auto,
 
-        labelStyle: const TextStyle(
-          color: AuthColors.textGrey,
-          fontSize: 12,
-        ),
+        labelStyle: const TextStyle(color: AuthColors.textGrey, fontSize: 12),
 
         floatingLabelStyle: const TextStyle(
           color: AuthColors.textGrey,
@@ -124,8 +118,7 @@ class _AppInputState extends State<AppInput> {
         ),
 
         filled: true,
-        fillColor:
-            widget.enabled ? AuthColors.white : AuthColors.background,
+        fillColor: widget.enabled ? AuthColors.white : AuthColors.background,
 
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -134,46 +127,32 @@ class _AppInputState extends State<AppInput> {
 
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: AuthColors.inputBorder,
-          ),
+          borderSide: const BorderSide(color: AuthColors.inputBorder),
         ),
 
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: AuthColors.inputBorder,
-          ),
+          borderSide: const BorderSide(color: AuthColors.inputBorder),
         ),
 
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: AuthColors.primaryBlue,
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: AuthColors.primaryBlue, width: 2),
         ),
 
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: AuthColors.inputBorder,
-          ),
+          borderSide: const BorderSide(color: AuthColors.inputBorder),
         ),
 
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: AuthColors.error,
-          ),
+          borderSide: const BorderSide(color: AuthColors.error),
         ),
 
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: AuthColors.error,
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: AuthColors.error, width: 2),
         ),
 
         suffixIcon: widget.isPassword
@@ -236,7 +215,10 @@ class AuthPrimaryButton extends StatelessWidget {
               )
             : Text(
                 label,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
       ),
     );

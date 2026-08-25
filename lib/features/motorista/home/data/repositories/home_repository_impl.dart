@@ -1,5 +1,5 @@
 import '../../../../../core/error/exceptions.dart';
-import '../../../../../core/error/failures.dart';
+import '../../../../../core/error/failure_mapper.dart';
 import '../../domain/entities/corrida.dart';
 import '../../domain/repositories/home_repository.dart';
 import '../datasources/home_remote_datasource.dart';
@@ -26,7 +26,7 @@ class HomeRepositoryImpl implements HomeRepository {
     try {
       return await call();
     } on ServerException catch (e) {
-      throw ServerFailure(e.message);
+      throw mapServerException(e);
     }
   }
 }

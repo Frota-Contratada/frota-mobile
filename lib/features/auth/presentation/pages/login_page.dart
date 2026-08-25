@@ -31,6 +31,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAutenticado) {
@@ -55,8 +56,11 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: 220),
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: AuthBottomCard(
+                    child: AuthBottomCard(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
+                        ),
                         child: _buildContent(context, state),
                       ),
                     ),
@@ -337,10 +341,7 @@ class _PinForm extends StatelessWidget {
               isLoading: isLoading,
               onPressed: () {
                 context.read<AuthBloc>().add(
-                  AuthPinSubmitted(
-                    email: email,
-                    pin: pinController.text,
-                  ),
+                  AuthPinSubmitted(email: email, pin: pinController.text),
                 );
               },
             ),

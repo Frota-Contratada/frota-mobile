@@ -131,14 +131,9 @@ class HomeRemoteDatasourceMock implements HomeRemoteDatasource {
         inicioSemana.month,
         inicioSemana.day,
       );
-      final fim = DateTime(
-        fimSemana.year,
-        fimSemana.month,
-        fimSemana.day,
-      );
+      final fim = DateTime(fimSemana.year, fimSemana.month, fimSemana.day);
       return !data.isBefore(inicio) && !data.isAfter(fim);
-    }).toList()
-      ..sort((a, b) => a.dataHoraPartida.compareTo(b.dataHoraPartida));
+    }).toList()..sort((a, b) => a.dataHoraPartida.compareTo(b.dataHoraPartida));
   }
 }
 
@@ -148,10 +143,7 @@ class HomeRemoteDatasourceImpl implements HomeRemoteDatasource {
   final Dio dio;
   final String viagensBaseUrl;
 
-  HomeRemoteDatasourceImpl({
-    required this.dio,
-    required this.viagensBaseUrl,
-  });
+  HomeRemoteDatasourceImpl({required this.dio, required this.viagensBaseUrl});
 
   @override
   Future<List<CorridaModel>> buscarViagensPorSemana({
@@ -159,22 +151,25 @@ class HomeRemoteDatasourceImpl implements HomeRemoteDatasource {
     required DateTime fimSemana,
   }) async {
     try {
-      final response = await dio.get(
+      final response = await dio.get<Map<String, dynamic>>(
         viagensBaseUrl,
         queryParameters: {
-          'inicio_semana': inicioSemana.toIso8601String(),
-          'fim_semana': fimSemana.toIso8601String(),
+          'inicio': inicioSemana.toUtc().toIso8601String(),
+          'fim': fimSemana.toUtc().toIso8601String(),
         },
       );
 
-      final lista = response.data as List<dynamic>;
+      final lista = response.data?['response'] as List<dynamic>? ?? const [];
       return lista
+          .whereType<Map<String, dynamic>>()
           .map(
-            (item) => HomeMapper.toCorridaModel(
-              CorridaResponseDto.fromJson(item as Map<String, dynamic>),
-            ),
+            (item) =>
+                HomeMapper.toCorridaModel(CorridaResponseDto.fromJson(item)),
           )
-          .toList();
+          .toList()
+        ..sort(
+          (uma, outra) => uma.dataHoraPartida.compareTo(outra.dataHoraPartida),
+        );
     } on DioException catch (e) {
       throw mapDioException(e);
     }

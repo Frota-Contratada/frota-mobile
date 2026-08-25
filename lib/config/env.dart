@@ -8,11 +8,19 @@ class Env {
 
   static String get usuarioBaseUrl => '$baseUrl/usuario';
 
+  static String get usuarioInfoBaseUrl => '$usuarioBaseUrl/info';
+
   static String get motoristaViagensBaseUrl => '$baseUrl/motorista/viagens';
 
   static String get motoristaCorridasBaseUrl => '$baseUrl/motorista/corridas';
 
+  static String get motoristaPerfilBaseUrl => '$baseUrl/motorista/perfil';
+
   static String get solicitacoesBaseUrl => '$baseUrl/solicitacoes';
+
+  static String get viagensBaseUrl => '$solicitacoesBaseUrl/viagens';
+
+  static String get centrosCustoBaseUrl => '$baseUrl/centro-de-custo';
 
   /// Servidor de roteirização usado para traçar o caminho mais rápido.
   ///

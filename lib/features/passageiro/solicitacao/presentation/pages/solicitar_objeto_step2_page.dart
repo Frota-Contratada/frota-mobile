@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../config/app_assets.dart';
 import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/app_map_widget.dart';
+import '../bloc/criar_solicitacao.bloc.dart';
 import '../widgets/solicitacao_dropdown_options_widget.dart';
 import '../widgets/solicitacao_input_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
@@ -36,19 +38,18 @@ class SolicitarObjetoStep2Page extends StatefulWidget {
 }
 
 class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
-  static const _veiculos = <String>['Moto', 'Carro', 'Van'];
-  static const _objetos = <String>[
-    'Documentos',
-    'Equipamentos',
-    'Encomendas',
-    'Materiais de escritório',
-    'Outros',
-  ];
-
   String? _objeto;
   String? _veiculo;
   bool _objetoExpandido = false;
   bool _veiculoExpandido = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final draft = context.read<CriarSolicitacaoBloc>().state.rascunho;
+    _objeto = draft.motivoNome;
+    _veiculo = draft.veiculoNome;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +194,6 @@ class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
     );
   }
 
-  /// Campo de seleção + lista de opções expansível, alinhada ao input.
   Widget _buildSelectField({
     required Widget field,
     required bool isOpen,
@@ -224,9 +224,15 @@ class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
   }
 
   Widget _buildObjetoField() {
+    final objetos = context
+        .watch<CriarSolicitacaoBloc>()
+        .state
+        .catalogos
+        .nomesObjetos;
+
     return _buildSelectField(
       isOpen: _objetoExpandido,
-      options: _objetos,
+      options: objetos,
       selected: _objeto,
       onSelected: (value) => setState(() {
         _objeto = value;
@@ -247,9 +253,15 @@ class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
   }
 
   Widget _buildVehicleField() {
+    final veiculos = context
+        .watch<CriarSolicitacaoBloc>()
+        .state
+        .catalogos
+        .nomesTiposVeiculo;
+
     return _buildSelectField(
       isOpen: _veiculoExpandido,
-      options: _veiculos,
+      options: veiculos,
       selected: _veiculo,
       onSelected: (value) => setState(() {
         _veiculo = value;
@@ -272,19 +284,38 @@ class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
   bool _podeAvancar() => _objeto != null && _veiculo != null;
 
   void _avancar() {
+    final bloc = context.read<CriarSolicitacaoBloc>();
+    final draft = bloc.state.rascunho.copyWith(
+      data: widget.data,
+      horario: widget.horario,
+      motivoNome: _objeto,
+      veiculoNome: _veiculo,
+      centrosCusto: List<String>.of(widget.centrosCusto),
+      origemDescricao: widget.origem,
+      origemPoint: widget.origemPoint,
+      destinoDescricao: widget.destino,
+      destinoPoint: widget.destinoPoint,
+      objeto: true,
+    );
+    bloc.add(SolicitacaoRascunhoAtualizado(draft));
+    bloc.add(SimulacaoSolicitada(draft.toRascunho()));
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => SolicitarObjetoRevisaoPage(
-          origem: widget.origem,
-          destino: widget.destino,
-          data: widget.data,
-          horario: widget.horario,
-          centrosCusto: widget.centrosCusto,
-          objeto: _objeto!,
-          veiculo: _veiculo!,
-          origemPoint: widget.origemPoint,
-          destinoPoint: widget.destinoPoint,
+        builder: (_) => BlocProvider.value(
+          value: bloc,
+          child: SolicitarObjetoRevisaoPage(
+            origem: widget.origem,
+            destino: widget.destino,
+            data: widget.data,
+            horario: widget.horario,
+            centrosCusto: widget.centrosCusto,
+            objeto: _objeto!,
+            veiculo: _veiculo!,
+            origemPoint: widget.origemPoint,
+            destinoPoint: widget.destinoPoint,
+          ),
         ),
       ),
     );

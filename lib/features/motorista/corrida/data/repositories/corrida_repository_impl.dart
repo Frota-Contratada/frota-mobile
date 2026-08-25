@@ -1,5 +1,5 @@
 import '../../../../../core/error/exceptions.dart';
-import '../../../../../core/error/failures.dart';
+import '../../../../../core/error/failure_mapper.dart';
 import '../../domain/entities/corrida_detalhe.dart';
 import '../../domain/repositories/corrida_repository.dart';
 import '../datasources/corrida_remote_datasource.dart';
@@ -11,15 +11,18 @@ class CorridaRepositoryImpl implements CorridaRepository {
 
   @override
   Future<CorridaDetalhe> buscarDetalhes(String corridaId) {
-    return _handleRemoteCall(
-      () => remoteDatasource.buscarDetalhes(corridaId),
-    );
+    return _handleRemoteCall(() => remoteDatasource.buscarDetalhes(corridaId));
   }
 
   @override
-  Future<void> iniciarCorrida(String corridaId) {
+  Future<CorridaDetalhe> iniciarCorrida(String corridaId) {
+    return _handleRemoteCall(() => remoteDatasource.iniciarCorrida(corridaId));
+  }
+
+  @override
+  Future<CorridaDetalhe> recusarCorrida(String corridaId, String motivo) {
     return _handleRemoteCall(
-      () => remoteDatasource.iniciarCorrida(corridaId),
+      () => remoteDatasource.recusarCorrida(corridaId, motivo),
     );
   }
 
@@ -27,7 +30,7 @@ class CorridaRepositoryImpl implements CorridaRepository {
     try {
       return await call();
     } on ServerException catch (e) {
-      throw ServerFailure(e.message);
+      throw mapServerException(e);
     }
   }
 }

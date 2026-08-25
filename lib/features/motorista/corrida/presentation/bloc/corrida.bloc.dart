@@ -4,6 +4,7 @@ import '../../../../../core/error/failures.dart';
 import '../../domain/entities/corrida_detalhe.dart';
 import '../../domain/usecases/buscar_corrida_detalhe_usecase.dart';
 import '../../domain/usecases/iniciar_corrida_usecase.dart';
+import '../../domain/usecases/recusar_corrida_usecase.dart';
 
 abstract class CorridaEvent extends Equatable {
   const CorridaEvent();
@@ -28,6 +29,19 @@ class CorridaIniciarSolicitado extends CorridaEvent {
 
   @override
   List<Object?> get props => [corridaId];
+}
+
+class CorridaRecusarSolicitado extends CorridaEvent {
+  final String corridaId;
+  final String motivo;
+
+  const CorridaRecusarSolicitado({
+    required this.corridaId,
+    required this.motivo,
+  });
+
+  @override
+  List<Object?> get props => [corridaId, motivo];
 }
 
 abstract class CorridaState extends Equatable {
@@ -68,14 +82,29 @@ class CorridaIniciada extends CorridaState {
   List<Object?> get props => [corrida];
 }
 
+class CorridaRecusando extends CorridaState {
+  final CorridaDetalhe corrida;
+
+  const CorridaRecusando({required this.corrida});
+
+  @override
+  List<Object?> get props => [corrida];
+}
+
+class CorridaRecusada extends CorridaState {
+  final CorridaDetalhe corrida;
+
+  const CorridaRecusada({required this.corrida});
+
+  @override
+  List<Object?> get props => [corrida];
+}
+
 class CorridaErro extends CorridaState {
   final String mensagem;
   final CorridaDetalhe? corrida;
 
-  const CorridaErro({
-    required this.mensagem,
-    this.corrida,
-  });
+  const CorridaErro({required this.mensagem, this.corrida});
 
   @override
   List<Object?> get props => [mensagem, corrida];
@@ -84,13 +113,16 @@ class CorridaErro extends CorridaState {
 class CorridaBloc extends Bloc<CorridaEvent, CorridaState> {
   final BuscarCorridaDetalheUsecase buscarCorridaDetalheUsecase;
   final IniciarCorridaUsecase iniciarCorridaUsecase;
+  final RecusarCorridaUsecase recusarCorridaUsecase;
 
   CorridaBloc({
     required this.buscarCorridaDetalheUsecase,
     required this.iniciarCorridaUsecase,
+    required this.recusarCorridaUsecase,
   }) : super(CorridaInitial()) {
     on<CorridaDetalheSolicitado>(_onDetalheSolicitado);
     on<CorridaIniciarSolicitado>(_onIniciarSolicitado);
+    on<CorridaRecusarSolicitado>(_onRecusarSolicitado);
   }
 
   Future<void> _onDetalheSolicitado(
@@ -105,9 +137,7 @@ class CorridaBloc extends Bloc<CorridaEvent, CorridaState> {
     } on Failure catch (e) {
       emit(CorridaErro(mensagem: e.message));
     } catch (e) {
-      emit(CorridaErro(
-        mensagem: e.toString().replaceAll('Exception: ', ''),
-      ));
+      emit(CorridaErro(mensagem: e.toString().replaceAll('Exception: ', '')));
     }
   }
 
@@ -121,18 +151,44 @@ class CorridaBloc extends Bloc<CorridaEvent, CorridaState> {
     emit(CorridaIniciando(corrida: corridaAtual));
 
     try {
-      await iniciarCorridaUsecase(event.corridaId);
-      emit(CorridaIniciada(corrida: corridaAtual));
+      final corrida = await iniciarCorridaUsecase(event.corridaId);
+      emit(CorridaIniciada(corrida: corrida));
     } on Failure catch (e) {
-      emit(CorridaErro(
-        mensagem: e.message,
-        corrida: corridaAtual,
-      ));
+      emit(CorridaErro(mensagem: e.message, corrida: corridaAtual));
     } catch (e) {
-      emit(CorridaErro(
-        mensagem: e.toString().replaceAll('Exception: ', ''),
-        corrida: corridaAtual,
-      ));
+      emit(
+        CorridaErro(
+          mensagem: e.toString().replaceAll('Exception: ', ''),
+          corrida: corridaAtual,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onRecusarSolicitado(
+    CorridaRecusarSolicitado event,
+    Emitter<CorridaState> emit,
+  ) async {
+    final corridaAtual = _resolverCorridaAtual(state);
+    if (corridaAtual == null) return;
+
+    emit(CorridaRecusando(corrida: corridaAtual));
+
+    try {
+      final corrida = await recusarCorridaUsecase(
+        event.corridaId,
+        event.motivo,
+      );
+      emit(CorridaRecusada(corrida: corrida));
+    } on Failure catch (e) {
+      emit(CorridaErro(mensagem: e.message, corrida: corridaAtual));
+    } catch (e) {
+      emit(
+        CorridaErro(
+          mensagem: e.toString().replaceAll('Exception: ', ''),
+          corrida: corridaAtual,
+        ),
+      );
     }
   }
 

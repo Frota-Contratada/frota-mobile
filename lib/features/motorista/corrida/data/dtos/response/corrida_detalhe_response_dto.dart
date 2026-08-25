@@ -7,6 +7,7 @@ class CorridaDetalheResponseDto {
   final double valorEstimado;
   final bool ehProxima;
   final int? minutosRestantes;
+  final String? motivoRecusa;
 
   const CorridaDetalheResponseDto({
     required this.id,
@@ -17,18 +18,20 @@ class CorridaDetalheResponseDto {
     required this.valorEstimado,
     this.ehProxima = false,
     this.minutosRestantes,
+    this.motivoRecusa,
   });
 
   factory CorridaDetalheResponseDto.fromJson(Map<String, dynamic> json) {
     return CorridaDetalheResponseDto(
-      id: json['id'] as String,
-      dataHoraPartida: json['data_hora_partida'] as String,
-      origem: json['origem'] as String,
-      destino: json['destino'] as String,
-      nomePassageiro: json['nome_passageiro'] as String,
-      valorEstimado: (json['valor_estimado'] as num).toDouble(),
-      ehProxima: json['eh_proxima'] as bool? ?? false,
-      minutosRestantes: json['minutos_restantes'] as int?,
+      id: (json['id'] as num?)?.toInt().toString() ?? json['id'].toString(),
+      dataHoraPartida: json['dataHoraPartida'] as String? ?? '',
+      origem: json['origem'] as String? ?? '',
+      destino: json['destino'] as String? ?? '',
+      nomePassageiro: json['nomePassageiro'] as String? ?? '',
+      valorEstimado: (json['valorEstimado'] as num?)?.toDouble() ?? 0,
+      ehProxima: json['ehProxima'] as bool? ?? false,
+      minutosRestantes: (json['minutosRestantes'] as num?)?.toInt(),
+      motivoRecusa: json['motivoRecusa'] as String?,
     );
   }
 }

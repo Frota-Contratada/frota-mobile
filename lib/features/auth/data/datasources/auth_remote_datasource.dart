@@ -39,12 +39,12 @@ abstract class AuthRemoteDatasource {
 class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
   final Dio dio;
   final String authBaseUrl;
-  final String usuarioBaseUrl;
+  final String usuarioInfoBaseUrl;
 
   AuthRemoteDatasourceImpl({
     required this.dio,
     required this.authBaseUrl,
-    required this.usuarioBaseUrl,
+    required this.usuarioInfoBaseUrl,
   });
 
   @override
@@ -86,7 +86,7 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
   @override
   Future<UsuarioModel> buscarUsuarioAtual() async {
     try {
-      final response = await dio.get('$usuarioBaseUrl/me');
+      final response = await dio.get('$usuarioInfoBaseUrl/me');
       final apiResponse = ApiResponseDto.fromJson(
         response.data as Map<String, dynamic>,
         UsuarioModel.fromJson,

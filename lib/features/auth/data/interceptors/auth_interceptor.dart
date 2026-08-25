@@ -26,11 +26,40 @@ class AuthInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    final token = await localDatasource.getAuthToken();
+    if (_isAuthRequest(options)) {
+      handler.next(options);
+      return;
+    }
+
+    var token = await localDatasource.getAuthToken();
+    if (token != null &&
+        token.refreshToken.isNotEmpty &&
+        !_accessTokenStillValid(token)) {
+      try {
+        final refreshedToken = await _refresh(token.refreshToken);
+        if (refreshedToken != null) {
+          await localDatasource.salvarAuthToken(refreshedToken);
+          token = refreshedToken;
+        }
+      } on Object {
+        // O fluxo de erro abaixo ainda poderá tratar um access token expirado.
+      }
+    }
+
     if (token != null && token.accessToken.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer ${token.accessToken}';
     }
     handler.next(options);
+  }
+
+  bool _accessTokenStillValid(AuthToken token) {
+    return token.expirationDate.isAfter(
+      DateTime.now().add(const Duration(seconds: 30)),
+    );
+  }
+
+  bool _isAuthRequest(RequestOptions request) {
+    return request.uri.path.startsWith(Uri.parse(authBaseUrl).path);
   }
 
   @override
@@ -73,13 +102,10 @@ class AuthInterceptor extends Interceptor {
   bool _shouldRefresh(DioException error) {
     final request = error.requestOptions;
     final statusCode = error.response?.statusCode;
-    final isAuthRequest = request.uri.path.startsWith(
-      Uri.parse(authBaseUrl).path,
-    );
 
     return statusCode == 401 &&
         request.extra[_retryKey] != true &&
-        !isAuthRequest;
+        !_isAuthRequest(request);
   }
 
   Future<AuthToken?> _refresh(String refreshToken) {

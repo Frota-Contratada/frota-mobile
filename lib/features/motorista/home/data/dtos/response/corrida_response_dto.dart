@@ -17,12 +17,12 @@ class CorridaResponseDto {
 
   factory CorridaResponseDto.fromJson(Map<String, dynamic> json) {
     return CorridaResponseDto(
-      id: json['id'] as String,
-      dataHoraPartida: json['data_hora_partida'] as String,
-      origem: json['origem'] as String,
-      destino: json['destino'] as String,
-      ehProxima: json['eh_proxima'] as bool? ?? false,
-      minutosRestantes: json['minutos_restantes'] as int?,
+      id: (json['id'] as num?)?.toInt().toString() ?? json['id'].toString(),
+      dataHoraPartida: json['dataHoraPartida'] as String? ?? '',
+      origem: json['origem'] as String? ?? '',
+      destino: json['destino'] as String? ?? '',
+      ehProxima: json['ehProxima'] as bool? ?? false,
+      minutosRestantes: (json['minutosRestantes'] as num?)?.toInt(),
     );
   }
 }

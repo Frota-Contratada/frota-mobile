@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../config/app_assets.dart';
 import 'app_colors.dart';
 import 'icone_configuracoes_button.dart';
 
-/// Header compartilhado entre as home pages de motorista e passageiro.
-/// Exibe avatar, saudação, subtítulo (transportadora/unidade) e ícone de configurações.
 class HomeHeaderWidget extends StatelessWidget {
   final String nome;
   final String subtitulo;
@@ -28,10 +25,7 @@ class HomeHeaderWidget extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          GestureDetector(
-            onTap: onAvatarTap,
-            child: _buildAvatar(),
-          ),
+          GestureDetector(onTap: onAvatarTap, child: _buildAvatar()),
           const SizedBox(width: 15),
           Expanded(
             child: Column(
