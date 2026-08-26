@@ -151,10 +151,7 @@ class AuthRemoteDatasourceFallback implements AuthRemoteDatasource {
   final AuthRemoteDatasource primary;
   final AuthRemoteDatasource mock;
 
-  AuthRemoteDatasourceFallback({
-    required this.primary,
-    required this.mock,
-  });
+  AuthRemoteDatasourceFallback({required this.primary, required this.mock});
 
   bool _isMockUser(String email) {
     return AuthMockUsuarios.buscarPorEmail(email) != null;

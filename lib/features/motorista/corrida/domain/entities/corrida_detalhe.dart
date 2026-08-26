@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../shared/trip_tracking/domain/entities/trip_tracking_snapshot.dart';
 
 class CorridaDetalhe extends Equatable {
   final String id;
@@ -10,6 +11,7 @@ class CorridaDetalhe extends Equatable {
   final bool ehProxima;
   final int? minutosRestantes;
   final String? motivoRecusa;
+  final TripTrackingSnapshot? trackingSnapshot;
 
   const CorridaDetalhe({
     required this.id,
@@ -21,6 +23,7 @@ class CorridaDetalhe extends Equatable {
     this.ehProxima = false,
     this.minutosRestantes,
     this.motivoRecusa,
+    this.trackingSnapshot,
   });
 
   @override
@@ -34,5 +37,6 @@ class CorridaDetalhe extends Equatable {
     ehProxima,
     minutosRestantes,
     motivoRecusa,
+    trackingSnapshot,
   ];
 }

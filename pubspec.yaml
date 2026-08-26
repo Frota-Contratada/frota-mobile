@@ -20,11 +20,15 @@ dependencies:
   geolocator: 14.0.3
   geocoding: 5.0.0
   maplibre_gl: 0.26.2
+  webview_flutter: ^4.14.1
+  url_launcher: ^6.3.2
+  socket_io_client: ^3.1.6
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  geocoding_platform_interface: ^5.0.0
 
 flutter:
   uses-material-design: true
@@ -37,4 +41,4 @@ flutter:
     - assets/images/passageiro/mapa_home.png
     - assets/images/passageiro/avatar_placeholder.png
     - assets/maps/
-    - .env
+    - .env.example

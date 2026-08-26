@@ -42,17 +42,15 @@ class OrigemDestinoTrajetoWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              Expanded(child: _campo(label: 'Origem', valor: origem)),
+              Expanded(
+                child: _campo(label: 'Origem', valor: origem),
+              ),
             ],
           ),
         ),
         Row(
           children: [
-            SizedBox(
-              width: _colunaIcone,
-              height: 16,
-              child: _linhaVertical(),
-            ),
+            SizedBox(width: _colunaIcone, height: 16, child: _linhaVertical()),
           ],
         ),
         Row(
@@ -74,7 +72,9 @@ class OrigemDestinoTrajetoWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            Expanded(child: _campo(label: 'Destino', valor: destino)),
+            Expanded(
+              child: _campo(label: 'Destino', valor: destino),
+            ),
           ],
         ),
       ],

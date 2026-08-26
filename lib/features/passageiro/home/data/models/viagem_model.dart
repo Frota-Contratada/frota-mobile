@@ -14,6 +14,7 @@ class ViagemModel extends Viagem {
     super.valorEstimado,
     super.motoristaNome,
     super.placaVeiculo,
+    super.trackingSnapshot,
   });
 
   factory ViagemModel.fromJson(Map<String, dynamic> json) {

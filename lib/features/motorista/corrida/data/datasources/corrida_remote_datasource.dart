@@ -93,7 +93,7 @@ class CorridaRemoteDatasourceImpl implements CorridaRemoteDatasource {
       );
       final dados = response.data?['response'];
       if (dados is Map<String, dynamic>) return _mapResponse(response.data);
-      return buscarDetalhes(corridaId);
+      return await buscarDetalhes(corridaId);
     } on DioException catch (e) {
       throw mapDioException(e);
     }

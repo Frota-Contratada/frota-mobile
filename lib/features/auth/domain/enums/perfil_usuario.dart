@@ -1,4 +1,1 @@
-enum PerfilUsuario {
-  motorista,
-  passageiro,
-}
+enum PerfilUsuario { motorista, passageiro }

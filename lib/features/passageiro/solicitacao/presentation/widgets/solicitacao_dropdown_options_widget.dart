@@ -131,9 +131,7 @@ class _SolicitacaoDropdownOptionsWidgetState
           height: _itemHeight,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.selectedOptionBg
-                : Colors.transparent,
+            color: isSelected ? AppColors.selectedOptionBg : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(

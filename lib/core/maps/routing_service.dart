@@ -56,9 +56,8 @@ class OsrmRoutingService implements RoutingService {
       }
 
       return rota;
-    } catch (error, stackTrace) {
-      debugPrint('Erro ao calcular rota: $error');
-      debugPrintStack(stackTrace: stackTrace);
+    } catch (_) {
+      debugPrint('Falha ao calcular a rota.');
 
       return null;
     }

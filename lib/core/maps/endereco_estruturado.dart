@@ -3,7 +3,6 @@ import 'package:geocoding/geocoding.dart';
 
 import 'map_point.dart';
 
-
 class EnderecoEstruturado {
   final String logradouro;
   final String cidade;
@@ -43,7 +42,7 @@ class EnderecoNaoIdentificadoException implements Exception {
   const EnderecoNaoIdentificadoException([
     this.message =
         'Não foi possível identificar o endereço do ponto selecionado. '
-            'Escolha o ponto novamente.',
+        'Escolha o ponto novamente.',
   ]);
 
   @override
@@ -63,9 +62,8 @@ Future<EnderecoEstruturado> resolverEnderecoEstruturado(
     );
 
     place = placemarks.isEmpty ? null : placemarks.first;
-  } catch (error, stackTrace) {
-    debugPrint('Erro ao resolver endereço estruturado: $error');
-    debugPrintStack(stackTrace: stackTrace);
+  } catch (_) {
+    debugPrint('Falha ao resolver o endereço estruturado.');
   }
 
   final logradouro = _primeiroNaoVazio([

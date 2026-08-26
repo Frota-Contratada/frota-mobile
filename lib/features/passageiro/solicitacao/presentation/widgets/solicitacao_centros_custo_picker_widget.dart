@@ -87,9 +87,7 @@ class _SolicitacaoCentrosCustoPickerWidgetState
               ? Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: SolicitacaoDropdownOptionsWidget(
-                    options: opcoes
-                        .map((centro) => centro.descricao)
-                        .toList(),
+                    options: opcoes.map((centro) => centro.descricao).toList(),
                     onSelected: (descricao) {
                       final escolhido = opcoes.firstWhere(
                         (centro) => centro.descricao == descricao,

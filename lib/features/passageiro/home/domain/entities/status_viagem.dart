@@ -1,4 +1,1 @@
-enum StatusViagem {
-  agendada,
-  emAndamento,
-}
+enum StatusViagem { agendada, emAndamento }
