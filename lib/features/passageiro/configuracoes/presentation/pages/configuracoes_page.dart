@@ -118,10 +118,9 @@ class _PassageiroConfiguracoesPageState
         height: 60,
         child: ElevatedButton(
           onPressed: () {
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              '/login',
-              (route) => false,
-            );
+            Navigator.of(
+              context,
+            ).pushNamedAndRemoveUntil('/login', (route) => false);
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryBlue,
@@ -133,10 +132,7 @@ class _PassageiroConfiguracoesPageState
           ),
           child: const Text(
             'Sair da conta',
-            style: TextStyle(
-              fontSize: 21,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -172,8 +168,7 @@ class _NotificacaoToggle extends StatelessWidget {
             ),
             child: AnimatedAlign(
               duration: const Duration(milliseconds: 200),
-              alignment:
-                  ativo ? Alignment.centerRight : Alignment.centerLeft,
+              alignment: ativo ? Alignment.centerRight : Alignment.centerLeft,
               child: Container(
                 width: 16,
                 height: 16,

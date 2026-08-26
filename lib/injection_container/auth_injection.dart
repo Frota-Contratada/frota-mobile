@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
-import '../../config/env.dart';
-import '../../core/network/dio_factory.dart';
+import '../config/env.dart';
+import '../core/network/dio_factory.dart';
 import '../features/auth/data/datasources/auth_local_datasource.dart';
 import '../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../features/auth/data/interceptors/auth_interceptor.dart';

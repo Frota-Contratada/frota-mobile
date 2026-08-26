@@ -10,10 +10,6 @@ class LoginRequestDto {
   });
 
   Map<String, dynamic> toJson() {
-    return {
-      'email': email,
-      'senha': senha,
-      'plataforma': plataforma,
-    };
+    return {'email': email, 'senha': senha, 'plataforma': plataforma};
   }
 }

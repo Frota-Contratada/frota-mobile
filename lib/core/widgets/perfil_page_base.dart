@@ -231,6 +231,7 @@ class _AvatarSection extends StatelessWidget {
             ),
           );
         } on FormatException {
+          // Conteúdo inválido: usa o avatar padrão abaixo.
         }
       }
     }

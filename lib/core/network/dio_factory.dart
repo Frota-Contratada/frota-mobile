@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 
 Dio createDio() {
   final dio = Dio(
@@ -13,20 +12,6 @@ Dio createDio() {
       },
     ),
   );
-
-  if (kDebugMode) {
-    dio.interceptors.add(
-      LogInterceptor(
-        request: true,
-        requestHeader: true,
-        requestBody: true,
-        responseHeader: false,
-        responseBody: true,
-        error: true,
-        logPrint: (log) => debugPrint('[HTTP] $log'),
-      ),
-    );
-  }
 
   return dio;
 }

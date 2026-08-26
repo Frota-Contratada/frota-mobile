@@ -32,11 +32,7 @@ class EmptyStateWidget extends StatelessWidget {
               color: AppColors.weekSelectorBg,
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              size: iconSize,
-              color: AppColors.textGrey,
-            ),
+            child: Icon(icon, size: iconSize, color: AppColors.textGrey),
           ),
           const SizedBox(height: 20),
           Text(

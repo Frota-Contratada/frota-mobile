@@ -42,7 +42,10 @@ class SolicitacaoRevisaoInfoWidget extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(width: iconSlotWidth, child: Center(child: icon)),
+        SizedBox(
+          width: iconSlotWidth,
+          child: Center(child: icon),
+        ),
         const SizedBox(width: iconGap),
         Expanded(
           child: Column(
@@ -99,11 +102,7 @@ class SolicitacaoRevisaoInfoWidget extends StatelessWidget {
       child: SizedBox(
         width: iconSlotWidth,
         child: Center(
-          child: Container(
-            width: 1.5,
-            height: 14,
-            color: AppColors.borderGrey,
-          ),
+          child: Container(width: 1.5, height: 14, color: AppColors.borderGrey),
         ),
       ),
     );
