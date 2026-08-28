@@ -213,7 +213,7 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
                   context,
                   AppRoutes.passageiroCorridaAndamento,
                   arguments: TripWebViewArgs(
-                    tripId: viagem.id,
+                    tripId: viagem.corridaId!,
                     role: TripRole.passenger,
                   ),
                 );
