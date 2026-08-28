@@ -30,10 +30,7 @@ class AuthMapper {
     required String email,
     required TipoToken tipoToken,
   }) {
-    return EnviarPinEmailRequestDto(
-      email: email,
-      tipoToken: tipoToken.value,
-    );
+    return EnviarPinEmailRequestDto(email: email, tipoToken: tipoToken.value);
   }
 
   static ConfirmarPinRequestDto toConfirmarPinRequestDto({

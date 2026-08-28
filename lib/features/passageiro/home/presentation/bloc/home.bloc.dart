@@ -107,7 +107,7 @@ class PassageiroHomeBloc
   final PassageiroBuscarViagensPorSemanaUsecase buscarViagensPorSemanaUsecase;
 
   PassageiroHomeBloc({required this.buscarViagensPorSemanaUsecase})
-      : super(PassageiroHomeInitial()) {
+    : super(PassageiroHomeInitial()) {
     on<PassageiroHomeIniciada>(_onIniciada);
     on<PassageiroHomeSemanaAnterior>(_onSemanaAnterior);
     on<PassageiroHomeSemanaProxima>(_onSemanaProxima);
@@ -134,8 +134,9 @@ class PassageiroHomeBloc
     final estadoAtual = state;
     if (estadoAtual is! PassageiroHomeCarregada) return;
 
-    final inicioSemana =
-        estadoAtual.inicioSemana.subtract(const Duration(days: 7));
+    final inicioSemana = estadoAtual.inicioSemana.subtract(
+      const Duration(days: 7),
+    );
     final fimSemana = SemanaUtil.fimSemanaUtil(inicioSemana);
     await _carregarViagens(
       emit,
@@ -168,37 +169,45 @@ class PassageiroHomeBloc
     required DateTime fimSemana,
     Usuario? usuario,
   }) async {
-    emit(PassageiroHomeLoading(
-      inicioSemana: inicioSemana,
-      fimSemana: fimSemana,
-      usuario: usuario,
-    ));
+    emit(
+      PassageiroHomeLoading(
+        inicioSemana: inicioSemana,
+        fimSemana: fimSemana,
+        usuario: usuario,
+      ),
+    );
 
     try {
       final viagens = await buscarViagensPorSemanaUsecase(
         inicioSemana: inicioSemana,
         fimSemana: fimSemana,
       );
-      emit(PassageiroHomeCarregada(
-        viagens: viagens,
-        inicioSemana: inicioSemana,
-        fimSemana: fimSemana,
-        usuario: usuario,
-      ));
+      emit(
+        PassageiroHomeCarregada(
+          viagens: viagens,
+          inicioSemana: inicioSemana,
+          fimSemana: fimSemana,
+          usuario: usuario,
+        ),
+      );
     } on Failure catch (e) {
-      emit(PassageiroHomeErro(
-        mensagem: e.message,
-        inicioSemana: inicioSemana,
-        fimSemana: fimSemana,
-        usuario: usuario,
-      ));
+      emit(
+        PassageiroHomeErro(
+          mensagem: e.message,
+          inicioSemana: inicioSemana,
+          fimSemana: fimSemana,
+          usuario: usuario,
+        ),
+      );
     } catch (e) {
-      emit(PassageiroHomeErro(
-        mensagem: e.toString().replaceAll('Exception: ', ''),
-        inicioSemana: inicioSemana,
-        fimSemana: fimSemana,
-        usuario: usuario,
-      ));
+      emit(
+        PassageiroHomeErro(
+          mensagem: e.toString().replaceAll('Exception: ', ''),
+          inicioSemana: inicioSemana,
+          fimSemana: fimSemana,
+          usuario: usuario,
+        ),
+      );
     }
   }
 }

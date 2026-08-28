@@ -7,13 +7,12 @@ import 'config/routes.dart';
 import 'features/auth/presentation/bloc/auth.bloc.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/domain/entities/usuario.dart';
-import 'core/maps/map_point.dart';
 import 'features/motorista/configuracoes/presentation/pages/configuracoes_page.dart';
 import 'features/motorista/corrida/presentation/pages/corrida_detalhe_page.dart';
 import 'features/motorista/home/presentation/pages/home_page.dart';
 import 'features/motorista/perfil/presentation/pages/perfil_page.dart';
 import 'features/passageiro/configuracoes/presentation/pages/configuracoes_page.dart';
-import 'features/passageiro/corrida/presentation/pages/corrida_andamento_page.dart';
+import 'features/shared/trip_tracking/presentation/pages/trip_webview_page.dart';
 import 'features/passageiro/shared/presentation/pages/passageiro_shell_page.dart';
 import 'features/passageiro/solicitacao/presentation/bloc/criar_solicitacao.bloc.dart';
 import 'features/passageiro/solicitacao/presentation/pages/solicitar_viagem_page.dart';
@@ -77,19 +76,12 @@ class FrotaApp extends StatelessWidget {
               sl<CriarSolicitacaoBloc>()..add(const CatalogosSolicitados()),
           child: const SolicitarObjetoPage(),
         ),
-        AppRoutes.passageiroCorridaAndamento: (context) {
-          final args =
-              ModalRoute.of(context)?.settings.arguments
-                  as Map<String, dynamic>?;
-          return CorridaAndamentoPage(
-            origem: args?['origem'] as String? ?? '',
-            destino: args?['destino'] as String? ?? '',
-            motoristaNome: args?['motoristaNome'] as String?,
-            placaVeiculo: args?['placaVeiculo'] as String?,
-            origemPoint: args?['origemPoint'] as MapPoint?,
-            destinoPoint: args?['destinoPoint'] as MapPoint?,
-          );
-        },
+        AppRoutes.passageiroCorridaAndamento: (context) => TripWebViewPage(
+          args: ModalRoute.of(context)!.settings.arguments as TripWebViewArgs,
+        ),
+        AppRoutes.tripWebView: (context) => TripWebViewPage(
+          args: ModalRoute.of(context)!.settings.arguments as TripWebViewArgs,
+        ),
         AppRoutes.passageiroDetalheSolicitacao: (context) {
           // A tela carrega os dados pelo id; telas que ainda usam mock passam
           // outro tipo de argumento e caem no estado de indisponível.

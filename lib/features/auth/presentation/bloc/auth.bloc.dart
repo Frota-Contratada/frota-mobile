@@ -85,7 +85,9 @@ class AuthRedefinirSenhaRequested extends AuthEvent {
 }
 
 class AuthBackToEmailRequested extends AuthEvent {}
+
 class AuthLogoutRequested extends AuthEvent {}
+
 class AuthBackToSenhaRequested extends AuthEvent {
   final String email;
   const AuthBackToSenhaRequested(this.email);
@@ -209,10 +211,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     if (event.pin.trim().isEmpty) {
-      emit(AuthPrimeiroAcesso(
-        event.email,
-        erro: 'Informe o código PIN.',
-      ));
+      emit(AuthPrimeiroAcesso(event.email, erro: 'Informe o código PIN.'));
       return;
     }
     emit(AuthLoading());
@@ -261,10 +260,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     if (event.pin.trim().isEmpty) {
-      emit(AuthRedefinirSenhaPin(
-        event.email,
-        erro: 'Informe o código PIN.',
-      ));
+      emit(AuthRedefinirSenhaPin(event.email, erro: 'Informe o código PIN.'));
       return;
     }
     emit(AuthLoading());
@@ -285,17 +281,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     if (event.senha != event.confirmacaoSenha) {
-      emit(AuthRedefinirSenhaNovaSenha(
-        event.email,
-        erro: 'As senhas não coincidem.',
-      ));
+      emit(
+        AuthRedefinirSenhaNovaSenha(
+          event.email,
+          erro: 'As senhas não coincidem.',
+        ),
+      );
       return;
     }
     if (event.senha.length < 6) {
-      emit(AuthRedefinirSenhaNovaSenha(
-        event.email,
-        erro: 'A senha deve ter no mínimo 6 caracteres.',
-      ));
+      emit(
+        AuthRedefinirSenhaNovaSenha(
+          event.email,
+          erro: 'A senha deve ter no mínimo 6 caracteres.',
+        ),
+      );
       return;
     }
     emit(AuthLoading());
@@ -316,17 +316,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     if (event.senha != event.confirmacaoSenha) {
-      emit(AuthCadastroSenha(
-        event.email,
-        erro: 'As senhas não coincidem.',
-      ));
+      emit(AuthCadastroSenha(event.email, erro: 'As senhas não coincidem.'));
       return;
     }
     if (event.senha.length < 6) {
-      emit(AuthCadastroSenha(
-        event.email,
-        erro: 'A senha deve ter no mínimo 6 caracteres.',
-      ));
+      emit(
+        AuthCadastroSenha(
+          event.email,
+          erro: 'A senha deve ter no mínimo 6 caracteres.',
+        ),
+      );
       return;
     }
     emit(AuthLoading());

@@ -6,11 +6,7 @@ class SolicitacaoCardsWidget extends StatelessWidget {
   final VoidCallback? onViagem;
   final VoidCallback? onObjeto;
 
-  const SolicitacaoCardsWidget({
-    super.key,
-    this.onViagem,
-    this.onObjeto,
-  });
+  const SolicitacaoCardsWidget({super.key, this.onViagem, this.onObjeto});
 
   @override
   Widget build(BuildContext context) {

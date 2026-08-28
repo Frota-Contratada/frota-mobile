@@ -1,5 +1,6 @@
 /// Barrel file para widgets compartilhados do core.
 library;
+
 export 'app_colors.dart';
 export 'busca_barra_widget.dart';
 export 'corrida_card_base_widget.dart';

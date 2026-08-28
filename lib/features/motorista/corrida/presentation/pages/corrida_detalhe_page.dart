@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../../config/routes.dart';
 import '../../../../../injection_container/injection_container.dart';
+import '../../../../shared/trip_tracking/domain/entities/trip_tracking_snapshot.dart';
+import '../../../../shared/trip_tracking/presentation/pages/trip_webview_page.dart';
 import '../../domain/entities/corrida_detalhe.dart';
 import '../bloc/corrida.bloc.dart';
 import '../widgets/corrida_colors.dart';
@@ -115,7 +118,13 @@ class _CorridaDetalheContentState extends State<_CorridaDetalheContent> {
                   backgroundColor: CorridaColors.primaryBlue,
                 ),
               );
-              Navigator.of(context).pop(true);
+              Navigator.of(context).pushReplacementNamed(
+                AppRoutes.tripWebView,
+                arguments: TripWebViewArgs(
+                  tripId: state.corrida.id,
+                  role: TripRole.driver,
+                ),
+              );
             }
 
             if (state is CorridaRecusada) {

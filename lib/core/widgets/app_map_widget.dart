@@ -201,7 +201,7 @@ class _AppMapWidgetState extends State<AppMapWidget> {
   }
 
   // Busca o caminho mais rápido entre os pontos selecionados.
-  
+
   // Enquanto a resposta não chega — ou se ela falhar — o mapa continua
   // mostrando os pontos ligados em linha reta, então o usuário nunca fica
   // sem referência visual do trajeto.
@@ -766,11 +766,8 @@ class _MapRoutePreviewState extends State<MapRoutePreview> {
             locations.first.longitude,
           );
         }
-      } catch (error, stackTrace) {
-        debugPrint(
-          'Erro ao geocodificar origem "${widget.originAddress}": $error',
-        );
-        debugPrintStack(stackTrace: stackTrace);
+      } catch (_) {
+        debugPrint('Falha ao geocodificar a origem.');
       }
     }
 
@@ -791,12 +788,8 @@ class _MapRoutePreviewState extends State<MapRoutePreview> {
             locations.first.longitude,
           );
         }
-      } catch (error, stackTrace) {
-        debugPrint(
-          'Erro ao geocodificar destino '
-          '"${widget.destinationAddress}": $error',
-        );
-        debugPrintStack(stackTrace: stackTrace);
+      } catch (_) {
+        debugPrint('Falha ao geocodificar o destino.');
       }
     }
 
@@ -886,12 +879,8 @@ Future<String?> reverseGeocodeMapPoint(MapPoint point) async {
     ];
 
     return parts.isEmpty ? null : parts.join(', ');
-  } catch (error, stackTrace) {
-    debugPrint(
-      'Erro ao fazer reverse geocoding '
-      '(${point.latitude}, ${point.longitude}): $error',
-    );
-    debugPrintStack(stackTrace: stackTrace);
+  } catch (_) {
+    debugPrint('Falha ao fazer reverse geocoding.');
 
     return null;
   }

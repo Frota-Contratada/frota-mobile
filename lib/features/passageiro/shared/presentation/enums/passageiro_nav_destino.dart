@@ -1,5 +1,1 @@
-enum PassageiroNavDestino {
-  solicitacoes,
-  home,
-  perfil,
-}
+enum PassageiroNavDestino { solicitacoes, home, perfil }

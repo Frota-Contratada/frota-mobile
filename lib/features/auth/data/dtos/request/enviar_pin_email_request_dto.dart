@@ -8,9 +8,6 @@ class EnviarPinEmailRequestDto {
   });
 
   Map<String, dynamic> toJson() {
-    return {
-      'tipoToken': tipoToken,
-      'email': email,
-    };
+    return {'tipoToken': tipoToken, 'email': email};
   }
 }

@@ -10,10 +10,6 @@ class ConfirmarPinRequestDto {
   });
 
   Map<String, dynamic> toJson() {
-    return {
-      'pin': pin,
-      'email': email,
-      'tipoToken': tipoToken,
-    };
+    return {'pin': pin, 'email': email, 'tipoToken': tipoToken};
   }
 }

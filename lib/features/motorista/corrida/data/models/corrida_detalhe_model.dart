@@ -13,6 +13,7 @@ class CorridaDetalheModel extends CorridaDetalhe {
     super.ehProxima,
     super.minutosRestantes,
     super.motivoRecusa,
+    super.trackingSnapshot,
   });
 
   factory CorridaDetalheModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +33,8 @@ class CorridaDetalheModel extends CorridaDetalhe {
       'ehProxima': ehProxima,
       'minutosRestantes': minutosRestantes,
       'motivoRecusa': motivoRecusa,
+      if (trackingSnapshot != null)
+        'tracking': trackingSnapshot!.toBootstrapPayload(),
     };
   }
 }

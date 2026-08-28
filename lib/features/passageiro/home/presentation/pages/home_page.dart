@@ -6,6 +6,8 @@ import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../core/widgets/map_picker_page.dart';
 import '../../../../../injection_container/injection_container.dart';
 import '../../../../auth/domain/entities/usuario.dart';
+import '../../../../shared/trip_tracking/domain/entities/trip_tracking_snapshot.dart';
+import '../../../../shared/trip_tracking/presentation/pages/trip_webview_page.dart';
 import '../../../shared/presentation/theme/passageiro_colors.dart';
 import '../../../solicitacao/presentation/pages/solicitar_viagem_route_args.dart';
 import '../bloc/home.bloc.dart';
@@ -210,12 +212,10 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
                 Navigator.pushNamed(
                   context,
                   AppRoutes.passageiroCorridaAndamento,
-                  arguments: {
-                    'origem': viagem.origem,
-                    'destino': viagem.destino,
-                    'motoristaNome': viagem.motoristaNome,
-                    'placaVeiculo': viagem.placaVeiculo,
-                  },
+                  arguments: TripWebViewArgs(
+                    tripId: viagem.corridaId!,
+                    role: TripRole.passenger,
+                  ),
                 );
               },
             );
