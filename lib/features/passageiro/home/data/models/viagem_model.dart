@@ -5,6 +5,7 @@ import '../mappers/home_mapper.dart';
 class ViagemModel extends Viagem {
   const ViagemModel({
     required super.id,
+    super.corridaId,
     required super.dataHoraPartida,
     required super.origem,
     required super.destino,

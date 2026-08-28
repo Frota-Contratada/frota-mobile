@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../../config/env.dart';
+import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../injection_container/injection_container.dart';
 import '../../data/dtos/trip_bridge_message.dart';
 import '../../domain/entities/trip_tracking_snapshot.dart';
@@ -49,7 +50,6 @@ class _TripWebViewContentState extends State<_TripWebViewContent>
   StreamSubscription<TripBridgeMessage>? _outboundSubscription;
   String? _pageError;
   late final Uri _configuredUri;
-  final List<String> _debugMessages = [];
   Timer? _mainFrameRetryTimer;
   int _mainFrameRetryCount = 0;
 
@@ -97,7 +97,6 @@ class _TripWebViewContentState extends State<_TripWebViewContent>
         .read<TripTrackingBloc>()
         .outboundMessages
         .listen((message) {
-          _recordDebug('Flutter → JS  ${message.type}');
           unawaited(_bridge.send(message));
         });
     if (_isAllowedConfiguration(_configuredUri)) {
@@ -163,7 +162,6 @@ class _TripWebViewContentState extends State<_TripWebViewContent>
     if (!mounted || (_mainFrameRetryTimer?.isActive ?? false)) return;
     if (_mainFrameRetryCount == 0) {
       _mainFrameRetryCount++;
-      _recordDebug('WebView: repetindo primeiro carregamento');
       _mainFrameRetryTimer = Timer(const Duration(milliseconds: 600), () {
         if (!mounted) return;
         unawaited(_controller.loadRequest(_configuredUri));
@@ -181,7 +179,6 @@ class _TripWebViewContentState extends State<_TripWebViewContent>
         expectedTripId: widget.args.tripId,
         allowedTypes: TripMessageType.fromWeb,
       );
-      _recordDebug('JS → Flutter  ${message.type}');
       if (message.type == TripMessageType.webReady) {
         _mainFrameRetryTimer?.cancel();
         _mainFrameRetryCount = 0;
@@ -233,12 +230,6 @@ class _TripWebViewContentState extends State<_TripWebViewContent>
     );
   }
 
-  void _recordDebug(String value) {
-    if (!kDebugMode) return;
-    _debugMessages.add(value);
-    if (_debugMessages.length > 100) _debugMessages.removeAt(0);
-  }
-
   void _queueRestoredBootstrap() {
     final snapshot = context.read<TripTrackingBloc>().state.snapshot;
     if (snapshot == null) return;
@@ -285,54 +276,55 @@ class _TripWebViewContentState extends State<_TripWebViewContent>
       },
       builder: (context, state) {
         return Scaffold(
-          appBar: AppBar(
-            title: Text(
-              widget.args.role == TripRole.driver
-                  ? 'Navegação da corrida'
-                  : 'Acompanhar corrida',
+          backgroundColor: AppColors.background,
+          body: SafeArea(
+            child: Column(
+              children: [
+                _TripTrackingHeader(
+                  title: widget.args.role == TripRole.driver
+                      ? 'Navegação da corrida'
+                      : 'Acompanhar corrida',
+                  onBack: () => Navigator.of(context).maybePop(),
+                  onReload: () => _controller.reload(),
+                ),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      if (_pageError == null)
+                        WebViewWidget(controller: _controller),
+                      if (state.loading)
+                        const ColoredBox(
+                          color: Color(0xfff5f7fa),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                      if (_pageError != null || state.errorMessage != null)
+                        _ErrorView(
+                          message: _pageError ?? state.errorMessage!,
+                          onRetry: () {
+                            _mainFrameRetryTimer?.cancel();
+                            _mainFrameRetryCount = 0;
+                            setState(() => _pageError = null);
+                            if (state.errorMessage != null) {
+                              unawaited(
+                                context.read<TripTrackingBloc>().retry(),
+                              );
+                            } else {
+                              unawaited(
+                                _controller.loadRequest(_configuredUri),
+                              );
+                            }
+                          },
+                        ),
+                      Positioned(
+                        right: 12,
+                        bottom: 12,
+                        child: _ConnectionChip(connected: state.connected),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            actions: [
-              if (kDebugMode)
-                IconButton(
-                  tooltip: 'Simulador de tracking',
-                  onPressed: _showDebugSimulator,
-                  icon: const Icon(Icons.bug_report_outlined),
-                ),
-              IconButton(
-                tooltip: 'Recarregar',
-                onPressed: () => _controller.reload(),
-                icon: const Icon(Icons.refresh_rounded),
-              ),
-            ],
-          ),
-          body: Stack(
-            children: [
-              if (_pageError == null) WebViewWidget(controller: _controller),
-              if (state.loading)
-                const ColoredBox(
-                  color: Color(0xfff5f7fa),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              if (_pageError != null || state.errorMessage != null)
-                _ErrorView(
-                  message: _pageError ?? state.errorMessage!,
-                  onRetry: () {
-                    _mainFrameRetryTimer?.cancel();
-                    _mainFrameRetryCount = 0;
-                    setState(() => _pageError = null);
-                    if (state.errorMessage != null) {
-                      unawaited(context.read<TripTrackingBloc>().retry());
-                    } else {
-                      unawaited(_controller.loadRequest(_configuredUri));
-                    }
-                  },
-                ),
-              Positioned(
-                right: 12,
-                bottom: 12,
-                child: _ConnectionChip(connected: state.connected),
-              ),
-            ],
           ),
         );
       },
@@ -358,121 +350,60 @@ class _TripWebViewContentState extends State<_TripWebViewContent>
     if (mounted) context.read<TripTrackingBloc>().dismissPassengerAlert();
   }
 
-  Future<void> _showDebugSimulator() async {
-    final bloc = context.read<TripTrackingBloc>();
-    var speed = bloc.simulationSpeed;
-    var heading = bloc.simulationHeading;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Simulador Flutter ↔ JavaScript',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      FilledButton.tonalIcon(
-                        onPressed: bloc.hasSimulator
-                            ? () {
-                                bloc.configureSimulation(
-                                  playing: !bloc.simulationPlaying,
-                                );
-                                setModalState(() {});
-                              }
-                            : null,
-                        icon: Icon(
-                          bloc.simulationPlaying
-                              ? Icons.pause_rounded
-                              : Icons.play_arrow_rounded,
-                        ),
-                        label: Text(bloc.simulationPlaying ? 'Pausar' : 'Play'),
-                      ),
-                      FilledButton.tonal(
-                        onPressed: bloc.simulateDeviation,
-                        child: const Text('Desviar posição'),
-                      ),
-                      FilledButton.tonal(
-                        onPressed: bloc.simulateRerouteRequest,
-                        child: const Text('Solicitar recálculo'),
-                      ),
-                      FilledButton.tonal(
-                        onPressed: bloc.simulateWaitingToggle,
-                        child: const Text('Alternar espera'),
-                      ),
-                      FilledButton.tonal(
-                        onPressed: () =>
-                            unawaited(bloc.simulateConnection(false)),
-                        child: const Text('Perder conexão'),
-                      ),
-                      FilledButton.tonal(
-                        onPressed: () =>
-                            unawaited(bloc.simulateConnection(true)),
-                        child: const Text('Retomar conexão'),
-                      ),
-                      FilledButton.tonal(
-                        onPressed: bloc.simulatePassengerAway,
-                        child: const Text('Afastar passageiro'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text('Velocidade: ${speed.toStringAsFixed(1)} m/s'),
-                  Slider(
-                    value: speed.clamp(0, 35).toDouble(),
-                    max: 35,
-                    onChanged: bloc.hasSimulator
-                        ? (value) {
-                            speed = value;
-                            bloc.configureSimulation(speed: value);
-                            setModalState(() {});
-                          }
-                        : null,
-                  ),
-                  Text('Direção: ${heading.toStringAsFixed(0)}°'),
-                  Slider(
-                    value: heading.clamp(0, 359).toDouble(),
-                    max: 359,
-                    onChanged: bloc.hasSimulator
-                        ? (value) {
-                            heading = value;
-                            bloc.configureSimulation(heading: value);
-                            setModalState(() {});
-                          }
-                        : null,
-                  ),
-                  const Divider(),
-                  const Text('Mensagens (payloads sensíveis ocultos)'),
-                  const SizedBox(height: 6),
-                  if (_debugMessages.isEmpty)
-                    const Text('Nenhuma mensagem ainda.'),
-                  ..._debugMessages.reversed
-                      .take(30)
-                      .map(
-                        (message) => Text(
-                          message,
-                          style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                ],
+}
+
+class _TripTrackingHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback onBack;
+  final VoidCallback onReload;
+
+  const _TripTrackingHeader({
+    required this.title,
+    required this.onBack,
+    required this.onReload,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(25, 17, 17, 16),
+      child: Row(
+        children: [
+          Material(
+            color: AppColors.primaryBlue,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onBack,
+              customBorder: const CircleBorder(),
+              child: const SizedBox(
+                width: 30,
+                height: 30,
+                child: Icon(Icons.arrow_back, color: Colors.white, size: 18),
               ),
             ),
           ),
-        ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.w500,
+                color: AppColors.darkBlue,
+                height: 1.2,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Recarregar',
+            onPressed: onReload,
+            color: AppColors.primaryBlue,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
       ),
     );
   }

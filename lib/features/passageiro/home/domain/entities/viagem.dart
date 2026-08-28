@@ -3,7 +3,10 @@ import 'status_viagem.dart';
 import '../../../../shared/trip_tracking/domain/entities/trip_tracking_snapshot.dart';
 
 class Viagem extends Equatable {
+  /// Identificador da solicitação, usado na tela de detalhes.
   final String id;
+  /// Identificador da corrida, usado exclusivamente no acompanhamento.
+  final String? corridaId;
   final DateTime dataHoraPartida;
   final String origem;
   final String destino;
@@ -17,6 +20,7 @@ class Viagem extends Equatable {
 
   const Viagem({
     required this.id,
+    this.corridaId,
     required this.dataHoraPartida,
     required this.origem,
     required this.destino,
@@ -29,11 +33,15 @@ class Viagem extends Equatable {
     this.trackingSnapshot,
   });
 
-  bool get emAndamento => status == StatusViagem.emAndamento;
+  bool get emAndamento =>
+      status == StatusViagem.emAndamento &&
+      corridaId != null &&
+      corridaId!.isNotEmpty;
 
   @override
   List<Object?> get props => [
     id,
+    corridaId,
     dataHoraPartida,
     origem,
     destino,

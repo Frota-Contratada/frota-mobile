@@ -6,7 +6,8 @@ import '../../../../shared/trip_tracking/domain/entities/trip_tracking_snapshot.
 class HomeMapper {
   static ViagemModel toViagemModel(ViagemResponseDto dto) {
     return ViagemModel(
-      id: dto.corridaId ?? dto.solicitacaoId.toString(),
+      id: dto.solicitacaoId.toString(),
+      corridaId: dto.corridaId,
       dataHoraPartida: DateTime.parse(dto.dataHoraPartida).toLocal(),
       origem: dto.origem,
       destino: dto.destino,
@@ -18,11 +19,11 @@ class HomeMapper {
       valorEstimado: dto.valorEstimado,
       motoristaNome: dto.motoristaNome,
       placaVeiculo: dto.placaVeiculo,
-      trackingSnapshot: dto.tracking == null
+      trackingSnapshot: dto.tracking == null || dto.corridaId == null
           ? null
           : TripTrackingSnapshot.fromJson(
               dto.tracking!,
-              tripId: dto.corridaId ?? dto.solicitacaoId.toString(),
+              tripId: dto.corridaId!,
               role: TripRole.passenger,
             ),
     );
