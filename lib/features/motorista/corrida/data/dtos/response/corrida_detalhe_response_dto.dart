@@ -1,8 +1,31 @@
+class CorridaParadaResponseDto {
+  final int ordem;
+  final String endereco;
+  final double latitude;
+  final double longitude;
+
+  const CorridaParadaResponseDto({
+    required this.ordem,
+    required this.endereco,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  factory CorridaParadaResponseDto.fromJson(Map<String, dynamic> json) =>
+      CorridaParadaResponseDto(
+        ordem: (json['ordem'] as num?)?.toInt() ?? 0,
+        endereco: _locationLabel(json['endereco']),
+        latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
+        longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
+      );
+}
+
 class CorridaDetalheResponseDto {
   final String id;
   final String dataHoraPartida;
   final String origem;
   final String destino;
+  final List<CorridaParadaResponseDto> paradas;
   final String nomePassageiro;
   final double valorEstimado;
   final bool ehProxima;
@@ -15,6 +38,7 @@ class CorridaDetalheResponseDto {
     required this.dataHoraPartida,
     required this.origem,
     required this.destino,
+    this.paradas = const [],
     required this.nomePassageiro,
     required this.valorEstimado,
     this.ehProxima = false,
@@ -29,6 +53,15 @@ class CorridaDetalheResponseDto {
       dataHoraPartida: json['dataHoraPartida'] as String? ?? '',
       origem: _locationLabel(json['origem']),
       destino: _locationLabel(json['destino']),
+      paradas: ((json['paradas'] as List?) ?? const [])
+          .whereType<Map>()
+          .map(
+            (item) => CorridaParadaResponseDto.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList()
+        ..sort((a, b) => a.ordem.compareTo(b.ordem)),
       nomePassageiro: json['nomePassageiro'] as String? ?? '',
       valorEstimado: (json['valorEstimado'] as num?)?.toDouble() ?? 0,
       ehProxima: json['ehProxima'] as bool? ?? false,

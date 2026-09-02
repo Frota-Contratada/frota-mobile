@@ -6,11 +6,13 @@ import 'app_colors.dart';
 class OrigemDestinoTrajetoWidget extends StatelessWidget {
   final String origem;
   final String destino;
+  final List<String> paradas;
 
   const OrigemDestinoTrajetoWidget({
     super.key,
     required this.origem,
     required this.destino,
+    this.paradas = const [],
   });
 
   static const double _colunaIcone = 12;
@@ -48,6 +50,48 @@ class OrigemDestinoTrajetoWidget extends StatelessWidget {
             ],
           ),
         ),
+        for (var index = 0; index < paradas.length; index++) ...[
+          Row(
+            children: [
+              SizedBox(width: _colunaIcone, height: 16, child: _linhaVertical()),
+            ],
+          ),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(
+                  width: _colunaIcone,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 4),
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.primaryBlue,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      Expanded(child: _linhaVertical()),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _campo(
+                    label: 'Parada ${index + 1}',
+                    valor: paradas[index],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         Row(
           children: [
             SizedBox(width: _colunaIcone, height: 16, child: _linhaVertical()),

@@ -51,11 +51,13 @@ class CorridaDetalheConteudoWidget extends StatelessWidget {
                 CorridaMapaWidget(
                   origem: corrida.origem,
                   destino: corrida.destino,
+                  paradas: corrida.paradas,
                 ),
                 const SizedBox(height: 30),
                 CorridaTrajetoWidget(
                   origem: corrida.origem,
                   destino: corrida.destino,
+                  paradas: corrida.paradas,
                 ),
                 const SizedBox(height: 20),
                 CorridaInfoItemWidget(
