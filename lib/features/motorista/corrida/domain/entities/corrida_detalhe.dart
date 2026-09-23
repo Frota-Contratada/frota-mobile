@@ -1,11 +1,29 @@
 import 'package:equatable/equatable.dart';
 import '../../../../shared/trip_tracking/domain/entities/trip_tracking_snapshot.dart';
 
+class CorridaParada extends Equatable {
+  final int ordem;
+  final String endereco;
+  final double latitude;
+  final double longitude;
+
+  const CorridaParada({
+    required this.ordem,
+    required this.endereco,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  @override
+  List<Object?> get props => [ordem, endereco, latitude, longitude];
+}
+
 class CorridaDetalhe extends Equatable {
   final String id;
   final DateTime dataHoraPartida;
   final String origem;
   final String destino;
+  final List<CorridaParada> paradas;
   final String nomePassageiro;
   final double valorEstimado;
   final bool ehProxima;
@@ -18,6 +36,7 @@ class CorridaDetalhe extends Equatable {
     required this.dataHoraPartida,
     required this.origem,
     required this.destino,
+    this.paradas = const [],
     required this.nomePassageiro,
     required this.valorEstimado,
     this.ehProxima = false,
@@ -32,6 +51,7 @@ class CorridaDetalhe extends Equatable {
     dataHoraPartida,
     origem,
     destino,
+    paradas,
     nomePassageiro,
     valorEstimado,
     ehProxima,

@@ -8,6 +8,7 @@ class CorridaDetalheModel extends CorridaDetalhe {
     required super.dataHoraPartida,
     required super.origem,
     required super.destino,
+    super.paradas,
     required super.nomePassageiro,
     required super.valorEstimado,
     super.ehProxima,
@@ -28,6 +29,16 @@ class CorridaDetalheModel extends CorridaDetalhe {
       'dataHoraPartida': dataHoraPartida.toIso8601String(),
       'origem': origem,
       'destino': destino,
+      'paradas': paradas
+          .map(
+            (parada) => {
+              'ordem': parada.ordem,
+              'endereco': parada.endereco,
+              'latitude': parada.latitude,
+              'longitude': parada.longitude,
+            },
+          )
+          .toList(),
       'nomePassageiro': nomePassageiro,
       'valorEstimado': valorEstimado,
       'ehProxima': ehProxima,

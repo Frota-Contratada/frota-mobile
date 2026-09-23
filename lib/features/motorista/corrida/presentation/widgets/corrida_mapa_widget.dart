@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/widgets/app_map_widget.dart';
+import '../../../../../core/maps/map_point.dart';
+import '../../domain/entities/corrida_detalhe.dart';
 import 'corrida_colors.dart';
 
 class CorridaMapaWidget extends StatelessWidget {
   final String origem;
   final String destino;
+  final List<CorridaParada> paradas;
 
   const CorridaMapaWidget({
     super.key,
     required this.origem,
     required this.destino,
+    this.paradas = const [],
   });
 
   @override
@@ -37,6 +41,9 @@ class CorridaMapaWidget extends StatelessWidget {
       child: MapRoutePreview(
         originAddress: origem,
         destinationAddress: destino,
+        viaPoints: paradas
+            .map((parada) => MapPoint(parada.latitude, parada.longitude))
+            .toList(),
       ),
     );
   }
