@@ -1,0 +1,1 @@
+enum PerfilUsuario { motorista, passageiro }

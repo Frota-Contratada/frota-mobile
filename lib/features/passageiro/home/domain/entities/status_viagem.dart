@@ -1,0 +1,1 @@
+enum StatusViagem { agendada, emAndamento }

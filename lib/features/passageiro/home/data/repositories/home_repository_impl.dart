@@ -1,0 +1,32 @@
+import '../../../../../core/error/exceptions.dart';
+import '../../../../../core/error/failure_mapper.dart';
+import '../../domain/entities/viagem.dart';
+import '../../domain/repositories/home_repository.dart';
+import '../datasources/home_remote_datasource.dart';
+
+class PassageiroHomeRepositoryImpl implements PassageiroHomeRepository {
+  final PassageiroHomeRemoteDatasource remoteDatasource;
+
+  PassageiroHomeRepositoryImpl({required this.remoteDatasource});
+
+  @override
+  Future<List<Viagem>> buscarViagensPorSemana({
+    required DateTime inicioSemana,
+    required DateTime fimSemana,
+  }) {
+    return _handleRemoteCall(
+      () => remoteDatasource.buscarViagensPorSemana(
+        inicioSemana: inicioSemana,
+        fimSemana: fimSemana,
+      ),
+    );
+  }
+
+  Future<T> _handleRemoteCall<T>(Future<T> Function() call) async {
+    try {
+      return await call();
+    } on ServerException catch (e) {
+      throw mapServerException(e);
+    }
+  }
+}
