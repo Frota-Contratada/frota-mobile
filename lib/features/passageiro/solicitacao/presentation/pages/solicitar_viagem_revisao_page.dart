@@ -102,6 +102,20 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
                             valores: [_valorEstimado(state)],
                             iconAsset: AppAssets.iconCusto,
                           ),
+                          if (state.erro != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  state.erro!,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),

@@ -505,17 +505,34 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
   }
 
   Widget _buildMotivoOptions() {
-    final motivos = context
-        .watch<CriarSolicitacaoBloc>()
-        .state
-        .catalogos
-        .nomesMotivosViagem;
+    final state = context.watch<CriarSolicitacaoBloc>().state;
+    final motivos = state.catalogos.nomesMotivosViagem;
+
+    if (state.carregandoCatalogos) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Text(
+          'Carregando motivos...',
+          style: TextStyle(fontSize: 12, color: AppColors.textGrey),
+        ),
+      );
+    }
+
+    if (state.erro != null) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Text(
+          'Não foi possível carregar os motivos.',
+          style: TextStyle(fontSize: 12, color: AppColors.textGrey),
+        ),
+      );
+    }
 
     if (motivos.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 12),
         child: Text(
-          'Carregando motivos...',
+          'Nenhum motivo disponível.',
           style: TextStyle(fontSize: 12, color: AppColors.textGrey),
         ),
       );

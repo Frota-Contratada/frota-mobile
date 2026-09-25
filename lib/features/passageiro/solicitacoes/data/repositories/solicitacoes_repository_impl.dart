@@ -6,7 +6,7 @@ import '../../domain/entities/status_solicitacao.dart';
 import '../../domain/repositories/solicitacoes_repository.dart';
 import '../datasources/solicitacoes_remote_datasource.dart';
 
-const _tipoMotivoCancelamento = '2';
+const _tipoMotivoCancelamento = 'cancelamento';
 
 class SolicitacoesRepositoryImpl implements SolicitacoesRepository {
   final SolicitacoesRemoteDatasource remoteDatasource;

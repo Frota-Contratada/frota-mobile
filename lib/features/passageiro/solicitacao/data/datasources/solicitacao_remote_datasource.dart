@@ -10,8 +10,22 @@ import '../../domain/entities/centro_custo.dart';
 import '../../domain/entities/nova_solicitacao.dart';
 import '../../domain/entities/simulacao_solicitacao.dart';
 
-const _tipoMotivoViagem = '1';
-const _tipoMotivoObjeto = '4';
+const _tipoMotivoSolicitacao = 'solicitacao';
+
+int _valorInteiro(dynamic valor) {
+  if (valor is num) return valor.toInt();
+  return int.tryParse(valor?.toString() ?? '') ?? 0;
+}
+
+double _valorDecimal(dynamic valor) {
+  if (valor is num) return valor.toDouble();
+  return double.tryParse(valor?.toString() ?? '') ?? 0;
+}
+
+DateTime? _dataResposta(dynamic valor) {
+  final data = DateTime.tryParse(valor?.toString() ?? '');
+  return data?.toLocal();
+}
 
 abstract class SolicitacaoRemoteDatasource {
   Future<CatalogosSolicitacao> buscarCatalogos();
@@ -34,22 +48,37 @@ class SolicitacaoRemoteDatasourceImpl implements SolicitacaoRemoteDatasource {
   Future<CatalogosSolicitacao> buscarCatalogos() async {
     try {
       final resultados = await Future.wait([
-        _buscarItens('/motivos', {'tipo': _tipoMotivoViagem}),
-        _buscarItens('/motivos', {'tipo': _tipoMotivoObjeto}),
+        _buscarMotivos(),
         _buscarItens('/tipos-veiculo', null),
         _buscarItens('/tipos-corrida', null),
       ]);
+      final motivos = resultados[0];
 
       return CatalogosSolicitacao(
-        motivosViagem: resultados[0],
-        objetos: resultados[1],
-        tiposVeiculo: resultados[2],
-        tiposCorrida: resultados[3],
+        motivosViagem: motivos,
+        objetos: List<ItemCatalogo>.of(motivos),
+        tiposVeiculo: resultados[1],
+        tiposCorrida: resultados[2],
         centrosCusto: await _buscarCentrosCusto(),
       );
     } on DioException catch (e) {
       throw mapDioException(e);
     }
+  }
+
+  Future<List<ItemCatalogo>> _buscarMotivos() async {
+    try {
+      final motivos = await _buscarItens('/motivos', {
+        'tipo': _tipoMotivoSolicitacao,
+      });
+
+      if (motivos.isNotEmpty) return motivos;
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      if (status != 400 && status != 422) rethrow;
+    }
+
+    return _buscarItens('/motivos', null);
   }
 
   Future<List<CentroCusto>> _buscarCentrosCusto() async {
@@ -58,10 +87,16 @@ class SolicitacaoRemoteDatasourceImpl implements SolicitacaoRemoteDatasource {
 
     return lista.map((item) {
       final centro = item as Map<String, dynamic>;
+      final filialId = centro['filialId'];
+      final numero = centro['numero'];
 
       return CentroCusto(
-        filialId: (centro['filialId'] as num?)?.toInt() ?? 0,
-        numero: (centro['numero'] as num).toInt(),
+        filialId: filialId is num
+            ? filialId.toInt()
+            : int.tryParse(filialId?.toString() ?? '') ?? 0,
+        numero: numero is num
+            ? numero.toInt()
+            : int.tryParse(numero?.toString() ?? '') ?? 0,
         nome: centro['nome'] as String? ?? '',
         ativo: centro['ativo'] as bool? ?? false,
         temAprovador: centro['temAprovador'] as bool? ?? false,
@@ -83,16 +118,19 @@ class SolicitacaoRemoteDatasourceImpl implements SolicitacaoRemoteDatasource {
         throw const ServerException('Resposta do servidor sem conteúdo.');
       }
 
+      final duracaoEstimadaMinutos = _valorInteiro(
+        dados['duracaoEstimadaMinutos'],
+      );
+      final dataChegadaEstimada =
+          _dataResposta(dados['dataChegadaEstimada']) ??
+          nova.dataCorrida.add(Duration(minutes: duracaoEstimadaMinutos));
+
       return SimulacaoSolicitacao(
-        distanciaEstimadaKm:
-            (dados['distanciaEstimadaKm'] as num?)?.toDouble() ?? 0,
-        duracaoEstimadaMinutos:
-            (dados['duracaoEstimadaMinutos'] as num?)?.toInt() ?? 0,
-        dataChegadaEstimada: DateTime.parse(
-          dados['dataChegadaEstimada'] as String,
-        ).toLocal(),
-        valorEstimado: (dados['valorEstimado'] as num?)?.toDouble() ?? 0,
-        fornecedorId: (dados['fornecedorId'] as num?)?.toInt() ?? 0,
+        distanciaEstimadaKm: _valorDecimal(dados['distanciaEstimadaKm']),
+        duracaoEstimadaMinutos: duracaoEstimadaMinutos,
+        dataChegadaEstimada: dataChegadaEstimada,
+        valorEstimado: _valorDecimal(dados['valorEstimado']),
+        fornecedorId: _valorInteiro(dados['fornecedorId']),
         fornecedorNome: dados['fornecedorNome'] as String? ?? '',
       );
     } on DioException catch (e) {

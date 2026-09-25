@@ -200,6 +200,7 @@ class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
     required List<String> options,
     required String? selected,
     required ValueChanged<String> onSelected,
+    String emptyMessage = 'Nenhuma opção disponível.',
   }) {
     return Column(
       children: [
@@ -211,11 +212,22 @@ class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
           child: isOpen
               ? Padding(
                   padding: const EdgeInsets.only(left: 28, top: 8),
-                  child: SolicitacaoDropdownOptionsWidget(
-                    options: options,
-                    selected: selected,
-                    onSelected: onSelected,
-                  ),
+                  child: options.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(
+                            emptyMessage,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textGrey,
+                            ),
+                          ),
+                        )
+                      : SolicitacaoDropdownOptionsWidget(
+                          options: options,
+                          selected: selected,
+                          onSelected: onSelected,
+                        ),
                 )
               : const SizedBox(width: double.infinity),
         ),
@@ -224,16 +236,18 @@ class _SolicitarObjetoStep2PageState extends State<SolicitarObjetoStep2Page> {
   }
 
   Widget _buildObjetoField() {
-    final objetos = context
-        .watch<CriarSolicitacaoBloc>()
-        .state
-        .catalogos
-        .nomesObjetos;
+    final state = context.watch<CriarSolicitacaoBloc>().state;
+    final objetos = state.catalogos.nomesObjetos;
 
     return _buildSelectField(
       isOpen: _objetoExpandido,
       options: objetos,
       selected: _objeto,
+      emptyMessage: state.carregandoCatalogos
+          ? 'Carregando objetos...'
+          : state.erro != null
+          ? 'Não foi possível carregar os objetos.'
+          : 'Nenhum objeto disponível.',
       onSelected: (value) => setState(() {
         _objeto = value;
         _objetoExpandido = false;

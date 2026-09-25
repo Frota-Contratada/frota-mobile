@@ -277,6 +277,13 @@ class CriarSolicitacaoBloc
       emit(state.copyWith(simulando: false, erro: e.message));
     } on Failure catch (e) {
       emit(state.copyWith(simulando: false, erro: e.message));
+    } catch (_) {
+      emit(
+        state.copyWith(
+          simulando: false,
+          erro: 'Não foi possível calcular a estimativa da solicitação.',
+        ),
+      );
     }
   }
 
@@ -294,6 +301,13 @@ class CriarSolicitacaoBloc
       emit(state.copyWith(catalogos: catalogos, carregandoCatalogos: false));
     } on Failure catch (e) {
       emit(state.copyWith(carregandoCatalogos: false, erro: e.message));
+    } catch (_) {
+      emit(
+        state.copyWith(
+          carregandoCatalogos: false,
+          erro: 'Não foi possível carregar os dados da solicitação.',
+        ),
+      );
     }
   }
 
@@ -316,6 +330,13 @@ class CriarSolicitacaoBloc
       emit(state.copyWith(enviando: false, erro: e.message));
     } on Failure catch (e) {
       emit(state.copyWith(enviando: false, erro: e.message));
+    } catch (_) {
+      emit(
+        state.copyWith(
+          enviando: false,
+          erro: 'Não foi possível enviar a solicitação.',
+        ),
+      );
     }
   }
 
@@ -374,6 +395,17 @@ class CriarSolicitacaoBloc
       );
     }
 
+    final cpfsAcompanhantes = rascunho.cpfsAcompanhantes
+        .map((cpf) => cpf.trim())
+        .where((cpf) => cpf.isNotEmpty)
+        .toList();
+
+    if (cpfsAcompanhantes.any((cpf) => !RegExp(r'^\d{11}$').hasMatch(cpf))) {
+      throw const RascunhoInvalidoException(
+        'Cada CPF de acompanhante deve ter 11 dígitos.',
+      );
+    }
+
     final paradas = <EnderecoEstruturado>[];
 
     for (var indice = 0; indice < rascunho.paradaPoints.length; indice++) {
@@ -405,24 +437,34 @@ class CriarSolicitacaoBloc
       ),
       paradas: paradas,
       centrosCustoIds: centrosCustoIds,
-      cpfsAcompanhantes: rascunho.cpfsAcompanhantes
-          .map((cpf) => cpf.trim())
-          .where((cpf) => cpf.isNotEmpty)
-          .toList(),
+      cpfsAcompanhantes: cpfsAcompanhantes,
     );
   }
 
   int? _resolverTipoCorrida(CatalogosSolicitacao catalogos, bool objeto) {
-    final idObjeto = catalogos.idTipoCorridaPorTermo('objeto');
+    final termosObjeto = ['objeto', 'item', 'itens', 'carga', 'encomenda'];
+    final idObjeto = _idTipoCorridaPorTermos(catalogos, termosObjeto);
 
     if (objeto) return idObjeto;
 
-    return catalogos.idTipoCorridaPorTermo('táxi') ??
-        catalogos.idTipoCorridaPorTermo('taxi') ??
+    final termosViagem = ['táxi', 'taxi', 'passageiro', 'viagem'];
+    return _idTipoCorridaPorTermos(catalogos, termosViagem) ??
         catalogos.tiposCorrida
             .where((item) => item.id != idObjeto)
             .map((item) => item.id)
             .firstOrNull;
+  }
+
+  int? _idTipoCorridaPorTermos(
+    CatalogosSolicitacao catalogos,
+    List<String> termos,
+  ) {
+    for (final termo in termos) {
+      final id = catalogos.idTipoCorridaPorTermo(termo);
+      if (id != null) return id;
+    }
+
+    return null;
   }
 
   DateTime _combinarDataHorario(String data, String horario) {

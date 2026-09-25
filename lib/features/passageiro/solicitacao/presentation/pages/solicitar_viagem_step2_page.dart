@@ -482,11 +482,17 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
             _cpfAcompanhanteControllers.every(
               (controller) => controller.text.trim().isNotEmpty,
             ));
+    final acompanhantesValidos =
+        _viagemCompartilhada != true ||
+        _cpfAcompanhanteControllers.every(
+          (controller) => RegExp(r'^\d{11}$').hasMatch(controller.text.trim()),
+        );
 
     return _centrosCusto.isNotEmpty &&
         _veiculo != null &&
         _viagemCompartilhada != null &&
-        acompanhantesPreenchidos;
+        acompanhantesPreenchidos &&
+        acompanhantesValidos;
   }
 
   void _avancar() {

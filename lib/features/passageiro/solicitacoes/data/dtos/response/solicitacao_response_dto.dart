@@ -1,3 +1,19 @@
+int _asInt(dynamic value) {
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+int? _asNullableInt(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString());
+}
+
+double _asDouble(dynamic value) {
+  if (value is num) return value.toDouble();
+  return double.tryParse(value?.toString() ?? '') ?? 0;
+}
+
 class EnderecoResponseDto {
   final int id;
   final String descricao;
@@ -228,15 +244,14 @@ class SolicitacaoResponseDto {
     final corridaJson = json['corrida'] as Map<String, dynamic>?;
 
     return SolicitacaoResponseDto(
-      id: (json['id'] as num).toInt(),
+      id: _asInt(json['id']),
       status: json['status'] as String? ?? 'P',
       dataCriacao: json['dataCriacao'] as String,
       dataCorrida: json['dataCorrida'] as String,
       dataChegadaEstimada: json['dataChegadaEstimada'] as String?,
-      duracaoEstimadaMinutos: (json['duracaoEstimadaMinutos'] as num?)?.toInt(),
-      distanciaEstimadaKm:
-          (json['distanciaEstimadaKm'] as num?)?.toDouble() ?? 0,
-      valorEstimado: (json['valorEstimado'] as num?)?.toDouble() ?? 0,
+      duracaoEstimadaMinutos: _asNullableInt(json['duracaoEstimadaMinutos']),
+      distanciaEstimadaKm: _asDouble(json['distanciaEstimadaKm']),
+      valorEstimado: _asDouble(json['valorEstimado']),
       tipoCorrida:
           item('tipoCorrida') ?? const CatalogoItemResponseDto(id: 0, nome: ''),
       tipoVeiculo: item('tipoVeiculo'),
