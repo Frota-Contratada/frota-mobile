@@ -38,12 +38,34 @@ class Env {
 
   /// Servidor de roteirização usado para traçar o caminho mais rápido.
   ///
-  /// Em produção deve apontar para o OSRM interno. O padrão é o servidor
-  /// público de demonstração, que só recebe coordenadas e serve para o app
-  /// funcionar em ambiente de desenvolvimento.
-  static String get osrmBaseUrl => _definedOsrmBaseUrl.isNotEmpty
-      ? _definedOsrmBaseUrl
-      : dotenv.env['OSRM_BASE_URL'] ?? 'https://router.project-osrm.org';
+  /// Em release, somente um OSRM corporativo HTTPS configurado é aceito.
+  /// Sem ele, o cálculo de rota por ruas fica indisponível.
+  static String get osrmBaseUrl {
+    final configured = _definedOsrmBaseUrl.isNotEmpty
+        ? _definedOsrmBaseUrl
+        : dotenv.env['OSRM_BASE_URL'] ?? '';
+    // HML/release must never send trip coordinates to the public demo server.
+    if (!kDebugMode &&
+        (!configured.startsWith('https://') ||
+            Uri.tryParse(configured)?.host == 'router.project-osrm.org')) {
+      return '';
+    }
+    return configured;
+  }
+
+  static void validateRelease() {
+    if (kDebugMode) return;
+    for (final url in [
+      baseUrl,
+      tripWebAppUrl,
+      tripSocketUrl,
+      tripTrackingBaseUrl,
+    ]) {
+      if (Uri.tryParse(url)?.scheme != 'https') {
+        throw StateError('Build release exige endpoints HTTPS configurados.');
+      }
+    }
+  }
 
   static String get tripWebAppUrl => _definedTripWebAppUrl.isNotEmpty
       ? _definedTripWebAppUrl

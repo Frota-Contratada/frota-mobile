@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../../config/app_assets.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../shared/presentation/theme/motorista_colors.dart';
+import '../../../../../features/auth/domain/usecases/logout_usecase.dart';
+import '../../../../../injection_container/injection_container.dart';
 
 /// Página de Configurações do motorista.
 /// Exibe toggles de notificação e botão de logout conforme o Figma.
@@ -17,6 +19,23 @@ class _MotoristaConfiguracoesPageState
     extends State<MotoristaConfiguracoesPage> {
   bool _corridaProximaAtiva = false;
   bool _mudancaStatusAtiva = false;
+  bool _loggingOut = false;
+
+  Future<void> _logout() async {
+    if (_loggingOut) return;
+    setState(() => _loggingOut = true);
+    try {
+      await sl<LogoutUsecase>()();
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível sair da conta.')),
+      );
+      setState(() => _loggingOut = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,12 +137,7 @@ class _MotoristaConfiguracoesPageState
         width: 245,
         height: 60,
         child: ElevatedButton(
-          onPressed: () {
-            // TODO: implementar logout
-            Navigator.of(
-              context,
-            ).pushNamedAndRemoveUntil('/login', (route) => false);
-          },
+          onPressed: _loggingOut ? null : _logout,
           style: ElevatedButton.styleFrom(
             backgroundColor: MotoristaColors.logoutButton,
             foregroundColor: AppColors.white,

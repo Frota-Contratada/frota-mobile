@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'config/env_loader.dart';
+import 'config/env.dart';
 import 'core/navigation/app_route_observer.dart';
 import 'config/themes.dart';
 import 'config/routes.dart';
 import 'features/auth/presentation/bloc/auth.bloc.dart';
+import 'features/auth/data/datasources/auth_local_datasource.dart';
+import 'features/auth/data/datasources/auth_remote_datasource.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/domain/entities/usuario.dart';
+import 'features/auth/domain/enums/perfil_usuario.dart';
 import 'features/motorista/configuracoes/presentation/pages/configuracoes_page.dart';
 import 'features/motorista/corrida/presentation/pages/corrida_detalhe_page.dart';
 import 'features/motorista/home/presentation/pages/home_page.dart';
@@ -24,12 +28,24 @@ import 'injection_container/injection_container.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await loadEnvironment();
+  Env.validateRelease();
   await initDependencies();
-  runApp(const FrotaApp());
+  Usuario? initialUser;
+  if (await sl<AuthLocalDatasource>().getAuthToken() != null) {
+    try {
+      initialUser = await sl<AuthRemoteDatasource>()
+          .buscarUsuarioAtual()
+          .timeout(const Duration(seconds: 8));
+    } on Object {
+      // Keep the saved token for a later attempt if HML is temporarily offline.
+    }
+  }
+  runApp(FrotaApp(initialUser: initialUser));
 }
 
 class FrotaApp extends StatelessWidget {
-  const FrotaApp({super.key});
+  final Usuario? initialUser;
+  const FrotaApp({super.key, this.initialUser});
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +55,14 @@ class FrotaApp extends StatelessWidget {
       theme: AppTheme.theme,
       themeMode: ThemeMode.light,
       navigatorObservers: [appRouteObserver],
-      initialRoute: AppRoutes.login,
+      home: initialUser == null
+          ? BlocProvider(
+              create: (_) => sl<AuthBloc>(),
+              child: const LoginPage(),
+            )
+          : initialUser!.perfil == PerfilUsuario.motorista
+          ? const HomePage()
+          : PassageiroShellPage(usuario: initialUser),
       routes: {
         AppRoutes.login: (_) => BlocProvider(
           create: (_) => sl<AuthBloc>(),
