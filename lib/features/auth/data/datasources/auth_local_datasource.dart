@@ -54,6 +54,11 @@ class AuthLocalDatasourceImpl implements AuthLocalDatasource {
 
   @override
   Future<void> removerSessao() async {
+    for (final key in sharedPreferences.getKeys()) {
+      if (key.startsWith('trip_tracking_positions_')) {
+        await sharedPreferences.remove(key);
+      }
+    }
     await sharedPreferences.remove(_keyUsuario);
     await sharedPreferences.remove(_keyUsuarioPendente);
     await sharedPreferences.remove(_keyAuthToken);

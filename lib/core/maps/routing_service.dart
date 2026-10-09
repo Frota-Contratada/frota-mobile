@@ -32,6 +32,7 @@ class OsrmRoutingService implements RoutingService {
   @override
   Future<MapRoute?> buscarRota(List<MapPoint> pontos) async {
     if (pontos.length < 2) return null;
+    if (_baseUrl.isEmpty) return null;
 
     final chave = _chaveDe(pontos);
     final emCache = _cache[chave];

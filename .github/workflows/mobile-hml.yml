@@ -1,0 +1,44 @@
+name: Mobile HML
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.2'
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze --no-pub
+      - run: flutter test --no-pub
+      - name: Build HML release APK
+        run: |
+          flutter build apk --release --no-pub \
+            --dart-define=BASE_URL=https://api.frota-contratada.hml.seara.com.br \
+            --dart-define=TRIP_WEBAPP_URL=https://frota-contratada.hml.seara.com.br/acompanhamento \
+            --dart-define=TRIP_SOCKET_URL=https://api.frota-contratada.hml.seara.com.br \
+            --dart-define=TRIP_TRACKING_BASE_URL=https://api.frota-contratada.hml.seara.com.br/corridas
+          SOURCE_SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          cp build/app/outputs/flutter-apk/app-release.apk "build/app/outputs/flutter-apk/frota-mobile-hml-${SOURCE_SHA:0:12}.apk"
+          sha256sum build/app/outputs/flutter-apk/frota-mobile-hml-*.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frota-mobile-hml-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/frota-mobile-hml-*.apk
+          if-no-files-found: error

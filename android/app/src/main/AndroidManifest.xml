@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <application
+        android:usesCleartextTraffic="false"
         android:label="app_frota_seara"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
