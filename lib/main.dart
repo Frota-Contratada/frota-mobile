@@ -23,6 +23,8 @@ import 'features/passageiro/solicitacao/presentation/pages/solicitar_viagem_page
 import 'features/passageiro/solicitacao/presentation/pages/solicitar_viagem_route_args.dart';
 import 'features/passageiro/solicitacao/presentation/pages/solicitar_objeto_page.dart';
 import 'features/passageiro/solicitacoes/presentation/pages/detalhe_solicitacao_page.dart';
+import 'features/notificacoes/presentation/bloc/notificacoes_bloc.dart';
+import 'features/notificacoes/presentation/pages/notificacoes_page.dart';
 import 'injection_container/injection_container.dart';
 
 Future<void> main() async {
@@ -80,8 +82,15 @@ class FrotaApp extends StatelessWidget {
         },
         AppRoutes.passageiroConfiguracoes: (_) =>
             const PassageiroConfiguracoesPage(),
-        // O bloc é criado na entrada do wizard e repassado aos passos
-        // seguintes, para que catálogos e envio compartilhem o mesmo estado.
+        AppRoutes.notificacoes: (context) {
+          final usuario =
+              ModalRoute.of(context)?.settings.arguments as Usuario?;
+          return BlocProvider(
+            create: (_) =>
+                sl<NotificacoesBloc>()..add(const NotificacoesCarregadas()),
+            child: NotificacoesPage(usuario: usuario),
+          );
+        },
         AppRoutes.passageiroSolicitarViagem: (context) {
           final arguments = ModalRoute.of(context)?.settings.arguments;
           final routeArgs = arguments is SolicitarViagemRouteArgs

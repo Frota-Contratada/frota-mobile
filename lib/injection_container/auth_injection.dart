@@ -5,6 +5,7 @@ import '../core/network/dio_factory.dart';
 import '../features/auth/data/datasources/auth_local_datasource.dart';
 import '../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../features/auth/data/interceptors/auth_interceptor.dart';
+import '../features/auth/data/services/auth_token_service.dart';
 import '../features/auth/data/repositories/auth_repository_impl.dart';
 import '../features/auth/domain/repositories/auth_repository.dart';
 import '../features/auth/domain/usecases/confirmar_pin_usecase.dart';
@@ -21,12 +22,17 @@ void registerAuthDependencies(GetIt sl) {
     () => AuthLocalDatasourceImpl(sharedPreferences: sl()),
   );
 
+  sl.registerLazySingleton<AuthTokenProvider>(
+    () => AuthTokenService(localDatasource: sl(), authBaseUrl: Env.authBaseUrl),
+  );
+
   sl.registerLazySingleton<Dio>(() {
     final dio = createDio();
     dio.interceptors.add(
       AuthInterceptor(
         dio: dio,
         localDatasource: sl(),
+        tokenProvider: sl(),
         authBaseUrl: Env.authBaseUrl,
       ),
     );

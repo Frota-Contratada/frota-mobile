@@ -12,6 +12,7 @@ class AppRoutes {
       '/passageiro/solicitar/objeto';
   static const String passageiroCorridaAndamento =
       '/passageiro/corrida/andamento';
+  static const String notificacoes = '/notificacoes';
   static const String passageiroDetalheSolicitacao =
       '/passageiro/solicitacao/detalhe';
   static const String tripWebView = '/corrida/acompanhamento';
