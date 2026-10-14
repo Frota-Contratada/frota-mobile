@@ -68,6 +68,7 @@ class AuthLocalDatasourceImpl implements AuthLocalDatasource {
 
   @override
   Future<AuthToken?> getAuthToken() async {
+    await sharedPreferences.reload();
     final json = sharedPreferences.getString(_keyAuthToken);
     if (json == null) return null;
 

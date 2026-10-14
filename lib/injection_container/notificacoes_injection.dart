@@ -7,9 +7,11 @@ import '../features/notificacoes/data/datasources/notificacoes_socket_datasource
 import '../features/notificacoes/data/datasources/preferencias_notificacao_remote_datasource.dart';
 import '../features/notificacoes/data/repositories/notificacoes_dispositivo_repository_impl.dart';
 import '../features/notificacoes/data/repositories/notificacoes_repository_impl.dart';
+import '../features/notificacoes/data/repositories/notificacoes_segundo_plano_repository_impl.dart';
 import '../features/notificacoes/data/repositories/preferencias_notificacao_repository_impl.dart';
 import '../features/notificacoes/domain/repositories/notificacoes_dispositivo_repository.dart';
 import '../features/notificacoes/domain/repositories/notificacoes_repository.dart';
+import '../features/notificacoes/domain/repositories/notificacoes_segundo_plano_repository.dart';
 import '../features/notificacoes/domain/repositories/preferencias_notificacao_repository.dart';
 import '../features/notificacoes/domain/usecases/atualizar_preferencia_notificacao_usecase.dart';
 import '../features/notificacoes/domain/usecases/buscar_notificacoes_usecase.dart';
@@ -72,6 +74,13 @@ void registerNotificacoesDependencies(GetIt sl) {
     () => NotificacoesDispositivoRepositoryImpl(datasource: sl()),
   );
 
+  sl.registerLazySingleton<NotificacoesSegundoPlanoRepository>(
+    () => NotificacoesSegundoPlanoRepositoryImpl(
+      notificacoesBaseUrl: Env.notificacoesBaseUrl,
+      authBaseUrl: Env.authBaseUrl,
+    ),
+  );
+
   sl.registerLazySingleton(() => BuscarNotificacoesUsecase(sl()));
   sl.registerLazySingleton(() => ContarNotificacoesNaoLidasUsecase(sl()));
   sl.registerLazySingleton(() => MarcarNotificacaoComoLidaUsecase(sl()));
@@ -83,6 +92,7 @@ void registerNotificacoesDependencies(GetIt sl) {
       notificacoesRepository: sl(instanceName: _instanciaSessao),
       dispositivoRepository: sl(),
       preferenciasRepository: sl(),
+      segundoPlanoRepository: sl(),
       buscarPreferencias: sl(),
       marcarComoLida: sl(),
       navigatorKey: appNavigatorKey,

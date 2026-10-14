@@ -10,6 +10,7 @@ import 'package:frota_mobile/features/notificacoes/domain/entities/preferencias_
 import 'package:frota_mobile/features/notificacoes/domain/entities/toque_notificacao.dart';
 import 'package:frota_mobile/features/notificacoes/domain/repositories/notificacoes_dispositivo_repository.dart';
 import 'package:frota_mobile/features/notificacoes/domain/repositories/notificacoes_repository.dart';
+import 'package:frota_mobile/features/notificacoes/domain/repositories/notificacoes_segundo_plano_repository.dart';
 import 'package:frota_mobile/features/notificacoes/domain/repositories/preferencias_notificacao_repository.dart';
 import 'package:frota_mobile/features/notificacoes/domain/usecases/buscar_preferencias_notificacao_usecase.dart';
 import 'package:frota_mobile/features/notificacoes/domain/usecases/marcar_notificacao_como_lida_usecase.dart';
@@ -51,10 +52,7 @@ void main() {
   });
 
   test('payload da notificação local preserva id e ação', () {
-    const toque = ToqueNotificacao(
-      notificacaoId: 'n1',
-      acao: _acaoSolicitacao,
-    );
+    const toque = ToqueNotificacao(notificacaoId: 'n1', acao: _acaoSolicitacao);
 
     expect(decodificarToque(codificarToque(toque)), toque);
     expect(decodificarToque('não é json'), isNull);
@@ -103,6 +101,28 @@ void main() {
     expect(contexto.dispositivo.exibidas, isEmpty);
   });
 
+  test(
+    'delega a exibição ao serviço em segundo plano quando disponível',
+    () async {
+      final contexto = _Contexto(segundoPlanoDisponivel: true);
+      await contexto.controller.iniciarSessao(_passageiro);
+
+      contexto.notificacoes.criadas.add(_notificacao('n1'));
+      contexto.preferencias.alteracoesController.add(
+        PreferenciasNotificacao.padrao().comPush(false),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(contexto.segundoPlano.ativo, isTrue);
+      expect(contexto.notificacoes.conectado, isFalse);
+      expect(contexto.dispositivo.exibidas, isEmpty);
+      expect(contexto.segundoPlano.pushEnviado, [false]);
+
+      await contexto.controller.encerrarSessao();
+      expect(contexto.segundoPlano.ativo, isFalse);
+    },
+  );
+
   testWidgets('tocar na notificação marca como lida e navega', (tester) async {
     final contexto = _Contexto();
     final rotas = <RouteSettings>[];
@@ -146,15 +166,18 @@ class _Contexto {
   final notificacoes = _FakeNotificacoesRepository();
   final dispositivo = _FakeDispositivoRepository();
   final _FakePreferenciasRepository preferencias;
+  final _FakeSegundoPlanoRepository segundoPlano;
   final navigatorKey = GlobalKey<NavigatorState>();
   late final NotificacoesSessaoController controller;
 
-  _Contexto({bool pushAtivo = true})
-    : preferencias = _FakePreferenciasRepository(pushAtivo) {
+  _Contexto({bool pushAtivo = true, bool segundoPlanoDisponivel = false})
+    : preferencias = _FakePreferenciasRepository(pushAtivo),
+      segundoPlano = _FakeSegundoPlanoRepository(segundoPlanoDisponivel) {
     controller = NotificacoesSessaoController(
       notificacoesRepository: notificacoes,
       dispositivoRepository: dispositivo,
       preferenciasRepository: preferencias,
+      segundoPlanoRepository: segundoPlano,
       buscarPreferencias: BuscarPreferenciasNotificacaoUsecase(preferencias),
       marcarComoLida: MarcarNotificacaoComoLidaUsecase(notificacoes),
       navigatorKey: navigatorKey,
@@ -211,6 +234,24 @@ class _FakeDispositivoRepository implements NotificacoesDispositivoRepository {
 
   @override
   Future<ToqueNotificacao?> toqueInicial() async => null;
+}
+
+class _FakeSegundoPlanoRepository
+    implements NotificacoesSegundoPlanoRepository {
+  final bool disponivel;
+  bool ativo = false;
+  final pushEnviado = <bool>[];
+
+  _FakeSegundoPlanoRepository(this.disponivel);
+
+  @override
+  Future<bool> iniciar() async => ativo = disponivel;
+
+  @override
+  Future<void> parar() async => ativo = false;
+
+  @override
+  void atualizarPushAtivo(bool valor) => pushEnviado.add(valor);
 }
 
 class _FakePreferenciasRepository implements PreferenciasNotificacaoRepository {

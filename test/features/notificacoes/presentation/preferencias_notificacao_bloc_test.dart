@@ -30,20 +30,26 @@ void main() {
     ]);
   });
 
-  test('DTO considera ativa a categoria ausente e rejeita formato inválido', () {
-    final preferencias = PreferenciasNotificacaoResponseDto.fromJson({
-      'pushAtivo': false,
-      'categorias': {'CORRIDA_CANCELADA': false, 'DESCONHECIDA': false},
-    }).toEntity();
+  test(
+    'DTO considera ativa a categoria ausente e rejeita formato inválido',
+    () {
+      final preferencias = PreferenciasNotificacaoResponseDto.fromJson({
+        'pushAtivo': false,
+        'categorias': {'CORRIDA_CANCELADA': false, 'DESCONHECIDA': false},
+      }).toEntity();
 
-    expect(preferencias.pushAtivo, isFalse);
-    expect(preferencias.ativa(CategoriaNotificacao.corridaCancelada), isFalse);
-    expect(preferencias.ativa(CategoriaNotificacao.lembreteViagem), isTrue);
-    expect(
-      () => PreferenciasNotificacaoResponseDto.fromJson({'pushAtivo': 'S'}),
-      throwsFormatException,
-    );
-  });
+      expect(preferencias.pushAtivo, isFalse);
+      expect(
+        preferencias.ativa(CategoriaNotificacao.corridaCancelada),
+        isFalse,
+      );
+      expect(preferencias.ativa(CategoriaNotificacao.lembreteViagem), isTrue);
+      expect(
+        () => PreferenciasNotificacaoResponseDto.fromJson({'pushAtivo': 'S'}),
+        throwsFormatException,
+      );
+    },
+  );
 
   test('carrega do backend e mantém o valor salvo ao reabrir a tela', () async {
     final repository = _FakePreferenciasRepository();

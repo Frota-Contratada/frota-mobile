@@ -93,8 +93,8 @@ class PreferenciasNotificacaoSection extends StatelessWidget {
                     anterior.erroSalvamento?.sequencia !=
                         atual.erroSalvamento!.sequencia),
             listener: (context, state) {
-              final erro = (state as PreferenciasNotificacaoCarregada)
-                  .erroSalvamento!;
+              final erro =
+                  (state as PreferenciasNotificacaoCarregada).erroSalvamento!;
               ScaffoldMessenger.of(
                 context,
               ).showSnackBar(SnackBar(content: Text(erro.mensagem)));

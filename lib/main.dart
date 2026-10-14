@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'config/env_loader.dart';
 import 'config/env.dart';
 import 'core/navigation/app_navigator.dart';
@@ -32,6 +33,7 @@ import 'injection_container/injection_container.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  FlutterForegroundTask.initCommunicationPort();
   await loadEnvironment();
   Env.validateRelease();
   await initDependencies();
@@ -61,7 +63,7 @@ class FrotaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Frota Mobile',
+      title: 'Frota Contratada',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       themeMode: ThemeMode.light,

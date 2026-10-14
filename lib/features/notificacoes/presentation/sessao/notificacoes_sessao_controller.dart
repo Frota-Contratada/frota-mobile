@@ -7,6 +7,7 @@ import '../../domain/entities/notificacao.dart';
 import '../../domain/entities/toque_notificacao.dart';
 import '../../domain/repositories/notificacoes_dispositivo_repository.dart';
 import '../../domain/repositories/notificacoes_repository.dart';
+import '../../domain/repositories/notificacoes_segundo_plano_repository.dart';
 import '../../domain/repositories/preferencias_notificacao_repository.dart';
 import '../../domain/usecases/buscar_preferencias_notificacao_usecase.dart';
 import '../../domain/usecases/marcar_notificacao_como_lida_usecase.dart';
@@ -33,12 +34,14 @@ class NotificacoesSessaoController {
   final NotificacoesRepository notificacoesRepository;
   final NotificacoesDispositivoRepository dispositivoRepository;
   final PreferenciasNotificacaoRepository preferenciasRepository;
+  final NotificacoesSegundoPlanoRepository segundoPlanoRepository;
   final BuscarPreferenciasNotificacaoUsecase buscarPreferencias;
   final MarcarNotificacaoComoLidaUsecase marcarComoLida;
   final GlobalKey<NavigatorState> navigatorKey;
 
   Usuario? _usuario;
   bool _pushAtivo = true;
+  bool _exibicaoEmSegundoPlano = false;
   bool _toqueInicialConsumido = false;
   final Set<String> _exibidas = {};
   StreamSubscription<ToqueNotificacao>? _toquesSubscription;
@@ -49,6 +52,7 @@ class NotificacoesSessaoController {
     required this.notificacoesRepository,
     required this.dispositivoRepository,
     required this.preferenciasRepository,
+    required this.segundoPlanoRepository,
     required this.buscarPreferencias,
     required this.marcarComoLida,
     required this.navigatorKey,
@@ -65,18 +69,23 @@ class NotificacoesSessaoController {
       final disponivel = await dispositivoRepository.inicializar();
       if (disponivel) {
         _toquesSubscription ??= dispositivoRepository.toques.listen(_abrir);
-        unawaited(dispositivoRepository.solicitarPermissao());
+        await dispositivoRepository.solicitarPermissao();
       }
 
-      _preferenciasSubscription = preferenciasRepository.alteracoes.listen(
-        (preferencias) => _pushAtivo = preferencias.pushAtivo,
-      );
-      unawaited(_carregarPreferencias());
+      _preferenciasSubscription = preferenciasRepository.alteracoes.listen((
+        preferencias,
+      ) {
+        _pushAtivo = preferencias.pushAtivo;
+        segundoPlanoRepository.atualizarPushAtivo(preferencias.pushAtivo);
+      });
 
-      _criadasSubscription = notificacoesRepository.notificacoesCriadas.listen(
-        (notificacao) => unawaited(_exibir(notificacao)),
-      );
-      await notificacoesRepository.conectar();
+      _exibicaoEmSegundoPlano = await segundoPlanoRepository.iniciar();
+      if (!_exibicaoEmSegundoPlano) {
+        unawaited(_carregarPreferencias());
+        _criadasSubscription = notificacoesRepository.notificacoesCriadas
+            .listen((notificacao) => unawaited(_exibir(notificacao)));
+        await notificacoesRepository.conectar();
+      }
 
       if (disponivel && !_toqueInicialConsumido) {
         _toqueInicialConsumido = true;
@@ -89,9 +98,12 @@ class NotificacoesSessaoController {
   }
 
   Future<void> encerrarSessao() async {
+    final estavaEmSegundoPlano = _exibicaoEmSegundoPlano;
     _usuario = null;
     _pushAtivo = true;
+    _exibicaoEmSegundoPlano = false;
     _exibidas.clear();
+    if (estavaEmSegundoPlano) await segundoPlanoRepository.parar();
     await _criadasSubscription?.cancel();
     await _preferenciasSubscription?.cancel();
     _criadasSubscription = null;

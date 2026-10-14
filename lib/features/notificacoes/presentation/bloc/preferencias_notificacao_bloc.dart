@@ -127,10 +127,7 @@ class PreferenciasNotificacaoBloc
       );
     } on Failure catch (e) {
       emit(
-        PreferenciasNotificacaoErro(
-          e.message,
-          semConexao: e is NetworkFailure,
-        ),
+        PreferenciasNotificacaoErro(e.message, semConexao: e is NetworkFailure),
       );
     } on Object {
       emit(
