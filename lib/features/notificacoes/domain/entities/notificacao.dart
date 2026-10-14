@@ -9,6 +9,7 @@ enum TipoNotificacao {
   solicitacaoRecusadaFornecedor,
   solicitacaoCancelada,
   corridaCancelada,
+  corridaRecusadaMotorista,
   desconhecido;
 
   static TipoNotificacao aPartirDoCodigo(String codigo) {
@@ -23,6 +24,7 @@ enum TipoNotificacao {
         TipoNotificacao.solicitacaoRecusadaFornecedor,
       'SOLICITACAO_CANCELADA' => TipoNotificacao.solicitacaoCancelada,
       'CORRIDA_CANCELADA' => TipoNotificacao.corridaCancelada,
+      'CORRIDA_RECUSADA_MOTORISTA' => TipoNotificacao.corridaRecusadaMotorista,
       _ => TipoNotificacao.desconhecido,
     };
   }
@@ -38,6 +40,7 @@ enum TipoNotificacao {
       'SOLICITACAO_RECUSADA_FORNECEDOR',
     TipoNotificacao.solicitacaoCancelada => 'SOLICITACAO_CANCELADA',
     TipoNotificacao.corridaCancelada => 'CORRIDA_CANCELADA',
+    TipoNotificacao.corridaRecusadaMotorista => 'CORRIDA_RECUSADA_MOTORISTA',
     TipoNotificacao.desconhecido => 'DESCONHECIDO',
   };
 }

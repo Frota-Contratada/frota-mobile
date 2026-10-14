@@ -11,7 +11,10 @@ enum CategoriaNotificacao {
     TipoNotificacao.solicitacaoRecusadaFornecedor,
     TipoNotificacao.solicitacaoCancelada,
   ]),
-  corridaCancelada('CORRIDA_CANCELADA', [TipoNotificacao.corridaCancelada]),
+  corridaCancelada('CORRIDA_CANCELADA', [
+    TipoNotificacao.corridaCancelada,
+    TipoNotificacao.corridaRecusadaMotorista,
+  ]),
   aprovacaoPendente('APROVACAO_PENDENTE', [TipoNotificacao.solicitacaoCriada]),
   decisaoFornecedor('DECISAO_FORNECEDOR', [
     TipoNotificacao.solicitacaoAguardandoFornecedor,
