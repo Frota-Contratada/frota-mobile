@@ -4,7 +4,7 @@ App mobile em Flutter para o passageiro e motorista.
 
 ## Configuração HML
 
-O workflow `Mobile HML` e `scripts/build-hml.ps1` usam os mesmos `dart-define`:
+O workflow `Mobile HML` (somente disparo manual na `main`) e `scripts/build-hml.ps1` usam os mesmos `dart-define`:
 
 | Variável | Valor HML |
 | --- | --- |
