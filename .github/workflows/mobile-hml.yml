@@ -1,8 +1,6 @@
 name: Mobile HML
 
 on:
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -30,10 +28,10 @@ jobs:
       - name: Build HML release APK
         run: |
           flutter build apk --release --no-pub \
-            --dart-define=BASE_URL=https://api.frota-contratada.hml.seara.com.br \
-            --dart-define=TRIP_WEBAPP_URL=https://frota-contratada.hml.seara.com.br/acompanhamento \
-            --dart-define=TRIP_SOCKET_URL=https://api.frota-contratada.hml.seara.com.br \
-            --dart-define=TRIP_TRACKING_BASE_URL=https://api.frota-contratada.hml.seara.com.br/corridas
+            --dart-define=BASE_URL=https://api-frota-contratada-hml.seara.com.br \
+            --dart-define=TRIP_WEBAPP_URL=https://frota-contratada-hml.seara.com.br/acompanhamento \
+            --dart-define=TRIP_SOCKET_URL=https://api-frota-contratada-hml.seara.com.br \
+            --dart-define=TRIP_TRACKING_BASE_URL=https://api-frota-contratada-hml.seara.com.br/corridas
           SOURCE_SHA="${{ github.event.pull_request.head.sha || github.sha }}"
           cp build/app/outputs/flutter-apk/app-release.apk "build/app/outputs/flutter-apk/frota-mobile-hml-${SOURCE_SHA:0:12}.apk"
           sha256sum build/app/outputs/flutter-apk/frota-mobile-hml-*.apk
