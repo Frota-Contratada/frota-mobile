@@ -9,8 +9,8 @@ if (-not $env:GRADLE_USER_HOME) {
 }
 New-Item -ItemType Directory -Path $env:GRADLE_USER_HOME -Force | Out-Null
 
-$api = 'https://api.frota-contratada.hml.seara.com.br'
-$web = 'https://frota-contratada.hml.seara.com.br/acompanhamento'
+$api = 'https://api-frota-contratada-hml.seara.com.br'
+$web = 'https://frota-contratada-hml.seara.com.br/acompanhamento'
 $defines = @(
     "--dart-define=BASE_URL=$api",
     "--dart-define=TRIP_WEBAPP_URL=$web",
