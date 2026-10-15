@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../injection_container/injection_container.dart';
+import '../../../notificacoes/presentation/sessao/notificacoes_sessao_controller.dart';
 import '../bloc/auth.bloc.dart';
 import '../utils/auth_navigation.dart';
 import '../widgets/auth_form_widget.dart';
@@ -46,6 +48,7 @@ class _LoginPageState extends State<LoginPage> {
               AuthNavigation.rotaHome(state.usuario),
               arguments: state.usuario,
             );
+            sl<NotificacoesSessaoController>().iniciarSessao(state.usuario);
           }
         },
         builder: (context, state) {

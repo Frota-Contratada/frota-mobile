@@ -7,12 +7,14 @@ import '../../../../../core/widgets/home_header_widget.dart' as shared;
 class HomeHeaderWidget extends StatelessWidget {
   final Usuario? usuario;
   final VoidCallback? onConfiguracoes;
+  final VoidCallback? onNotificacoes;
   final VoidCallback? onAvatarTap;
 
   const HomeHeaderWidget({
     super.key,
     this.usuario,
     this.onConfiguracoes,
+    this.onNotificacoes,
     this.onAvatarTap,
   });
 
@@ -24,6 +26,7 @@ class HomeHeaderWidget extends StatelessWidget {
       nome: nome,
       subtitulo: 'Moreira Transportes',
       onConfiguracoes: onConfiguracoes,
+      onNotificacoes: onNotificacoes,
       onAvatarTap: onAvatarTap,
     );
   }

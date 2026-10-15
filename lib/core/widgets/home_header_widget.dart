@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'icone_configuracoes_button.dart';
+import 'icone_notificacoes_button.dart';
 
 class HomeHeaderWidget extends StatelessWidget {
   final String nome;
   final String subtitulo;
   final String? avatarAssetPath;
   final VoidCallback? onConfiguracoes;
+  final VoidCallback? onNotificacoes;
   final VoidCallback? onAvatarTap;
 
   const HomeHeaderWidget({
@@ -15,6 +17,7 @@ class HomeHeaderWidget extends StatelessWidget {
     required this.subtitulo,
     this.avatarAssetPath,
     this.onConfiguracoes,
+    this.onNotificacoes,
     this.onAvatarTap,
   });
 
@@ -52,6 +55,8 @@ class HomeHeaderWidget extends StatelessWidget {
               ],
             ),
           ),
+          IconeNotificacoesButton(onPressed: onNotificacoes),
+          const SizedBox(width: 8),
           IconeConfiguracoesButton(onPressed: onConfiguracoes),
         ],
       ),

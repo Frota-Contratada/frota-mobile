@@ -4,6 +4,9 @@ import '../../../../../core/widgets/app_colors.dart';
 import '../../../shared/presentation/theme/motorista_colors.dart';
 import '../../../../../features/auth/domain/usecases/logout_usecase.dart';
 import '../../../../../injection_container/injection_container.dart';
+import '../../../../auth/domain/enums/perfil_usuario.dart';
+import '../../../../notificacoes/presentation/sessao/notificacoes_sessao_controller.dart';
+import '../../../../notificacoes/presentation/widgets/preferencias_notificacao_section.dart';
 
 /// Página de Configurações do motorista.
 /// Exibe toggles de notificação e botão de logout conforme o Figma.
@@ -17,14 +20,13 @@ class MotoristaConfiguracoesPage extends StatefulWidget {
 
 class _MotoristaConfiguracoesPageState
     extends State<MotoristaConfiguracoesPage> {
-  bool _corridaProximaAtiva = false;
-  bool _mudancaStatusAtiva = false;
   bool _loggingOut = false;
 
   Future<void> _logout() async {
     if (_loggingOut) return;
     setState(() => _loggingOut = true);
     try {
+      await sl<NotificacoesSessaoController>().encerrarSessao();
       await sl<LogoutUsecase>()();
       if (!mounted) return;
       Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
@@ -53,8 +55,16 @@ class _MotoristaConfiguracoesPageState
               endIndent: 25,
             ),
             const SizedBox(height: 15),
-            _buildNotificacoes(),
-            const Spacer(),
+            const Expanded(
+              child: SingleChildScrollView(
+                child: PreferenciasNotificacaoSection(
+                  perfil: PerfilUsuario.motorista,
+                  corAtiva: MotoristaColors.toggleActive,
+                  corInativa: MotoristaColors.toggleInactive,
+                ),
+              ),
+            ),
+            const SizedBox(height: 15),
             _buildLogoutButton(),
             const SizedBox(height: 57),
           ],
@@ -91,46 +101,6 @@ class _MotoristaConfiguracoesPageState
     );
   }
 
-  Widget _buildNotificacoes() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 25),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Notificações',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
-              color: AppColors.darkBlue,
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Escolha quais notificações deseja receber',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: AppColors.textMediumGrey,
-            ),
-          ),
-          const SizedBox(height: 20),
-          _NotificacaoToggle(
-            label: 'Corrida próxima do início',
-            ativo: _corridaProximaAtiva,
-            onChanged: (valor) => setState(() => _corridaProximaAtiva = valor),
-          ),
-          const SizedBox(height: 15),
-          _NotificacaoToggle(
-            label: 'Mudança de status da solicitação',
-            ativo: _mudancaStatusAtiva,
-            onChanged: (valor) => setState(() => _mudancaStatusAtiva = valor),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildLogoutButton() {
     return Center(
       child: SizedBox(
@@ -152,71 +122,6 @@ class _MotoristaConfiguracoesPageState
           ),
         ),
       ),
-    );
-  }
-}
-
-class _NotificacaoToggle extends StatelessWidget {
-  final String label;
-  final bool ativo;
-  final ValueChanged<bool> onChanged;
-
-  const _NotificacaoToggle({
-    required this.label,
-    required this.ativo,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        GestureDetector(
-          onTap: () => onChanged(!ativo),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 36,
-            height: 20,
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              color: ativo
-                  ? MotoristaColors.toggleActive
-                  : MotoristaColors.toggleInactive,
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: AnimatedAlign(
-              duration: const Duration(milliseconds: 200),
-              alignment: ativo ? Alignment.centerRight : Alignment.centerLeft,
-              child: Container(
-                width: 16,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: AppColors.darkBlue,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

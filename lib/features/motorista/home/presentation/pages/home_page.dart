@@ -69,6 +69,11 @@ class _HomeContentState extends State<_HomeContent> {
                     context,
                     AppRoutes.motoristaConfiguracoes,
                   ),
+                  onNotificacoes: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.notificacoes,
+                    arguments: usuarioAtual,
+                  ),
                 ),
                 const SizedBox(height: 28),
                 const Padding(

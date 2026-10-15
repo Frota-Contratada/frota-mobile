@@ -78,6 +78,11 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
                         context,
                         AppRoutes.passageiroConfiguracoes,
                       ),
+                      onNotificacoes: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.notificacoes,
+                        arguments: usuarioAtual,
+                      ),
                     ),
                     const SizedBox(height: 30),
                     MapaBuscaWidget(onBuscarLocal: _abrirBuscaLocal),

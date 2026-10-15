@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'config/env_loader.dart';
 import 'config/env.dart';
+import 'core/navigation/app_navigator.dart';
 import 'core/navigation/app_route_observer.dart';
 import 'config/themes.dart';
 import 'config/routes.dart';
@@ -23,10 +25,15 @@ import 'features/passageiro/solicitacao/presentation/pages/solicitar_viagem_page
 import 'features/passageiro/solicitacao/presentation/pages/solicitar_viagem_route_args.dart';
 import 'features/passageiro/solicitacao/presentation/pages/solicitar_objeto_page.dart';
 import 'features/passageiro/solicitacoes/presentation/pages/detalhe_solicitacao_page.dart';
+import 'features/notificacoes/presentation/bloc/notificacoes_bloc.dart';
+import 'features/notificacoes/presentation/bloc/preferencias_notificacao_bloc.dart';
+import 'features/notificacoes/presentation/pages/notificacoes_page.dart';
+import 'features/notificacoes/presentation/sessao/notificacoes_sessao_controller.dart';
 import 'injection_container/injection_container.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  FlutterForegroundTask.initCommunicationPort();
   await loadEnvironment();
   Env.validateRelease();
   await initDependencies();
@@ -41,6 +48,12 @@ Future<void> main() async {
     }
   }
   runApp(FrotaApp(initialUser: initialUser));
+  final usuarioLogado = initialUser;
+  if (usuarioLogado != null) {
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => sl<NotificacoesSessaoController>().iniciarSessao(usuarioLogado),
+    );
+  }
 }
 
 class FrotaApp extends StatelessWidget {
@@ -50,10 +63,11 @@ class FrotaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Frota Mobile',
+      title: 'Frota Contratada',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       themeMode: ThemeMode.light,
+      navigatorKey: appNavigatorKey,
       navigatorObservers: [appRouteObserver],
       home: initialUser == null
           ? BlocProvider(
@@ -71,17 +85,32 @@ class FrotaApp extends StatelessWidget {
         AppRoutes.motoristaHome: (_) => const HomePage(),
         AppRoutes.motoristaCorridaDetalhe: (_) => const CorridaDetalhePage(),
         AppRoutes.motoristaPerfil: (_) => const MotoristPerfilPage(),
-        AppRoutes.motoristaConfiguracoes: (_) =>
-            const MotoristaConfiguracoesPage(),
+        AppRoutes.motoristaConfiguracoes: (_) => BlocProvider(
+          create: (_) =>
+              sl<PreferenciasNotificacaoBloc>()
+                ..add(const PreferenciasNotificacaoCarregadas()),
+          child: const MotoristaConfiguracoesPage(),
+        ),
         AppRoutes.passageiroHome: (context) {
           final usuario =
               ModalRoute.of(context)?.settings.arguments as Usuario?;
           return PassageiroShellPage(usuario: usuario);
         },
-        AppRoutes.passageiroConfiguracoes: (_) =>
-            const PassageiroConfiguracoesPage(),
-        // O bloc é criado na entrada do wizard e repassado aos passos
-        // seguintes, para que catálogos e envio compartilhem o mesmo estado.
+        AppRoutes.passageiroConfiguracoes: (_) => BlocProvider(
+          create: (_) =>
+              sl<PreferenciasNotificacaoBloc>()
+                ..add(const PreferenciasNotificacaoCarregadas()),
+          child: const PassageiroConfiguracoesPage(),
+        ),
+        AppRoutes.notificacoes: (context) {
+          final usuario =
+              ModalRoute.of(context)?.settings.arguments as Usuario?;
+          return BlocProvider(
+            create: (_) =>
+                sl<NotificacoesBloc>()..add(const NotificacoesCarregadas()),
+            child: NotificacoesPage(usuario: usuario),
+          );
+        },
         AppRoutes.passageiroSolicitarViagem: (context) {
           final arguments = ModalRoute.of(context)?.settings.arguments;
           final routeArgs = arguments is SolicitarViagemRouteArgs

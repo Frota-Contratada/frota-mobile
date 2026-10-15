@@ -32,6 +32,8 @@ class Env {
 
   static String get solicitacoesBaseUrl => '$baseUrl/solicitacoes';
 
+  static String get notificacoesBaseUrl => '$baseUrl/notificacoes';
+
   static String get viagensBaseUrl => '$solicitacoesBaseUrl/viagens';
 
   static String get centrosCustoBaseUrl => '$baseUrl/centro-de-custo';
