@@ -1,11 +1,14 @@
 name: Mobile DEMO
 
 on:
+  push:
+    branches:
+      - 'demo/**'
   workflow_dispatch:
     inputs:
       public_url:
         description: URL HTTPS publica do gateway DEMO, sem barra final
-        required: true
+        required: false
         type: string
 
 permissions:
@@ -28,7 +31,7 @@ jobs:
           cache: true
       - name: Validate public endpoint
         env:
-          PUBLIC_URL: ${{ inputs.public_url }}
+          PUBLIC_URL: ${{ inputs.public_url || vars.DEMO_PUBLIC_URL }}
         run: |
           case "$PUBLIC_URL" in
             https://*) ;;
@@ -40,7 +43,7 @@ jobs:
       - run: flutter test --no-pub
       - name: Build DEMO release APK
         env:
-          PUBLIC_URL: ${{ inputs.public_url }}
+          PUBLIC_URL: ${{ inputs.public_url || vars.DEMO_PUBLIC_URL }}
         run: |
           flutter build apk --release --no-pub \
             --dart-define=BASE_URL="$PUBLIC_URL/api" \
