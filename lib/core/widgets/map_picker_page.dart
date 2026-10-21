@@ -1,10 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 
+import '../maps/endereco_autocomplete_service.dart';
+import '../maps/endereco_sugestao.dart';
 import '../maps/map_point.dart';
 import 'app_colors.dart';
 import 'app_map_widget.dart';
 import 'busca_barra_widget.dart';
+import 'endereco_sugestoes_widget.dart';
+
+const _intervaloBuscaSugestoes = Duration(milliseconds: 350);
 
 /// Seleciona um ponto por toque no mapa ou por busca de endereço.
 class MapPickerPage extends StatefulWidget {
@@ -30,6 +37,14 @@ class _MapPickerPageState extends State<MapPickerPage> {
   MapPoint? _selectedPoint;
   String? _selectedAddress;
   bool _resolvingAddress = false;
+  Timer? _debounceSugestoes;
+  int _buscaSugestoesId = 0;
+  List<EnderecoSugestao> _sugestoes = const [];
+  bool _buscandoSugestoes = false;
+  String? _mensagemSugestoes;
+
+  bool get _mostrarSugestoes =>
+      _sugestoes.isNotEmpty || _mensagemSugestoes != null;
 
   bool get _isOrigin => widget.selectionKind == MapSelectionKind.origin;
 
@@ -52,8 +67,78 @@ class _MapPickerPageState extends State<MapPickerPage> {
 
   @override
   void dispose() {
+    _debounceSugestoes?.cancel();
     _addressController.dispose();
     super.dispose();
+  }
+
+  void _agendarBuscaSugestoes(String texto) {
+    _debounceSugestoes?.cancel();
+    final busca = texto.trim();
+
+    if (busca.length < BackendEnderecoAutocompleteService.tamanhoMinimoBusca) {
+      _buscaSugestoesId++;
+      _limparSugestoes();
+      return;
+    }
+
+    setState(() => _buscandoSugestoes = true);
+    _debounceSugestoes = Timer(
+      _intervaloBuscaSugestoes,
+      () => _buscarSugestoes(busca),
+    );
+  }
+
+  Future<void> _buscarSugestoes(String busca) async {
+    final buscaId = ++_buscaSugestoesId;
+
+    try {
+      final sugestoes = await enderecoAutocompleteService.buscarSugestoes(
+        busca,
+        proximoDe: widget.initialPoint,
+      );
+      if (!mounted || buscaId != _buscaSugestoesId) return;
+
+      setState(() {
+        _buscandoSugestoes = false;
+        _sugestoes = sugestoes;
+        _mensagemSugestoes = sugestoes.isEmpty
+            ? 'Nenhum endereço encontrado. Tente detalhar a busca.'
+            : null;
+      });
+    } on BuscaEnderecoIndisponivelException {
+      if (!mounted || buscaId != _buscaSugestoesId) return;
+
+      setState(() {
+        _buscandoSugestoes = false;
+        _sugestoes = const [];
+        _mensagemSugestoes =
+            'Não foi possível buscar sugestões agora. Toque na seta para buscar.';
+      });
+    }
+  }
+
+  void _limparSugestoes() {
+    setState(() {
+      _buscandoSugestoes = false;
+      _sugestoes = const [];
+      _mensagemSugestoes = null;
+    });
+  }
+
+  void _selecionarSugestao(EnderecoSugestao sugestao) {
+    _debounceSugestoes?.cancel();
+    _buscaSugestoesId++;
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      _selectedPoint = sugestao.ponto;
+      _selectedAddress = sugestao.descricao;
+      _addressController.text = sugestao.descricao;
+      _buscandoSugestoes = false;
+      _sugestoes = const [];
+      _mensagemSugestoes = null;
+    });
   }
 
   Future<void> _resolveInitialAddress() async {
@@ -68,7 +153,12 @@ class _MapPickerPageState extends State<MapPickerPage> {
   }
 
   Future<void> _selectPoint(MapPoint point) async {
+    _debounceSugestoes?.cancel();
+    _buscaSugestoesId++;
     setState(() {
+      _buscandoSugestoes = false;
+      _sugestoes = const [];
+      _mensagemSugestoes = null;
       _selectedPoint = point;
       _selectedAddress = null;
       _addressController.clear();
@@ -94,6 +184,14 @@ class _MapPickerPageState extends State<MapPickerPage> {
       return;
     }
 
+    if (_sugestoes.isNotEmpty) {
+      _selecionarSugestao(_sugestoes.first);
+      return;
+    }
+
+    _debounceSugestoes?.cancel();
+    _buscaSugestoesId++;
+    _limparSugestoes();
     FocusScope.of(context).unfocus();
     setState(() => _resolvingAddress = true);
     try {
@@ -160,28 +258,47 @@ class _MapPickerPageState extends State<MapPickerPage> {
             child: BuscaBarraWidget(
               controller: _addressController,
               hintText: 'Rua, número, cidade',
-              onChanged: (_) {
+              onChanged: (texto) {
                 setState(() {
                   if (_selectedPoint != null) {
                     _selectedPoint = null;
                     _selectedAddress = null;
                   }
                 });
+                _agendarBuscaSugestoes(texto);
               },
               onSubmitted: (_) => _searchAddress(),
-              suffixIcon: _addressController.text.isEmpty
+              suffixIcon: _buscandoSugestoes
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primaryBlue,
+                        ),
+                      ),
+                    )
+                  : _addressController.text.isEmpty
                   ? null
                   : IconButton(
+                      tooltip: 'Limpar busca',
                       icon: const Icon(
                         Icons.close,
                         color: AppColors.textGrey,
                         size: 20,
                       ),
                       onPressed: () {
+                        _debounceSugestoes?.cancel();
+                        _buscaSugestoesId++;
                         setState(() {
                           _addressController.clear();
                           _selectedPoint = null;
                           _selectedAddress = null;
+                          _buscandoSugestoes = false;
+                          _sugestoes = const [];
+                          _mensagemSugestoes = null;
                         });
                       },
                     ),
@@ -190,19 +307,36 @@ class _MapPickerPageState extends State<MapPickerPage> {
             ),
           ),
           Expanded(
-            child: AppMapWidget(
-              origin: _isOrigin || widget.selectionKind == MapSelectionKind.stop
-                  ? _selectedPoint
-                  : null,
-              destination:
-                  _isOrigin || widget.selectionKind == MapSelectionKind.stop
-                  ? null
-                  : _selectedPoint,
-              initialCenter: widget.initialPoint,
-              onTap: _selectPoint,
-              onCurrentLocation: () {
-                // O mapa envia a localização atual por onTap.
-              },
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: AppMapWidget(
+                    origin:
+                        _isOrigin ||
+                            widget.selectionKind == MapSelectionKind.stop
+                        ? _selectedPoint
+                        : null,
+                    destination:
+                        _isOrigin ||
+                            widget.selectionKind == MapSelectionKind.stop
+                        ? null
+                        : _selectedPoint,
+                    initialCenter: widget.initialPoint,
+                    onTap: _selectPoint,
+                  ),
+                ),
+                if (_mostrarSugestoes)
+                  Positioned(
+                    top: 0,
+                    left: 25,
+                    right: 25,
+                    child: EnderecoSugestoesWidget(
+                      sugestoes: _sugestoes,
+                      mensagem: _mensagemSugestoes,
+                      onSelecionar: _selecionarSugestao,
+                    ),
+                  ),
+              ],
             ),
           ),
           Container(
