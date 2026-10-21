@@ -193,17 +193,40 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthEmailSubmitted event,
     Emitter<AuthState> emit,
   ) async {
+    final email = event.email.trim();
+    final erroEmail = _validarEmail(email);
+    if (erroEmail != null) {
+      emit(AuthErro(erroEmail));
+      return;
+    }
     emit(AuthLoading());
     try {
-      final result = await verificarEmailUsecase(event.email);
+      final result = await verificarEmailUsecase(email);
       if (result.precisaCadastroSenha) {
-        emit(AuthPrimeiroAcesso(event.email));
+        emit(AuthPrimeiroAcesso(email));
       } else {
-        emit(AuthEmailValidado(event.email));
+        emit(AuthEmailValidado(email));
       }
     } on Failure catch (e) {
       emit(AuthErro(e.message));
     }
+  }
+
+  static final _formatoEmail = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+  static const _tamanhoMinimoSenha = 6;
+
+  String? _validarEmail(String email) {
+    if (email.isEmpty) return 'Informe o e-mail.';
+    if (!_formatoEmail.hasMatch(email)) return 'Informe um e-mail válido.';
+    return null;
+  }
+
+  String? _validarSenhaLogin(String senha) {
+    if (senha.isEmpty) return 'Informe a senha.';
+    if (senha.length < _tamanhoMinimoSenha) {
+      return 'A senha deve ter no mínimo $_tamanhoMinimoSenha caracteres.';
+    }
+    return null;
   }
 
   Future<void> _onPinSubmitted(
@@ -227,6 +250,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthLoginRequested event,
     Emitter<AuthState> emit,
   ) async {
+    final erroSenha = _validarSenhaLogin(event.senha);
+    if (erroSenha != null) {
+      emit(AuthEmailValidado(event.email, erro: erroSenha));
+      return;
+    }
     emit(AuthLoading());
     try {
       final usuario = await loginUsecase(
