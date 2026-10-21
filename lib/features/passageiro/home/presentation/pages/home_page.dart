@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../config/routes.dart';
@@ -66,82 +68,85 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
         builder: (context, state) {
           final usuarioAtual = _resolverUsuario(state);
 
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    HomeHeaderWidget(
-                      usuario: usuarioAtual,
-                      onConfiguracoes: () => Navigator.pushNamed(
-                        context,
-                        AppRoutes.passageiroConfiguracoes,
-                      ),
-                      onNotificacoes: () => Navigator.pushNamed(
-                        context,
-                        AppRoutes.notificacoes,
-                        arguments: usuarioAtual,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    MapaBuscaWidget(onBuscarLocal: _abrirBuscaLocal),
-                    const SizedBox(height: 30),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 25),
-                      child: Text(
-                        'Solicitar transporte',
-                        style: TextStyle(
-                          fontSize: 21,
-                          fontWeight: FontWeight.w500,
-                          color: PassageiroColors.darkBlue,
+          return RefreshIndicator(
+            color: PassageiroColors.primaryBlue,
+            onRefresh: _atualizarViagens,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      HomeHeaderWidget(
+                        usuario: usuarioAtual,
+                        onConfiguracoes: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.passageiroConfiguracoes,
+                        ),
+                        onNotificacoes: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.notificacoes,
+                          arguments: usuarioAtual,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 15),
-                    SolicitacaoCardsWidget(
-                      onViagem: () => Navigator.pushNamed(
-                        context,
-                        AppRoutes.passageiroSolicitarViagem,
-                      ),
-                      onObjeto: () => Navigator.pushNamed(
-                        context,
-                        AppRoutes.passageiroSolicitarObjeto,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 25),
-                      child: Text(
-                        'Viagens agendadas',
-                        style: TextStyle(
-                          fontSize: 21,
-                          fontWeight: FontWeight.w500,
-                          color: PassageiroColors.darkBlue,
+                      const SizedBox(height: 30),
+                      MapaBuscaWidget(onBuscarLocal: _abrirBuscaLocal),
+                      const SizedBox(height: 30),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 25),
+                        child: Text(
+                          'Solicitar transporte',
+                          style: TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w500,
+                            color: PassageiroColors.darkBlue,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    SemanaSeletorWidget(
-                      intervaloSemana: _resolverIntervaloSemana(state),
-                      onSemanaAnterior: state is PassageiroHomeCarregada
-                          ? () => context.read<PassageiroHomeBloc>().add(
-                              PassageiroHomeSemanaAnterior(),
-                            )
-                          : () {},
-                      onSemanaProxima: state is PassageiroHomeCarregada
-                          ? () => context.read<PassageiroHomeBloc>().add(
-                              PassageiroHomeSemanaProxima(),
-                            )
-                          : () {},
-                    ),
-                    const SizedBox(height: 28),
-                  ],
+                      const SizedBox(height: 15),
+                      SolicitacaoCardsWidget(
+                        onViagem: () => _abrirSolicitacao(
+                          AppRoutes.passageiroSolicitarViagem,
+                        ),
+                        onObjeto: () => _abrirSolicitacao(
+                          AppRoutes.passageiroSolicitarObjeto,
+                        ),
+                      ),
+                      const SizedBox(height: 30),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 25),
+                        child: Text(
+                          'Viagens agendadas',
+                          style: TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w500,
+                            color: PassageiroColors.darkBlue,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SemanaSeletorWidget(
+                        intervaloSemana: _resolverIntervaloSemana(state),
+                        onSemanaAnterior: state is PassageiroHomeCarregada
+                            ? () => context.read<PassageiroHomeBloc>().add(
+                                PassageiroHomeSemanaAnterior(),
+                              )
+                            : () {},
+                        onSemanaProxima: state is PassageiroHomeCarregada
+                            ? () => context.read<PassageiroHomeBloc>().add(
+                                PassageiroHomeSemanaProxima(),
+                              )
+                            : () {},
+                      ),
+                      const SizedBox(height: 28),
+                    ],
+                  ),
                 ),
-              ),
-              SliverToBoxAdapter(child: _buildConteudo(context, state)),
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
-            ],
+                SliverToBoxAdapter(child: _buildConteudo(context, state)),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              ],
+            ),
           );
         },
       ),
@@ -244,11 +249,24 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
     );
     if (!mounted || result == null) return;
 
-    await Navigator.pushNamed(
-      context,
+    await _abrirSolicitacao(
       AppRoutes.passageiroSolicitarViagem,
       arguments: SolicitarViagemRouteArgs(destinoInicial: result),
     );
+  }
+
+  Future<void> _abrirSolicitacao(String rota, {Object? arguments}) async {
+    await Navigator.pushNamed(context, rota, arguments: arguments);
+    if (!mounted) return;
+    await _atualizarViagens();
+  }
+
+  Future<void> _atualizarViagens() {
+    final concluido = Completer<void>();
+    context.read<PassageiroHomeBloc>().add(
+      PassageiroHomeAtualizada(concluido: concluido),
+    );
+    return concluido.future;
   }
 
   Usuario? _resolverUsuario(PassageiroHomeState state) {
