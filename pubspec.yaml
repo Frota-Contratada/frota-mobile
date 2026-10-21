@@ -52,5 +52,4 @@ flutter:
     - assets/images/passageiro/cards/
     - assets/images/passageiro/mapa_home.png
     - assets/images/passageiro/avatar_placeholder.png
-    - assets/maps/
     - .env.example

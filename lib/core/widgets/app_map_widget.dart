@@ -9,7 +9,8 @@ import '../maps/map_route.dart';
 import '../maps/routing_service.dart';
 
 const _defaultMapCenter = MapPoint(-23.3045, -51.1696);
-const _mapStyleAsset = 'assets/maps/frota_uber_style.json';
+const _mapStyleUrl = 'https://tiles.openfreemap.org/styles/positron';
+const _maxMapZoom = 17.0;
 const _routePadding = 56.0;
 
 class AppMapWidget extends StatefulWidget {
@@ -615,7 +616,8 @@ class _AppMapWidgetState extends State<AppMapWidget> {
       fit: StackFit.expand,
       children: [
         MapLibreMap(
-          styleString: _mapStyleAsset,
+          styleString: _mapStyleUrl,
+          minMaxZoomPreference: const MinMaxZoomPreference(null, _maxMapZoom),
           initialCameraPosition: CameraPosition(
             target: _toLatLng(_center),
             zoom: _hasRoute ? 12 : 13,
