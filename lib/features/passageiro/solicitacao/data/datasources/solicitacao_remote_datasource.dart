@@ -11,6 +11,7 @@ import '../../domain/entities/nova_solicitacao.dart';
 import '../../domain/entities/simulacao_solicitacao.dart';
 
 const _tipoMotivoSolicitacao = 'solicitacao';
+const _tipoMotivoObjeto = 'objeto';
 
 int _valorInteiro(dynamic valor) {
   if (valor is num) return valor.toInt();
@@ -49,16 +50,16 @@ class SolicitacaoRemoteDatasourceImpl implements SolicitacaoRemoteDatasource {
     try {
       final resultados = await Future.wait([
         _buscarMotivos(),
+        _buscarItens('/motivos', {'tipo': _tipoMotivoObjeto}),
         _buscarItens('/tipos-veiculo', null),
         _buscarItens('/tipos-corrida', null),
       ]);
-      final motivos = resultados[0];
 
       return CatalogosSolicitacao(
-        motivosViagem: motivos,
-        objetos: List<ItemCatalogo>.of(motivos),
-        tiposVeiculo: resultados[1],
-        tiposCorrida: resultados[2],
+        motivosViagem: resultados[0],
+        objetos: resultados[1],
+        tiposVeiculo: resultados[2],
+        tiposCorrida: resultados[3],
         centrosCusto: await _buscarCentrosCusto(),
       );
     } on DioException catch (e) {
