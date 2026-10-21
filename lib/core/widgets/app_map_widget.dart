@@ -394,6 +394,20 @@ class _AppMapWidgetState extends State<AppMapWidget> {
     }
   }
 
+  Future<void> _moveToPoint(MapPoint point) async {
+    final controller = _controller;
+    if (controller == null || !_styleReady) return;
+
+    try {
+      await controller.animateCamera(
+        CameraUpdate.newLatLngZoom(_toLatLng(point), 16),
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Erro ao centralizar o ponto selecionado: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
   Future<void> _onMapCreated(MapLibreMapController controller) async {
     _controller = controller;
   }
@@ -414,6 +428,9 @@ class _AppMapWidgetState extends State<AppMapWidget> {
     if (_hasRoute) {
       _centeredOnCurrentLocation = false;
       await _fitRoute();
+    } else if (_waypoints.length == 1) {
+      _centeredOnCurrentLocation = false;
+      await _moveToPoint(_waypoints.single);
     } else if (_currentLocation != null &&
         widget.centerOnCurrentLocation &&
         widget.initialCenter == null &&
