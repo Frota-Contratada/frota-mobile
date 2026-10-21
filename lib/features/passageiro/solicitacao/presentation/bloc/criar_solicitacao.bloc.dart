@@ -203,6 +203,8 @@ class CriarSolicitacaoState extends Equatable {
     this.podeSolicitarEmergencia = false,
   });
 
+  String? get erroSimulacao => !simulando && simulacao == null ? erro : null;
+
   bool get emergenciaDisponivel =>
       podeSolicitarEmergencia && catalogos.idTipoCorridaEmergencial != null;
 
@@ -216,6 +218,7 @@ class CriarSolicitacaoState extends Equatable {
     Solicitacao? criada,
     SolicitacaoDraft? rascunho,
     bool? podeSolicitarEmergencia,
+    bool limparSimulacao = false,
   }) {
     return CriarSolicitacaoState(
       catalogos: catalogos ?? this.catalogos,
@@ -223,7 +226,7 @@ class CriarSolicitacaoState extends Equatable {
       enviando: enviando ?? this.enviando,
       simulando: simulando ?? this.simulando,
       erro: erro,
-      simulacao: simulacao ?? this.simulacao,
+      simulacao: limparSimulacao ? null : simulacao ?? this.simulacao,
       criada: criada ?? this.criada,
       rascunho: rascunho ?? this.rascunho,
       podeSolicitarEmergencia:
@@ -283,7 +286,7 @@ class CriarSolicitacaoBloc
     SimulacaoSolicitada event,
     Emitter<CriarSolicitacaoState> emit,
   ) async {
-    emit(state.copyWith(simulando: true));
+    emit(state.copyWith(simulando: true, limparSimulacao: true));
 
     try {
       final nova = await _montarSolicitacao(event.rascunho);

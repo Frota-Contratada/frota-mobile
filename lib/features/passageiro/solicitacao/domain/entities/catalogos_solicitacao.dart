@@ -41,6 +41,14 @@ class CatalogosSolicitacao extends Equatable {
 
   int? get idTipoCorridaEmergencial => idTipoCorridaPorTermo('emergenc');
 
+  String descricaoCentroCusto(String numero) {
+    for (final centro in centrosCusto) {
+      if (centro.numero.toString() == numero.trim()) return centro.descricao;
+    }
+
+    return numero;
+  }
+
   int? idTipoCorridaPorTermo(String termo) {
     final alvo = termo.toLowerCase();
 
