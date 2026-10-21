@@ -2,6 +2,8 @@ import '../../domain/entities/usuario.dart';
 import '../../domain/enums/perfil_usuario.dart';
 
 class UsuarioModel extends Usuario {
+  static const _perfilSolicitanteEmergencia = 'solicitante-emergencia';
+
   const UsuarioModel({
     super.id,
     required super.nome,
@@ -10,9 +12,12 @@ class UsuarioModel extends Usuario {
     super.dataAtivacao,
     super.dataDesativacao,
     super.perfil = PerfilUsuario.motorista,
+    super.podeSolicitarEmergencia = false,
   });
 
   factory UsuarioModel.fromJson(Map<String, dynamic> json) {
+    final perfis = _perfisFromJson(json['perfil'] as String?, json['perfis']);
+
     return UsuarioModel(
       id: json['id'] as int?,
       nome: json['nome'] as String? ?? '',
@@ -20,7 +25,8 @@ class UsuarioModel extends Usuario {
       cpf: json['cpf'] as String?,
       dataAtivacao: _dateFromJson(json['dataAtivacao']),
       dataDesativacao: _dateFromJson(json['dataDesativacao']),
-      perfil: _perfilFromJson(json['perfil'] as String?, json['perfis']),
+      perfil: _perfilFromPerfis(perfis),
+      podeSolicitarEmergencia: perfis.contains(_perfilSolicitanteEmergencia),
     );
   }
 
@@ -33,6 +39,7 @@ class UsuarioModel extends Usuario {
       'dataAtivacao': dataAtivacao?.toIso8601String(),
       'dataDesativacao': dataDesativacao?.toIso8601String(),
       'perfil': perfil.name,
+      'perfis': [if (podeSolicitarEmergencia) _perfilSolicitanteEmergencia],
     };
   }
 
@@ -41,7 +48,7 @@ class UsuarioModel extends Usuario {
     return DateTime.tryParse(value);
   }
 
-  static PerfilUsuario _perfilFromJson(String? value, dynamic perfisJson) {
+  static Set<String> _perfisFromJson(String? value, dynamic perfisJson) {
     final perfis = <String>[];
     if (value != null) perfis.add(value);
 
@@ -56,15 +63,18 @@ class UsuarioModel extends Usuario {
       }
     }
 
-    final normalized = perfis.map((perfil) => perfil.toLowerCase()).toSet();
-    if (normalized.contains('motorista')) {
+    return perfis.map((perfil) => perfil.toLowerCase()).toSet();
+  }
+
+  static PerfilUsuario _perfilFromPerfis(Set<String> perfis) {
+    if (perfis.contains('motorista')) {
       return PerfilUsuario.motorista;
     }
-    if (normalized.any(
+    if (perfis.any(
       (perfil) => {
         'passageiro',
         'solicitante',
-        'solicitante-emergencia',
+        _perfilSolicitanteEmergencia,
       }.contains(perfil),
     )) {
       return PerfilUsuario.passageiro;
