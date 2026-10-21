@@ -241,13 +241,16 @@ class _AppMapWidgetState extends State<AppMapWidget> {
       widget.onRouteResolved?.call(rota);
     }
 
-    if (_styleReady) {
+    if (mounted && _styleReady) {
       await _refreshMap();
     }
   }
 
   @override
   void dispose() {
+    _styleReady = false;
+    _controller = null;
+    _routeRequestId++;
     unawaited(_stopLocationTracking());
     super.dispose();
   }
@@ -401,9 +404,11 @@ class _AppMapWidgetState extends State<AppMapWidget> {
   }
 
   Future<void> _refreshMap() async {
-    if (!_styleReady || _controller == null) return;
+    if (!mounted || !_styleReady || _controller == null) return;
 
     await _renderAnnotations();
+
+    if (!mounted || !_styleReady || _controller == null) return;
 
     if (_hasRoute) {
       _centeredOnCurrentLocation = false;
@@ -577,26 +582,31 @@ class _AppMapWidgetState extends State<AppMapWidget> {
 
     final east = longitudes.reduce((a, b) => a > b ? a : b);
 
-    if ((north - south).abs() < 0.0001 && (east - west).abs() < 0.0001) {
+    try {
+      if ((north - south).abs() < 0.0001 && (east - west).abs() < 0.0001) {
+        await controller.animateCamera(
+          CameraUpdate.newLatLngZoom(_toLatLng(points.first), 16),
+        );
+
+        return;
+      }
+
       await controller.animateCamera(
-        CameraUpdate.newLatLngZoom(_toLatLng(points.first), 16),
-      );
-
-      return;
-    }
-
-    await controller.animateCamera(
-      CameraUpdate.newLatLngBounds(
-        LatLngBounds(
-          southwest: LatLng(south, west),
-          northeast: LatLng(north, east),
+        CameraUpdate.newLatLngBounds(
+          LatLngBounds(
+            southwest: LatLng(south, west),
+            northeast: LatLng(north, east),
+          ),
+          left: _routePadding,
+          top: _routePadding,
+          right: _routePadding,
+          bottom: _routePadding + 20,
         ),
-        left: _routePadding,
-        top: _routePadding,
-        right: _routePadding,
-        bottom: _routePadding + 20,
-      ),
-    );
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Erro ao enquadrar a rota: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
   }
 
   @override
