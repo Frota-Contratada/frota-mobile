@@ -23,6 +23,7 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
   final String veiculo;
   final List<String> acompanhantes;
   final String? cpfAcompanhante;
+  final bool? viagemCompartilhada;
   final MapPoint? origemPoint;
   final List<MapPoint> paradaPoints;
   final MapPoint? destinoPoint;
@@ -39,6 +40,7 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
     required this.veiculo,
     this.acompanhantes = const [],
     this.cpfAcompanhante,
+    this.viagemCompartilhada,
     this.origemPoint,
     this.paradaPoints = const [],
     this.destinoPoint,
@@ -261,6 +263,7 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
   List<String> _valoresAcompanhantes() {
     if (acompanhantes.isNotEmpty) return acompanhantes;
     if (cpfAcompanhante?.isNotEmpty == true) return [cpfAcompanhante!];
+    if (viagemCompartilhada == false) return const ['Não'];
     return const ['Não informado'];
   }
 

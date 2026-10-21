@@ -544,6 +544,7 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
             centrosCusto: List<String>.of(_centrosCusto),
             veiculo: _veiculo!,
             acompanhantes: acompanhantes,
+            viagemCompartilhada: _viagemCompartilhada,
             origemPoint: widget.origemPoint,
             paradaPoints: widget.paradaPoints,
             destinoPoint: widget.destinoPoint,
