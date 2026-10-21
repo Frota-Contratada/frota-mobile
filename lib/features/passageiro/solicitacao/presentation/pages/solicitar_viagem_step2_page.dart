@@ -101,7 +101,14 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
                   children: [
                     _buildHeader(),
                     const SizedBox(height: 16),
-                    const SolicitacaoModalidadeChipWidget(modalidade: 'Táxi'),
+                    SolicitacaoModalidadeChipWidget(
+                      modalidade:
+                          context.select<CriarSolicitacaoBloc, bool>(
+                            (bloc) => bloc.state.rascunho.emergencia,
+                          )
+                          ? 'Emergencial'
+                          : 'Táxi',
+                    ),
                     const SizedBox(height: 12),
                     _buildSectionTitle('4.', 'Custos'),
                     const SizedBox(height: 8),

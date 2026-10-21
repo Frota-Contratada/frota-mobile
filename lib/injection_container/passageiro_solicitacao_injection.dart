@@ -30,6 +30,7 @@ void registerPassageiroSolicitacaoDependencies(GetIt sl) {
       buscarCatalogosUsecase: sl(),
       simularSolicitacaoUsecase: sl(),
       criarSolicitacaoUsecase: sl(),
+      buscarUsuarioAtualUsecase: sl(),
     ),
   );
 }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/error/failures.dart';
 import '../../../../../core/maps/endereco_estruturado.dart';
 import '../../../../../core/maps/map_point.dart';
+import '../../../../auth/domain/usecases/buscar_usuario_atual_usecase.dart';
 import '../../../solicitacoes/domain/entities/solicitacao.dart';
 import '../../domain/entities/catalogos_solicitacao.dart';
 import '../../domain/entities/nova_solicitacao.dart';
@@ -26,6 +27,7 @@ class RascunhoSolicitacao {
   final List<String> paradasDescricao;
   final List<MapPoint> paradaPoints;
   final bool objeto;
+  final bool emergencia;
 
   const RascunhoSolicitacao({
     required this.data,
@@ -41,6 +43,7 @@ class RascunhoSolicitacao {
     this.paradasDescricao = const [],
     this.paradaPoints = const [],
     this.objeto = false,
+    this.emergencia = false,
   });
 }
 
@@ -59,6 +62,7 @@ class SolicitacaoDraft {
   final List<MapPoint?> paradaPoints;
   final bool objeto;
   final bool? viagemCompartilhada;
+  final bool emergencia;
 
   const SolicitacaoDraft({
     this.data = '',
@@ -75,6 +79,7 @@ class SolicitacaoDraft {
     this.paradaPoints = const [],
     this.objeto = false,
     this.viagemCompartilhada,
+    this.emergencia = false,
   });
 
   SolicitacaoDraft copyWith({
@@ -92,6 +97,7 @@ class SolicitacaoDraft {
     List<MapPoint?>? paradaPoints,
     bool? objeto,
     bool? viagemCompartilhada,
+    bool? emergencia,
   }) {
     return SolicitacaoDraft(
       data: data ?? this.data,
@@ -108,6 +114,7 @@ class SolicitacaoDraft {
       paradaPoints: paradaPoints ?? this.paradaPoints,
       objeto: objeto ?? this.objeto,
       viagemCompartilhada: viagemCompartilhada ?? this.viagemCompartilhada,
+      emergencia: emergencia ?? this.emergencia,
     );
   }
 
@@ -126,6 +133,7 @@ class SolicitacaoDraft {
       paradasDescricao: List<String>.of(paradasDescricao),
       paradaPoints: paradaPoints.whereType<MapPoint>().toList(),
       objeto: objeto,
+      emergencia: emergencia,
     );
   }
 }
@@ -181,6 +189,7 @@ class CriarSolicitacaoState extends Equatable {
   final SimulacaoSolicitacao? simulacao;
   final Solicitacao? criada;
   final SolicitacaoDraft rascunho;
+  final bool podeSolicitarEmergencia;
 
   const CriarSolicitacaoState({
     this.catalogos = const CatalogosSolicitacao(),
@@ -191,7 +200,11 @@ class CriarSolicitacaoState extends Equatable {
     this.simulacao,
     this.criada,
     this.rascunho = const SolicitacaoDraft(),
+    this.podeSolicitarEmergencia = false,
   });
+
+  bool get emergenciaDisponivel =>
+      podeSolicitarEmergencia && catalogos.idTipoCorridaEmergencial != null;
 
   CriarSolicitacaoState copyWith({
     CatalogosSolicitacao? catalogos,
@@ -202,6 +215,7 @@ class CriarSolicitacaoState extends Equatable {
     SimulacaoSolicitacao? simulacao,
     Solicitacao? criada,
     SolicitacaoDraft? rascunho,
+    bool? podeSolicitarEmergencia,
   }) {
     return CriarSolicitacaoState(
       catalogos: catalogos ?? this.catalogos,
@@ -212,6 +226,8 @@ class CriarSolicitacaoState extends Equatable {
       simulacao: simulacao ?? this.simulacao,
       criada: criada ?? this.criada,
       rascunho: rascunho ?? this.rascunho,
+      podeSolicitarEmergencia:
+          podeSolicitarEmergencia ?? this.podeSolicitarEmergencia,
     );
   }
 
@@ -225,6 +241,7 @@ class CriarSolicitacaoState extends Equatable {
     simulacao,
     criada,
     rascunho,
+    podeSolicitarEmergencia,
   ];
 }
 
@@ -233,11 +250,13 @@ class CriarSolicitacaoBloc
   final BuscarCatalogosUsecase buscarCatalogosUsecase;
   final SimularSolicitacaoUsecase simularSolicitacaoUsecase;
   final CriarSolicitacaoUsecase criarSolicitacaoUsecase;
+  final BuscarUsuarioAtualUsecase buscarUsuarioAtualUsecase;
 
   CriarSolicitacaoBloc({
     required this.buscarCatalogosUsecase,
     required this.simularSolicitacaoUsecase,
     required this.criarSolicitacaoUsecase,
+    required this.buscarUsuarioAtualUsecase,
   }) : super(const CriarSolicitacaoState()) {
     on<CatalogosSolicitados>(_onCatalogosSolicitados);
     on<SolicitacaoRascunhoAtualizado>(_onRascunhoAtualizado);
@@ -296,9 +315,16 @@ class CriarSolicitacaoBloc
     emit(state.copyWith(carregandoCatalogos: true));
 
     try {
+      final permissaoEmergencia = _buscarPermissaoEmergencia();
       final catalogos = await buscarCatalogosUsecase();
 
-      emit(state.copyWith(catalogos: catalogos, carregandoCatalogos: false));
+      emit(
+        state.copyWith(
+          catalogos: catalogos,
+          carregandoCatalogos: false,
+          podeSolicitarEmergencia: await permissaoEmergencia,
+        ),
+      );
     } on Failure catch (e) {
       emit(state.copyWith(carregandoCatalogos: false, erro: e.message));
     } catch (_) {
@@ -308,6 +334,15 @@ class CriarSolicitacaoBloc
           erro: 'Não foi possível carregar os dados da solicitação.',
         ),
       );
+    }
+  }
+
+  Future<bool> _buscarPermissaoEmergencia() async {
+    try {
+      final usuario = await buscarUsuarioAtualUsecase();
+      return usuario.podeSolicitarEmergencia;
+    } on Object {
+      return false;
     }
   }
 
@@ -358,7 +393,9 @@ class CriarSolicitacaoBloc
       );
     }
 
-    final tipoCorridaId = _resolverTipoCorrida(catalogos, rascunho.objeto);
+    final tipoCorridaId = rascunho.emergencia
+        ? _resolverTipoCorridaEmergencial(catalogos)
+        : _resolverTipoCorrida(catalogos, rascunho.objeto);
 
     if (tipoCorridaId == null) {
       throw const RascunhoInvalidoException(
@@ -441,6 +478,16 @@ class CriarSolicitacaoBloc
     );
   }
 
+  int? _resolverTipoCorridaEmergencial(CatalogosSolicitacao catalogos) {
+    if (!state.podeSolicitarEmergencia) {
+      throw const RascunhoInvalidoException(
+        'Seu perfil não permite solicitar corridas emergenciais.',
+      );
+    }
+
+    return catalogos.idTipoCorridaEmergencial;
+  }
+
   int? _resolverTipoCorrida(CatalogosSolicitacao catalogos, bool objeto) {
     final termosObjeto = ['objeto', 'item', 'itens', 'carga', 'encomenda'];
     final idObjeto = _idTipoCorridaPorTermos(catalogos, termosObjeto);
@@ -450,7 +497,11 @@ class CriarSolicitacaoBloc
     final termosViagem = ['táxi', 'taxi', 'passageiro', 'viagem'];
     return _idTipoCorridaPorTermos(catalogos, termosViagem) ??
         catalogos.tiposCorrida
-            .where((item) => item.id != idObjeto)
+            .where(
+              (item) =>
+                  item.id != idObjeto &&
+                  item.id != catalogos.idTipoCorridaEmergencial,
+            )
             .map((item) => item.id)
             .firstOrNull;
   }

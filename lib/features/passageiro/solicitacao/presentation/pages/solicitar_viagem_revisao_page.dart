@@ -78,7 +78,14 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
                   children: [
                     _buildHeader(context),
                     const SizedBox(height: 16),
-                    const SolicitacaoModalidadeChipWidget(modalidade: 'Táxi'),
+                    SolicitacaoModalidadeChipWidget(
+                      modalidade:
+                          context.select<CriarSolicitacaoBloc, bool>(
+                            (bloc) => bloc.state.rascunho.emergencia,
+                          )
+                          ? 'Emergencial'
+                          : 'Táxi',
+                    ),
                     const SizedBox(height: 12),
                     _buildRouteDetails(),
                     _buildInfoItem(
@@ -291,9 +298,11 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
   }
 
   void _enviarSolicitacao(BuildContext context) {
-    context.read<CriarSolicitacaoBloc>().add(
+    final bloc = context.read<CriarSolicitacaoBloc>();
+    bloc.add(
       SolicitacaoEnviada(
         RascunhoSolicitacao(
+          emergencia: bloc.state.rascunho.emergencia,
           data: data,
           horario: horario,
           motivoNome: motivo,

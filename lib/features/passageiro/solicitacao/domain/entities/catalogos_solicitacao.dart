@@ -39,6 +39,8 @@ class CatalogosSolicitacao extends Equatable {
     return null;
   }
 
+  int? get idTipoCorridaEmergencial => idTipoCorridaPorTermo('emergenc');
+
   int? idTipoCorridaPorTermo(String termo) {
     final alvo = termo.toLowerCase();
 

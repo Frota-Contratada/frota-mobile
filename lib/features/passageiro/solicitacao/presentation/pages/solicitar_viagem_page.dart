@@ -40,6 +40,7 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
   String? _horarioErro;
   String? _motivo;
   bool _motivosExpandidos = false;
+  bool _emergencia = false;
 
   @override
   void initState() {
@@ -61,6 +62,7 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
     _dataSelecionada = _parseData(draft.data);
     _horarioErro = _validarHorario(draft.horario, _dataSelecionada);
     _motivo = draft.motivoNome;
+    _emergencia = draft.emergencia;
 
     final quantidadeParadas =
         draft.paradasDescricao.length > draft.paradaPoints.length
@@ -166,6 +168,7 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
                       _buildSectionTitle('3.', 'Motivo da corrida'),
                       const SizedBox(height: 8),
                       _buildMotivoInput(),
+                      _buildEmergenciaToggle(),
                       const SizedBox(height: 30),
                       SolicitacaoPrimaryButtonWidget(
                         label: 'Avançar',
@@ -183,6 +186,8 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
   }
 
   String get _modalidadeLabel {
+    if (_emergencia) return 'Emergencial';
+
     final modalidade =
         widget.routeArgs?.modalidade ?? SolicitarViagemModalidade.taxi;
 
@@ -504,6 +509,36 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
     );
   }
 
+  Widget _buildEmergenciaToggle() {
+    final disponivel = context.select<CriarSolicitacaoBloc, bool>(
+      (bloc) => bloc.state.emergenciaDisponivel,
+    );
+
+    if (!disponivel) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: SwitchListTile.adaptive(
+        value: _emergencia,
+        onChanged: (value) => setState(() => _emergencia = value),
+        contentPadding: EdgeInsets.zero,
+        activeTrackColor: AppColors.primaryBlue,
+        title: const Text(
+          'Viagem de emergência',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.darkBlue,
+          ),
+        ),
+        subtitle: const Text(
+          'Use apenas em situações urgentes.',
+          style: TextStyle(fontSize: 11, color: AppColors.textGrey),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMotivoOptions() {
     final state = context.watch<CriarSolicitacaoBloc>().state;
     final motivos = state.catalogos.nomesMotivosViagem;
@@ -714,6 +749,7 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
         for (final controller in _paradaControllers) controller.text.trim(),
       ],
       paradaPoints: List<MapPoint?>.of(_paradaPoints),
+      emergencia: _emergencia && bloc.state.emergenciaDisponivel,
     );
     bloc.add(SolicitacaoRascunhoAtualizado(draft));
 
