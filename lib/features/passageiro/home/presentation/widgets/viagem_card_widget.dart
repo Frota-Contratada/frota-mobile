@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/widgets/corrida_card_base_widget.dart';
+import '../../domain/entities/status_viagem.dart';
 import '../../domain/entities/viagem.dart';
 import '../utils/semana_util.dart';
 
@@ -28,6 +29,9 @@ class ViagemCardWidget extends StatelessWidget {
       onVerDetalhes: onVerDetalhes,
       emAndamento: viagem.emAndamento,
       onViagemEmAndamento: onViagemEmAndamento,
+      etiqueta: viagem.status == StatusViagem.pendenteAprovacao
+          ? 'Pendente de aprovação'
+          : null,
     );
   }
 }

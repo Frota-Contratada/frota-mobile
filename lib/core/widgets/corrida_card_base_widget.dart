@@ -13,6 +13,7 @@ class CorridaCardBaseWidget extends StatelessWidget {
   /// Se `true`, exibe o botão "viagem em andamento" no lugar de "ver detalhes".
   final bool emAndamento;
   final VoidCallback? onViagemEmAndamento;
+  final String? etiqueta;
 
   const CorridaCardBaseWidget({
     super.key,
@@ -22,6 +23,7 @@ class CorridaCardBaseWidget extends StatelessWidget {
     this.onVerDetalhes,
     this.emAndamento = false,
     this.onViagemEmAndamento,
+    this.etiqueta,
   });
 
   @override
@@ -37,6 +39,10 @@ class CorridaCardBaseWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (etiqueta != null) ...[
+              _Etiqueta(etiqueta!),
+              const SizedBox(height: 10),
+            ],
             Row(
               children: [
                 const SizedBox(width: 14),
@@ -152,6 +158,31 @@ class CorridaCardBaseWidget extends StatelessWidget {
         child: const Text(
           'ver detalhes',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+      ),
+    );
+  }
+}
+
+class _Etiqueta extends StatelessWidget {
+  final String texto;
+
+  const _Etiqueta(this.texto);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.selectedOptionBg,
+        borderRadius: BorderRadius.circular(150),
+      ),
+      child: Text(
+        texto,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: AppColors.primaryBlue,
         ),
       ),
     );
