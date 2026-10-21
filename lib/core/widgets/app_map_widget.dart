@@ -715,7 +715,7 @@ class _AppMapWidgetState extends State<AppMapWidget> {
           ],
         ),
         if (widget.showAttribution)
-          const Positioned(left: 8, bottom: 7, child: _MapAttributionChip()),
+          const Positioned(left: 4, bottom: 3, child: _MapAttributionChip()),
         if (widget.showCurrentLocation)
           Positioned(
             right: 12,
@@ -895,22 +895,58 @@ class _MapRoutePreviewState extends State<MapRoutePreview> {
   }
 }
 
-class _MapAttributionChip extends StatelessWidget {
+class _MapAttributionChip extends StatefulWidget {
   const _MapAttributionChip();
 
   @override
+  State<_MapAttributionChip> createState() => _MapAttributionChipState();
+}
+
+class _MapAttributionChipState extends State<_MapAttributionChip> {
+  static const _texto = '© OpenFreeMap · © OpenStreetMap';
+  static const _corTexto = Color(0xff69727D);
+
+  bool _expandido = false;
+
+  @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(5),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3)],
-      ),
-      child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-        child: Text(
-          '© OpenFreeMap · © OpenStreetMap',
-          style: TextStyle(fontSize: 9, color: Color(0xff69727D)),
+    return Semantics(
+      button: true,
+      expanded: _expandido,
+      label: _expandido
+          ? 'Ocultar créditos do mapa: $_texto'
+          : 'Mostrar créditos do mapa',
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => setState(() => _expandido = !_expandido),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            height: 22,
+            padding: EdgeInsets.only(left: 3, right: _expandido ? 8 : 3),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(11),
+              boxShadow: const [
+                BoxShadow(color: Colors.black12, blurRadius: 3),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.info_outline, size: 16, color: _corTexto),
+                if (_expandido) ...[
+                  const SizedBox(width: 4),
+                  const Text(
+                    _texto,
+                    style: TextStyle(fontSize: 9, color: _corTexto),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
