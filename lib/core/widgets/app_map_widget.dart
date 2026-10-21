@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import '../maps/destino_pin_image.dart';
 import '../maps/map_point.dart';
 import '../maps/map_route.dart';
 import '../maps/routing_service.dart';
@@ -68,6 +69,8 @@ class _AppMapWidgetState extends State<AppMapWidget> {
 
   bool _loadingLocation = true;
   bool _styleReady = false;
+  bool _destinationPinReady = false;
+  double _pixelRatio = 3;
   bool _centeredOnCurrentLocation = false;
 
   // Impede que múltiplas renderizações do mapa aconteçam simultaneamente.
@@ -138,6 +141,12 @@ class _AppMapWidgetState extends State<AppMapWidget> {
     }
 
     unawaited(_resolveRoute());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _pixelRatio = MediaQuery.devicePixelRatioOf(context);
   }
 
   @override
@@ -414,6 +423,13 @@ class _AppMapWidgetState extends State<AppMapWidget> {
 
   Future<void> _onStyleLoaded() async {
     _styleReady = true;
+    _destinationPinReady = false;
+
+    final controller = _controller;
+    if (controller != null) {
+      await _registerDestinationPin(controller);
+    }
+    if (!mounted) return;
 
     await _refreshMap();
   }
@@ -465,6 +481,7 @@ class _AppMapWidgetState extends State<AppMapWidget> {
 
         await controller.clearLines();
         await controller.clearCircles();
+        await controller.clearSymbols();
 
         if (!_styleReady || !mounted) return;
 
@@ -523,16 +540,7 @@ class _AppMapWidgetState extends State<AppMapWidget> {
         }
 
         if (widget.destination != null) {
-          await controller.addCircle(
-            CircleOptions(
-              geometry: _toLatLng(widget.destination!),
-              circleRadius: 9,
-              circleColor: '#F15B5A',
-              circleStrokeColor: '#FFFFFF',
-              circleStrokeWidth: 3,
-              circleStrokeOpacity: 1,
-            ),
-          );
+          await _addDestinationMarker(controller, widget.destination!);
         }
       } while (_renderRequested && mounted);
     } catch (error, stackTrace) {
@@ -541,6 +549,48 @@ class _AppMapWidgetState extends State<AppMapWidget> {
     } finally {
       _renderingAnnotations = false;
     }
+  }
+
+  Future<void> _registerDestinationPin(MapLibreMapController controller) async {
+    try {
+      final bytes = await gerarDestinoPinImage(_pixelRatio);
+      if (bytes == null || !mounted || _controller != controller) return;
+
+      await controller.addImage(destinoPinImageName, bytes);
+      _destinationPinReady = true;
+    } catch (error, stackTrace) {
+      _destinationPinReady = false;
+      debugPrint('Erro ao registrar o ícone de destino: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _addDestinationMarker(
+    MapLibreMapController controller,
+    MapPoint destination,
+  ) async {
+    if (_destinationPinReady) {
+      await controller.addSymbol(
+        SymbolOptions(
+          geometry: _toLatLng(destination),
+          iconImage: destinoPinImageName,
+          iconAnchor: 'bottom',
+          iconSize: 1,
+        ),
+      );
+      return;
+    }
+
+    await controller.addCircle(
+      CircleOptions(
+        geometry: _toLatLng(destination),
+        circleRadius: 9,
+        circleColor: '#1E224F',
+        circleStrokeColor: '#FFFFFF',
+        circleStrokeWidth: 3,
+        circleStrokeOpacity: 1,
+      ),
+    );
   }
 
   Future<void> _updateLocationAnnotation() async {
