@@ -331,8 +331,9 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
       builder: (_) => SolicitacaoConfirmacaoDialog(
         titulo: 'Sua viagem foi solicitada!',
         mensagem:
-            'Valor estimado de ${_moeda(criada.valorEstimado)}'
-            '${chegada == null ? '' : ' com chegada prevista às ${formatarHorarioSolicitacao(chegada)}'}.'
+            'Partida às ${formatarHorarioSolicitacao(criada.dataCorrida)}'
+            '${chegada == null ? '' : ', com chegada prevista às ${formatarHorarioSolicitacao(chegada)}'}.'
+            ' Valor estimado de ${_moeda(criada.valorEstimado)}.'
             ' Agora é só esperar os responsáveis aprovarem sua solicitação!',
         submensagem:
             'Você pode acompanhar o status da sua solicitação através da aba ‘solicitações’ aqui no aplicativo',
