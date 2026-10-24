@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../../core/error/exceptions.dart';
+import '../../../../../core/error/failures.dart';
 import '../../data/dtos/trip_bridge_message.dart';
 import '../../domain/entities/canonical_route.dart';
 import '../../domain/entities/tracked_position.dart';
@@ -130,14 +132,23 @@ class TripTrackingBloc extends Cubit<TripTrackingState> {
           emit(state.copyWith(errorMessage: error.message));
         }
       }
-    } on Object {
+    } on Object catch (error) {
       emit(
         state.copyWith(
           loading: false,
-          errorMessage: 'Não foi possível carregar os dados da corrida.',
+          errorMessage: _mensagemDeFalha(
+            error,
+            fallback: 'Não foi possível carregar os dados da corrida.',
+          ),
         ),
       );
     }
+  }
+
+  String _mensagemDeFalha(Object error, {required String fallback}) {
+    if (error is ServerException) return error.message;
+    if (error is Failure) return error.message;
+    return fallback;
   }
 
   Future<void> _synchronizeSnapshot() {
@@ -377,7 +388,10 @@ class TripTrackingBloc extends Cubit<TripTrackingState> {
         'commandType': message.type,
         'reason': error is StateError
             ? error.message
-            : 'Não foi possível executar o comando.',
+            : _mensagemDeFalha(
+                error,
+                fallback: 'Não foi possível executar o comando.',
+              ),
       });
     }
   }

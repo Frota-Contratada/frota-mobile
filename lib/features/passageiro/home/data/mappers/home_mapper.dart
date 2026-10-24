@@ -34,6 +34,8 @@ class HomeMapper {
       'em-andamento' ||
       'em_andamento' ||
       'emAndamento' => StatusViagem.emAndamento,
+      'aguardando-aprovacao' ||
+      'pendente-aprovacao' => StatusViagem.pendenteAprovacao,
       _ => StatusViagem.agendada,
     };
   }

@@ -18,9 +18,7 @@ import 'package:frota_mobile/injection_container/injection_container.dart';
 
 void main() {
   setUpAll(() {
-    dotenv.loadFromString(
-      envString: 'OSRM_BASE_URL=https://router.project-osrm.org',
-    );
+    dotenv.loadFromString(envString: 'BASE_URL=http://localhost:3000');
     geocoding.GeocodingPlatformFactory.instance = _FakeGeocodingFactory();
     mapRoutingService = _FakeRoutingService();
   });

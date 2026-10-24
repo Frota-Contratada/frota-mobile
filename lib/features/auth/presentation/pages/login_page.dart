@@ -177,9 +177,9 @@ class _EmailForm extends StatelessWidget {
           label: 'Avançar',
           isLoading: isLoading,
           onPressed: () {
-            final email = emailController.text.trim();
-            if (email.isEmpty) return;
-            context.read<AuthBloc>().add(AuthEmailSubmitted(email));
+            context.read<AuthBloc>().add(
+              AuthEmailSubmitted(emailController.text.trim()),
+            );
           },
         ),
       ],

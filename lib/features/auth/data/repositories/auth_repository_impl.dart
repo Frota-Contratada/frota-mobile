@@ -36,6 +36,7 @@ class AuthRepositoryImpl implements AuthRepository {
           dataAtivacao: result.usuario.dataAtivacao,
           dataDesativacao: result.usuario.dataDesativacao,
           perfil: result.usuario.perfil,
+          podeSolicitarEmergencia: result.usuario.podeSolicitarEmergencia,
         ),
       );
       if (result.precisaCadastroSenha) {
@@ -63,6 +64,15 @@ class AuthRepositoryImpl implements AuthRepository {
       await localDatasource.salvarAuthToken(authToken);
 
       final usuario = await _carregarUsuarioAutenticado(authToken);
+      await localDatasource.salvarUsuario(usuario);
+      return usuario;
+    });
+  }
+
+  @override
+  Future<Usuario> buscarUsuarioAtual() async {
+    return _handleRemoteCall(() async {
+      final usuario = await remoteDatasource.buscarUsuarioAtual();
       await localDatasource.salvarUsuario(usuario);
       return usuario;
     });

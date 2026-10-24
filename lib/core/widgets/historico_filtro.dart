@@ -4,7 +4,17 @@ enum HistoricoOrdenacao { maisRecente, maisAntiga }
 
 enum HistoricoTipo { todos, viagem, transporteItens }
 
-enum HistoricoPeriodo { todos, hoje, ontem, ultimos7, ultimos15, ultimos30 }
+enum HistoricoPeriodo {
+  todos,
+  hoje,
+  ontem,
+  ultimos7,
+  ultimos15,
+  ultimos30,
+  proximos7,
+  proximos15,
+  proximos30,
+}
 
 class HistoricoFiltro {
   final HistoricoOrdenacao ordenacao;
@@ -25,11 +35,12 @@ class HistoricoFiltro {
       periodo == HistoricoPeriodo.todos &&
       statusCodigo == null;
 
-  DateTimeRange? get intervalo {
+  DateTimeRange? get intervalo => intervaloEm(DateTime.now());
+
+  DateTimeRange? intervaloEm(DateTime referencia) {
     if (periodo == HistoricoPeriodo.todos) return null;
 
-    final agora = DateTime.now();
-    final hoje = DateTime(agora.year, agora.month, agora.day);
+    final hoje = DateTime(referencia.year, referencia.month, referencia.day);
 
     switch (periodo) {
       case HistoricoPeriodo.hoje:
@@ -51,6 +62,21 @@ class HistoricoFiltro {
         return DateTimeRange(
           start: hoje.subtract(const Duration(days: 29)),
           end: _fimDoDia(hoje),
+        );
+      case HistoricoPeriodo.proximos7:
+        return DateTimeRange(
+          start: hoje,
+          end: _fimDoDia(hoje.add(const Duration(days: 6))),
+        );
+      case HistoricoPeriodo.proximos15:
+        return DateTimeRange(
+          start: hoje,
+          end: _fimDoDia(hoje.add(const Duration(days: 14))),
+        );
+      case HistoricoPeriodo.proximos30:
+        return DateTimeRange(
+          start: hoje,
+          end: _fimDoDia(hoje.add(const Duration(days: 29))),
         );
       case HistoricoPeriodo.todos:
         return null;
@@ -77,8 +103,11 @@ class HistoricoFiltro {
     }
   }
 
-  bool correspondeData(DateTime data) {
-    final faixa = intervalo;
+  bool correspondeData(DateTime data) =>
+      correspondeDataEm(data, DateTime.now());
+
+  bool correspondeDataEm(DateTime data, DateTime referencia) {
+    final faixa = intervaloEm(referencia);
     if (faixa == null) return true;
     return !data.isBefore(faixa.start) && !data.isAfter(faixa.end);
   }

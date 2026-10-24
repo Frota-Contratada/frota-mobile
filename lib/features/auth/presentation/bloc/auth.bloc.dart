@@ -193,25 +193,67 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthEmailSubmitted event,
     Emitter<AuthState> emit,
   ) async {
+    final email = event.email.trim();
+    final erroEmail = _validarEmail(email);
+    if (erroEmail != null) {
+      emit(AuthErro(erroEmail));
+      return;
+    }
     emit(AuthLoading());
     try {
-      final result = await verificarEmailUsecase(event.email);
+      final result = await verificarEmailUsecase(email);
       if (result.precisaCadastroSenha) {
-        emit(AuthPrimeiroAcesso(event.email));
+        emit(AuthPrimeiroAcesso(email));
       } else {
-        emit(AuthEmailValidado(event.email));
+        emit(AuthEmailValidado(email));
       }
     } on Failure catch (e) {
       emit(AuthErro(e.message));
     }
   }
 
+  static final _formatoEmail = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+  static const _tamanhoMinimoSenha = 6;
+
+  String? _validarEmail(String email) {
+    if (email.isEmpty) return 'Informe o e-mail.';
+    if (!_formatoEmail.hasMatch(email)) return 'Informe um e-mail válido.';
+    return null;
+  }
+
+  String? _validarSenhaLogin(String senha) {
+    final valor = senha.trim();
+    if (valor.isEmpty) return 'Informe a senha.';
+    if (valor.length < _tamanhoMinimoSenha) return 'Senha inválida.';
+    return null;
+  }
+
+  String? _validarPin(String pin) {
+    final valor = pin.trim();
+    if (valor.isEmpty) return 'Informe o código PIN.';
+    if (!RegExp(r'^\d{6}$').hasMatch(valor)) {
+      return 'O código PIN deve ter 6 dígitos.';
+    }
+    return null;
+  }
+
+  String? _validarNovaSenha(String senha, String confirmacaoSenha) {
+    if (senha.isEmpty) return 'Informe a senha.';
+    if (confirmacaoSenha.isEmpty) return 'Confirme a senha.';
+    if (senha != confirmacaoSenha) return 'As senhas não coincidem.';
+    if (senha.length < _tamanhoMinimoSenha) {
+      return 'A senha deve ter no mínimo $_tamanhoMinimoSenha caracteres.';
+    }
+    return null;
+  }
+
   Future<void> _onPinSubmitted(
     AuthPinSubmitted event,
     Emitter<AuthState> emit,
   ) async {
-    if (event.pin.trim().isEmpty) {
-      emit(AuthPrimeiroAcesso(event.email, erro: 'Informe o código PIN.'));
+    final erroPin = _validarPin(event.pin);
+    if (erroPin != null) {
+      emit(AuthPrimeiroAcesso(event.email, erro: erroPin));
       return;
     }
     emit(AuthLoading());
@@ -227,6 +269,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthLoginRequested event,
     Emitter<AuthState> emit,
   ) async {
+    final erroSenha = _validarSenhaLogin(event.senha);
+    if (erroSenha != null) {
+      emit(AuthEmailValidado(event.email, erro: erroSenha));
+      return;
+    }
     emit(AuthLoading());
     try {
       final usuario = await loginUsecase(
@@ -259,8 +306,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthRedefinirSenhaPinSubmitted event,
     Emitter<AuthState> emit,
   ) async {
-    if (event.pin.trim().isEmpty) {
-      emit(AuthRedefinirSenhaPin(event.email, erro: 'Informe o código PIN.'));
+    final erroPin = _validarPin(event.pin);
+    if (erroPin != null) {
+      emit(AuthRedefinirSenhaPin(event.email, erro: erroPin));
       return;
     }
     emit(AuthLoading());
@@ -280,22 +328,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthRedefinirSenhaRequested event,
     Emitter<AuthState> emit,
   ) async {
-    if (event.senha != event.confirmacaoSenha) {
-      emit(
-        AuthRedefinirSenhaNovaSenha(
-          event.email,
-          erro: 'As senhas não coincidem.',
-        ),
-      );
-      return;
-    }
-    if (event.senha.length < 6) {
-      emit(
-        AuthRedefinirSenhaNovaSenha(
-          event.email,
-          erro: 'A senha deve ter no mínimo 6 caracteres.',
-        ),
-      );
+    final erroSenha = _validarNovaSenha(event.senha, event.confirmacaoSenha);
+    if (erroSenha != null) {
+      emit(AuthRedefinirSenhaNovaSenha(event.email, erro: erroSenha));
       return;
     }
     emit(AuthLoading());
@@ -315,17 +350,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthCadastrarSenhaRequested event,
     Emitter<AuthState> emit,
   ) async {
-    if (event.senha != event.confirmacaoSenha) {
-      emit(AuthCadastroSenha(event.email, erro: 'As senhas não coincidem.'));
-      return;
-    }
-    if (event.senha.length < 6) {
-      emit(
-        AuthCadastroSenha(
-          event.email,
-          erro: 'A senha deve ter no mínimo 6 caracteres.',
-        ),
-      );
+    final erroSenha = _validarNovaSenha(event.senha, event.confirmacaoSenha);
+    if (erroSenha != null) {
+      emit(AuthCadastroSenha(event.email, erro: erroSenha));
       return;
     }
     emit(AuthLoading());

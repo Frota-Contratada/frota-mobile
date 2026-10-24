@@ -8,6 +8,8 @@ abstract class AuthRepository {
 
   Future<Usuario> login({required String email, required String senha});
 
+  Future<Usuario> buscarUsuarioAtual();
+
   Future<void> signUp({required String senha});
 
   Future<void> redefinirSenha({required String senha});

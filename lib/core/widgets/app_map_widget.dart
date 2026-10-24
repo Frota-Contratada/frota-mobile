@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import '../maps/destino_pin_image.dart';
 import '../maps/map_point.dart';
 import '../maps/map_route.dart';
 import '../maps/routing_service.dart';
 
 const _defaultMapCenter = MapPoint(-23.3045, -51.1696);
-const _mapStyleAsset = 'assets/maps/frota_uber_style.json';
+const _mapStyleUrl = 'https://tiles.openfreemap.org/styles/positron';
+const _maxMapZoom = 17.0;
 const _routePadding = 56.0;
 
 class AppMapWidget extends StatefulWidget {
@@ -67,6 +69,8 @@ class _AppMapWidgetState extends State<AppMapWidget> {
 
   bool _loadingLocation = true;
   bool _styleReady = false;
+  bool _destinationPinReady = false;
+  double _pixelRatio = 3;
   bool _centeredOnCurrentLocation = false;
 
   // Impede que múltiplas renderizações do mapa aconteçam simultaneamente.
@@ -137,6 +141,12 @@ class _AppMapWidgetState extends State<AppMapWidget> {
     }
 
     unawaited(_resolveRoute());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _pixelRatio = MediaQuery.devicePixelRatioOf(context);
   }
 
   @override
@@ -228,7 +238,18 @@ class _AppMapWidgetState extends State<AppMapWidget> {
 
     _loadingRoute = true;
 
-    final rota = await _routingService.buscarRota(pontos);
+    MapRoute? rota;
+    try {
+      rota = await _routingService.buscarRota(pontos);
+    } on BackendRoutingException catch (error) {
+      if (!mounted || requestId != _routeRequestId) return;
+      _setLocationMessage(error.message);
+      setState(() {
+        _loadingRoute = false;
+        _resolvedRoutePoints = null;
+      });
+      return;
+    }
 
     if (!mounted || requestId != _routeRequestId) return;
 
@@ -241,13 +262,16 @@ class _AppMapWidgetState extends State<AppMapWidget> {
       widget.onRouteResolved?.call(rota);
     }
 
-    if (_styleReady) {
+    if (mounted && _styleReady) {
       await _refreshMap();
     }
   }
 
   @override
   void dispose() {
+    _styleReady = false;
+    _controller = null;
+    _routeRequestId++;
     unawaited(_stopLocationTracking());
     super.dispose();
   }
@@ -390,24 +414,50 @@ class _AppMapWidgetState extends State<AppMapWidget> {
     }
   }
 
+  Future<void> _moveToPoint(MapPoint point) async {
+    final controller = _controller;
+    if (controller == null || !_styleReady) return;
+
+    try {
+      await controller.animateCamera(
+        CameraUpdate.newLatLngZoom(_toLatLng(point), 16),
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Erro ao centralizar o ponto selecionado: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
   Future<void> _onMapCreated(MapLibreMapController controller) async {
     _controller = controller;
   }
 
   Future<void> _onStyleLoaded() async {
     _styleReady = true;
+    _destinationPinReady = false;
+
+    final controller = _controller;
+    if (controller != null) {
+      await _registerDestinationPin(controller);
+    }
+    if (!mounted) return;
 
     await _refreshMap();
   }
 
   Future<void> _refreshMap() async {
-    if (!_styleReady || _controller == null) return;
+    if (!mounted || !_styleReady || _controller == null) return;
 
     await _renderAnnotations();
+
+    if (!mounted || !_styleReady || _controller == null) return;
 
     if (_hasRoute) {
       _centeredOnCurrentLocation = false;
       await _fitRoute();
+    } else if (_waypoints.length == 1) {
+      _centeredOnCurrentLocation = false;
+      await _moveToPoint(_waypoints.single);
     } else if (_currentLocation != null &&
         widget.centerOnCurrentLocation &&
         widget.initialCenter == null &&
@@ -442,6 +492,7 @@ class _AppMapWidgetState extends State<AppMapWidget> {
 
         await controller.clearLines();
         await controller.clearCircles();
+        await controller.clearSymbols();
 
         if (!_styleReady || !mounted) return;
 
@@ -500,16 +551,7 @@ class _AppMapWidgetState extends State<AppMapWidget> {
         }
 
         if (widget.destination != null) {
-          await controller.addCircle(
-            CircleOptions(
-              geometry: _toLatLng(widget.destination!),
-              circleRadius: 9,
-              circleColor: '#F15B5A',
-              circleStrokeColor: '#FFFFFF',
-              circleStrokeWidth: 3,
-              circleStrokeOpacity: 1,
-            ),
-          );
+          await _addDestinationMarker(controller, widget.destination!);
         }
       } while (_renderRequested && mounted);
     } catch (error, stackTrace) {
@@ -518,6 +560,48 @@ class _AppMapWidgetState extends State<AppMapWidget> {
     } finally {
       _renderingAnnotations = false;
     }
+  }
+
+  Future<void> _registerDestinationPin(MapLibreMapController controller) async {
+    try {
+      final bytes = await gerarDestinoPinImage(_pixelRatio);
+      if (bytes == null || !mounted || _controller != controller) return;
+
+      await controller.addImage(destinoPinImageName, bytes);
+      _destinationPinReady = true;
+    } catch (error, stackTrace) {
+      _destinationPinReady = false;
+      debugPrint('Erro ao registrar o ícone de destino: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _addDestinationMarker(
+    MapLibreMapController controller,
+    MapPoint destination,
+  ) async {
+    if (_destinationPinReady) {
+      await controller.addSymbol(
+        SymbolOptions(
+          geometry: _toLatLng(destination),
+          iconImage: destinoPinImageName,
+          iconAnchor: 'bottom',
+          iconSize: 1,
+        ),
+      );
+      return;
+    }
+
+    await controller.addCircle(
+      CircleOptions(
+        geometry: _toLatLng(destination),
+        circleRadius: 9,
+        circleColor: '#1E224F',
+        circleStrokeColor: '#FFFFFF',
+        circleStrokeWidth: 3,
+        circleStrokeOpacity: 1,
+      ),
+    );
   }
 
   Future<void> _updateLocationAnnotation() async {
@@ -577,26 +661,31 @@ class _AppMapWidgetState extends State<AppMapWidget> {
 
     final east = longitudes.reduce((a, b) => a > b ? a : b);
 
-    if ((north - south).abs() < 0.0001 && (east - west).abs() < 0.0001) {
+    try {
+      if ((north - south).abs() < 0.0001 && (east - west).abs() < 0.0001) {
+        await controller.animateCamera(
+          CameraUpdate.newLatLngZoom(_toLatLng(points.first), 16),
+        );
+
+        return;
+      }
+
       await controller.animateCamera(
-        CameraUpdate.newLatLngZoom(_toLatLng(points.first), 16),
-      );
-
-      return;
-    }
-
-    await controller.animateCamera(
-      CameraUpdate.newLatLngBounds(
-        LatLngBounds(
-          southwest: LatLng(south, west),
-          northeast: LatLng(north, east),
+        CameraUpdate.newLatLngBounds(
+          LatLngBounds(
+            southwest: LatLng(south, west),
+            northeast: LatLng(north, east),
+          ),
+          left: _routePadding,
+          top: _routePadding,
+          right: _routePadding,
+          bottom: _routePadding + 20,
         ),
-        left: _routePadding,
-        top: _routePadding,
-        right: _routePadding,
-        bottom: _routePadding + 20,
-      ),
-    );
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Erro ao enquadrar a rota: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
   }
 
   @override
@@ -605,7 +694,8 @@ class _AppMapWidgetState extends State<AppMapWidget> {
       fit: StackFit.expand,
       children: [
         MapLibreMap(
-          styleString: _mapStyleAsset,
+          styleString: _mapStyleUrl,
+          minMaxZoomPreference: const MinMaxZoomPreference(null, _maxMapZoom),
           initialCameraPosition: CameraPosition(
             target: _toLatLng(_center),
             zoom: _hasRoute ? 12 : 13,
@@ -636,7 +726,7 @@ class _AppMapWidgetState extends State<AppMapWidget> {
           ],
         ),
         if (widget.showAttribution)
-          const Positioned(left: 8, bottom: 7, child: _MapAttributionChip()),
+          const Positioned(left: 4, bottom: 3, child: _MapAttributionChip()),
         if (widget.showCurrentLocation)
           Positioned(
             right: 12,
@@ -816,22 +906,58 @@ class _MapRoutePreviewState extends State<MapRoutePreview> {
   }
 }
 
-class _MapAttributionChip extends StatelessWidget {
+class _MapAttributionChip extends StatefulWidget {
   const _MapAttributionChip();
 
   @override
+  State<_MapAttributionChip> createState() => _MapAttributionChipState();
+}
+
+class _MapAttributionChipState extends State<_MapAttributionChip> {
+  static const _texto = '© OpenFreeMap · © OpenStreetMap';
+  static const _corTexto = Color(0xff69727D);
+
+  bool _expandido = false;
+
+  @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(5),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3)],
-      ),
-      child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-        child: Text(
-          '© OpenFreeMap · © OpenStreetMap',
-          style: TextStyle(fontSize: 9, color: Color(0xff69727D)),
+    return Semantics(
+      button: true,
+      expanded: _expandido,
+      label: _expandido
+          ? 'Ocultar créditos do mapa: $_texto'
+          : 'Mostrar créditos do mapa',
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => setState(() => _expandido = !_expandido),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            height: 22,
+            padding: EdgeInsets.only(left: 3, right: _expandido ? 8 : 3),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(11),
+              boxShadow: const [
+                BoxShadow(color: Colors.black12, blurRadius: 3),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.info_outline, size: 16, color: _corTexto),
+                if (_expandido) ...[
+                  const SizedBox(width: 4),
+                  const Text(
+                    _texto,
+                    style: TextStyle(fontSize: 9, color: _corTexto),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );

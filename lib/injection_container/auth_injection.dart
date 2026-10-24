@@ -8,6 +8,7 @@ import '../features/auth/data/interceptors/auth_interceptor.dart';
 import '../features/auth/data/services/auth_token_service.dart';
 import '../features/auth/data/repositories/auth_repository_impl.dart';
 import '../features/auth/domain/repositories/auth_repository.dart';
+import '../features/auth/domain/usecases/buscar_usuario_atual_usecase.dart';
 import '../features/auth/domain/usecases/confirmar_pin_usecase.dart';
 import '../features/auth/domain/usecases/enviar_pin_email_usecase.dart';
 import '../features/auth/domain/usecases/login_usecase.dart';
@@ -58,6 +59,7 @@ void registerAuthDependencies(GetIt sl) {
   sl.registerLazySingleton(() => EnviarPinEmailUsecase(sl()));
   sl.registerLazySingleton(() => ConfirmarPinUsecase(sl()));
   sl.registerLazySingleton(() => RedefinirSenhaUsecase(sl()));
+  sl.registerLazySingleton(() => BuscarUsuarioAtualUsecase(sl()));
 
   sl.registerFactory(
     () => AuthBloc(

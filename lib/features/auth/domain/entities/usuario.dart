@@ -9,6 +9,7 @@ class Usuario extends Equatable {
   final DateTime? dataAtivacao;
   final DateTime? dataDesativacao;
   final PerfilUsuario perfil;
+  final bool podeSolicitarEmergencia;
 
   const Usuario({
     this.id,
@@ -18,6 +19,7 @@ class Usuario extends Equatable {
     this.dataAtivacao,
     this.dataDesativacao,
     this.perfil = PerfilUsuario.motorista,
+    this.podeSolicitarEmergencia = false,
   });
 
   @override
@@ -29,5 +31,6 @@ class Usuario extends Equatable {
     dataAtivacao,
     dataDesativacao,
     perfil,
+    podeSolicitarEmergencia,
   ];
 }

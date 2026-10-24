@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/error/failures.dart';
@@ -20,6 +22,12 @@ class PassageiroHomeIniciada extends PassageiroHomeEvent {
 
   @override
   List<Object?> get props => [usuario];
+}
+
+class PassageiroHomeAtualizada extends PassageiroHomeEvent {
+  final Completer<void>? concluido;
+
+  const PassageiroHomeAtualizada({this.concluido});
 }
 
 class PassageiroHomeSemanaAnterior extends PassageiroHomeEvent {}
@@ -109,6 +117,7 @@ class PassageiroHomeBloc
   PassageiroHomeBloc({required this.buscarViagensPorSemanaUsecase})
     : super(PassageiroHomeInitial()) {
     on<PassageiroHomeIniciada>(_onIniciada);
+    on<PassageiroHomeAtualizada>(_onAtualizada);
     on<PassageiroHomeSemanaAnterior>(_onSemanaAnterior);
     on<PassageiroHomeSemanaProxima>(_onSemanaProxima);
   }
@@ -125,6 +134,34 @@ class PassageiroHomeBloc
       fimSemana: fimSemana,
       usuario: event.usuario,
     );
+  }
+
+  Future<void> _onAtualizada(
+    PassageiroHomeAtualizada event,
+    Emitter<PassageiroHomeState> emit,
+  ) async {
+    try {
+      final estadoAtual = state;
+
+      if (estadoAtual is PassageiroHomeCarregada) {
+        await _carregarViagens(
+          emit,
+          inicioSemana: estadoAtual.inicioSemana,
+          fimSemana: estadoAtual.fimSemana,
+          usuario: estadoAtual.usuario,
+          manterViagensAtuais: true,
+        );
+      } else if (estadoAtual is PassageiroHomeErro) {
+        await _carregarViagens(
+          emit,
+          inicioSemana: estadoAtual.inicioSemana,
+          fimSemana: estadoAtual.fimSemana,
+          usuario: estadoAtual.usuario,
+        );
+      }
+    } finally {
+      event.concluido?.complete();
+    }
   }
 
   Future<void> _onSemanaAnterior(
@@ -168,14 +205,17 @@ class PassageiroHomeBloc
     required DateTime inicioSemana,
     required DateTime fimSemana,
     Usuario? usuario,
+    bool manterViagensAtuais = false,
   }) async {
-    emit(
-      PassageiroHomeLoading(
-        inicioSemana: inicioSemana,
-        fimSemana: fimSemana,
-        usuario: usuario,
-      ),
-    );
+    if (!manterViagensAtuais) {
+      emit(
+        PassageiroHomeLoading(
+          inicioSemana: inicioSemana,
+          fimSemana: fimSemana,
+          usuario: usuario,
+        ),
+      );
+    }
 
     try {
       final viagens = await buscarViagensPorSemanaUsecase(

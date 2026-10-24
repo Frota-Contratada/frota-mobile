@@ -47,20 +47,38 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
     required this.usuarioInfoBaseUrl,
   });
 
+  T _parseApiResponse<T>(
+    Response<dynamic> response,
+    T Function(Map<String, dynamic>) parser,
+  ) {
+    final body = response.data;
+    if (body is! Map) {
+      throw const ServerException('Resposta inválida do servidor.');
+    }
+
+    try {
+      return ApiResponseDto.fromJson(
+        Map<String, dynamic>.from(body),
+        parser,
+      ).response;
+    } on ServerException {
+      rethrow;
+    } on Object {
+      throw const ServerException('Resposta inválida do servidor.');
+    }
+  }
+
   @override
   Future<VerificacaoEmailResult> verificarEmail(String email) async {
     try {
       final response = await dio.get(
         '$authBaseUrl/primeiro-acesso/${Uri.encodeComponent(email)}',
       );
-      final apiResponse = ApiResponseDto.fromJson(
-        response.data as Map<String, dynamic>,
+      final dto = _parseApiResponse(
+        response,
         VerificacaoEmailResponseDto.fromJson,
       );
-      return AuthMapper.toVerificacaoEmailResult(
-        dto: apiResponse.response,
-        email: email,
-      );
+      return AuthMapper.toVerificacaoEmailResult(dto: dto, email: email);
     } on DioException catch (e) {
       throw mapDioException(e);
     }
@@ -73,13 +91,10 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
         '$authBaseUrl/login',
         data: request.toJson(),
       );
-      final apiResponse = ApiResponseDto.fromJson(
-        response.data as Map<String, dynamic>,
-        AuthTokenDto.fromJson,
-      );
-      return AuthMapper.toAuthToken(apiResponse.response);
+      final dto = _parseApiResponse(response, AuthTokenDto.fromJson);
+      return AuthMapper.toAuthToken(dto);
     } on DioException catch (e) {
-      throw mapDioException(e);
+      throw mapDioException(e, context: DioExceptionContext.login);
     }
   }
 
@@ -87,11 +102,7 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
   Future<UsuarioModel> buscarUsuarioAtual() async {
     try {
       final response = await dio.get('$usuarioInfoBaseUrl/me');
-      final apiResponse = ApiResponseDto.fromJson(
-        response.data as Map<String, dynamic>,
-        UsuarioModel.fromJson,
-      );
-      return apiResponse.response;
+      return _parseApiResponse(response, UsuarioModel.fromJson);
     } on DioException catch (e) {
       throw mapDioException(e);
     }
@@ -133,14 +144,14 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
         '$authBaseUrl/pin/confirmar',
         data: request.toJson(),
       );
-      final apiResponse = ApiResponseDto.fromJson(
-        response.data as Map<String, dynamic>,
+      final dto = _parseApiResponse(
+        response,
         (json) => ConfirmarPinResponseDto.fromJson(
           json,
           tipoTokenFallback: request.tipoToken,
         ),
       );
-      return AuthMapper.toConfirmarPinResult(apiResponse.response);
+      return AuthMapper.toConfirmarPinResult(dto);
     } on DioException catch (e) {
       throw mapDioException(e);
     }

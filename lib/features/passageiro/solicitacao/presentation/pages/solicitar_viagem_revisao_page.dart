@@ -5,9 +5,11 @@ import '../../../../../config/app_assets.dart';
 import '../../../../../core/maps/map_point.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/app_map_widget.dart';
+import '../../domain/entities/catalogos_solicitacao.dart';
 import '../bloc/criar_solicitacao.bloc.dart';
 import '../utils/solicitacao_formatters.dart';
 import '../widgets/solicitacao_confirmacao_dialog.dart';
+import '../widgets/solicitacao_erro_simulacao_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
 import '../widgets/solicitacao_revisao_info_widget.dart';
@@ -23,6 +25,7 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
   final String veiculo;
   final List<String> acompanhantes;
   final String? cpfAcompanhante;
+  final bool? viagemCompartilhada;
   final MapPoint? origemPoint;
   final List<MapPoint> paradaPoints;
   final MapPoint? destinoPoint;
@@ -39,6 +42,7 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
     required this.veiculo,
     this.acompanhantes = const [],
     this.cpfAcompanhante,
+    this.viagemCompartilhada,
     this.origemPoint,
     this.paradaPoints = const [],
     this.destinoPoint,
@@ -76,8 +80,16 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
                   children: [
                     _buildHeader(context),
                     const SizedBox(height: 16),
-                    const SolicitacaoModalidadeChipWidget(modalidade: 'Táxi'),
+                    SolicitacaoModalidadeChipWidget(
+                      modalidade:
+                          context.select<CriarSolicitacaoBloc, bool>(
+                            (bloc) => bloc.state.rascunho.emergencia,
+                          )
+                          ? 'Emergencial'
+                          : 'Táxi',
+                    ),
                     const SizedBox(height: 12),
+                    _buildErroSimulacao(),
                     _buildRouteDetails(),
                     _buildInfoItem(
                       label: 'Data',
@@ -102,20 +114,6 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
                             valores: [_valorEstimado(state)],
                             iconAsset: AppAssets.iconCusto,
                           ),
-                          if (state.erro != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 6),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  state.erro!,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                              ),
-                            ),
                         ],
                       ),
                     ),
@@ -133,9 +131,7 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
                       label: centrosCusto.length == 1
                           ? 'Centro de custo'
                           : 'Centros de custo',
-                      valores: centrosCusto.isNotEmpty
-                          ? centrosCusto
-                          : const ['Não informado'],
+                      valores: _descricoesCentrosCusto(context),
                       iconAsset: AppAssets.iconCusto,
                     ),
                     _buildInfoItem(
@@ -149,7 +145,8 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
                     BlocConsumer<CriarSolicitacaoBloc, CriarSolicitacaoState>(
                       listenWhen: (previous, current) =>
                           (previous.criada == null && current.criada != null) ||
-                          (previous.erro != current.erro &&
+                          (previous.enviando &&
+                              !current.enviando &&
                               current.erro != null),
                       listener: _reagirAoEnvio,
                       builder: (context, state) =>
@@ -215,9 +212,43 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
     );
   }
 
+  Widget _buildErroSimulacao() {
+    return BlocBuilder<CriarSolicitacaoBloc, CriarSolicitacaoState>(
+      buildWhen: (previous, current) =>
+          previous.erroSimulacao != current.erroSimulacao,
+      builder: (context, state) {
+        final erro = state.erroSimulacao;
+        if (erro == null) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: SolicitacaoErroSimulacaoWidget(
+            mensagem: erro,
+            onTentarNovamente: () {
+              final bloc = context.read<CriarSolicitacaoBloc>();
+              bloc.add(SimulacaoSolicitada(bloc.state.rascunho.toRascunho()));
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  List<String> _descricoesCentrosCusto(BuildContext context) {
+    if (centrosCusto.isEmpty) return const ['Não informado'];
+
+    final catalogos = context
+        .select<CriarSolicitacaoBloc, CatalogosSolicitacao>(
+          (bloc) => bloc.state.catalogos,
+        );
+
+    return centrosCusto.map(catalogos.descricaoCentroCusto).toList();
+  }
+
   Widget _buildRouteDetails() {
     final locations = <String>[origem, ...paradas, destino];
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (var index = 0; index < locations.length; index++) ...[
           _buildRouteLocation(
@@ -261,6 +292,7 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
   List<String> _valoresAcompanhantes() {
     if (acompanhantes.isNotEmpty) return acompanhantes;
     if (cpfAcompanhante?.isNotEmpty == true) return [cpfAcompanhante!];
+    if (viagemCompartilhada == false) return const ['Não'];
     return const ['Não informado'];
   }
 
@@ -288,9 +320,11 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
   }
 
   void _enviarSolicitacao(BuildContext context) {
-    context.read<CriarSolicitacaoBloc>().add(
+    final bloc = context.read<CriarSolicitacaoBloc>();
+    bloc.add(
       SolicitacaoEnviada(
         RascunhoSolicitacao(
+          emergencia: bloc.state.rascunho.emergencia,
           data: data,
           horario: horario,
           motivoNome: motivo,
@@ -328,8 +362,9 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
       builder: (_) => SolicitacaoConfirmacaoDialog(
         titulo: 'Sua viagem foi solicitada!',
         mensagem:
-            'Valor estimado de ${_moeda(criada.valorEstimado)}'
-            '${chegada == null ? '' : ' com chegada prevista às ${formatarHorarioSolicitacao(chegada)}'}.'
+            'Partida às ${formatarHorarioSolicitacao(criada.dataCorrida)}'
+            '${chegada == null ? '' : ', com chegada prevista às ${formatarHorarioSolicitacao(chegada)}'}.'
+            ' Valor estimado de ${_moeda(criada.valorEstimado)}.'
             ' Agora é só esperar os responsáveis aprovarem sua solicitação!',
         submensagem:
             'Você pode acompanhar o status da sua solicitação através da aba ‘solicitações’ aqui no aplicativo',

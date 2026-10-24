@@ -10,7 +10,12 @@ const conexaoDemorou =
 const servidorIndisponivel =
     'Não foi possível falar com o servidor agora. Tente novamente em instantes.';
 
-ServerException mapDioException(DioException exception) {
+enum DioExceptionContext { geral, login }
+
+ServerException mapDioException(
+  DioException exception, {
+  DioExceptionContext context = DioExceptionContext.geral,
+}) {
   if (_ehFalhaDeConexao(exception)) {
     return const ServerException(semInternet, true);
   }
@@ -30,13 +35,17 @@ ServerException mapDioException(DioException exception) {
     return const ServerException('Operação cancelada.');
   }
 
-  final mensagemDoServidor = _mensagemDoServidor(exception.response?.data);
+  final mensagemDoServidor =
+      _mensagemDoServidor(exception.response?.data) ??
+      _mensagemDoServidor(exception.error);
 
   if (mensagemDoServidor != null) {
     return ServerException(mensagemDoServidor);
   }
 
-  return ServerException(_mensagemPorStatus(exception.response?.statusCode));
+  return ServerException(
+    _mensagemPorStatus(exception.response?.statusCode, context: context),
+  );
 }
 
 bool _ehFalhaDeConexao(DioException exception) {
@@ -52,28 +61,77 @@ bool _ehTimeout(DioException exception) {
 }
 
 String? _mensagemDoServidor(dynamic data) {
-  if (data is! Map<String, dynamic>) return null;
+  if (data is Map) {
+    for (final chave in const ['message', 'messages', 'detail']) {
+      final mensagem = _mensagemLegivel(data[chave]);
+      if (mensagem != null) return mensagem;
+    }
 
-  final message = data['message'];
+    final response = data['response'];
+    final mensagemDaResposta = _mensagemLegivel(response);
+    if (mensagemDaResposta != null) return mensagemDaResposta;
 
-  if (message is String && message.isNotEmpty) return message;
+    final erro = _mensagemLegivel(data['error']);
+    if (erro != null) return erro;
+  }
 
-  if (message is List && message.isNotEmpty) {
-    return message.map((item) => item.toString()).join('\n');
+  return _mensagemLegivel(data);
+}
+
+String? _mensagemLegivel(dynamic valor) {
+  if (valor is String) {
+    final mensagem = valor.trim();
+    if (mensagem.isEmpty || _mensagemTecnica(mensagem)) return null;
+    return mensagem;
+  }
+
+  if (valor is List) {
+    final mensagens = valor
+        .map(_mensagemLegivel)
+        .whereType<String>()
+        .toSet()
+        .toList();
+    return mensagens.isEmpty ? null : mensagens.join('\n');
+  }
+
+  if (valor is Map) {
+    for (final chave in const ['message', 'messages', 'detail', 'error']) {
+      final mensagem = _mensagemLegivel(valor[chave]);
+      if (mensagem != null) return mensagem;
+    }
   }
 
   return null;
 }
 
-String _mensagemPorStatus(int? status) {
+bool _mensagemTecnica(String mensagem) {
+  final normalizada = mensagem.toLowerCase();
+  return const {
+    'not found',
+    'bad request',
+    'unauthorized',
+    'forbidden',
+    'internal server error',
+    'service unavailable',
+  }.contains(normalizada);
+}
+
+String _mensagemPorStatus(
+  int? status, {
+  DioExceptionContext context = DioExceptionContext.geral,
+}) {
   if (status == null) return servidorIndisponivel;
 
   return switch (status) {
     400 => 'Alguns dados enviados não são válidos. Revise e tente de novo.',
-    401 => 'Sua sessão expirou. Entre novamente para continuar.',
+    401 =>
+      context == DioExceptionContext.login
+          ? 'E-mail ou senha inválidos.'
+          : 'Sua sessão expirou. Entre novamente para continuar.',
     403 => 'Você não tem permissão para fazer isso.',
-    404 => 'Não encontramos o que você procurou.',
-    409 => 'Essa operação conflita com o estado atual do registro.',
+    404 => 'Não encontramos o recurso solicitado.',
+    409 =>
+      'Não foi possível concluir porque o registro mudou. Tente novamente.',
     422 => 'Alguns dados enviados não são válidos. Revise e tente de novo.',
     >= 500 => servidorIndisponivel,
     _ => servidorIndisponivel,

@@ -11,15 +11,18 @@ import '../../domain/entities/nova_solicitacao.dart';
 import '../../domain/entities/simulacao_solicitacao.dart';
 
 const _tipoMotivoSolicitacao = 'solicitacao';
+const _tipoMotivoObjeto = 'objeto';
 
-int _valorInteiro(dynamic valor) {
-  if (valor is num) return valor.toInt();
-  return int.tryParse(valor?.toString() ?? '') ?? 0;
+int? _valorInteiro(dynamic valor) {
+  if (valor is int) return valor;
+  if (valor is num && valor.isFinite) return valor.toInt();
+  return int.tryParse(valor?.toString() ?? '');
 }
 
-double _valorDecimal(dynamic valor) {
-  if (valor is num) return valor.toDouble();
-  return double.tryParse(valor?.toString() ?? '') ?? 0;
+double? _valorDecimal(dynamic valor) {
+  if (valor is num && valor.isFinite) return valor.toDouble();
+  final resultado = double.tryParse(valor?.toString() ?? '');
+  return resultado?.isFinite == true ? resultado : null;
 }
 
 DateTime? _dataResposta(dynamic valor) {
@@ -49,16 +52,16 @@ class SolicitacaoRemoteDatasourceImpl implements SolicitacaoRemoteDatasource {
     try {
       final resultados = await Future.wait([
         _buscarMotivos(),
+        _buscarItens('/motivos', {'tipo': _tipoMotivoObjeto}),
         _buscarItens('/tipos-veiculo', null),
         _buscarItens('/tipos-corrida', null),
       ]);
-      final motivos = resultados[0];
 
       return CatalogosSolicitacao(
-        motivosViagem: motivos,
-        objetos: List<ItemCatalogo>.of(motivos),
-        tiposVeiculo: resultados[1],
-        tiposCorrida: resultados[2],
+        motivosViagem: resultados[0],
+        objetos: resultados[1],
+        tiposVeiculo: resultados[2],
+        tiposCorrida: resultados[3],
         centrosCusto: await _buscarCentrosCusto(),
       );
     } on DioException catch (e) {
@@ -118,20 +121,38 @@ class SolicitacaoRemoteDatasourceImpl implements SolicitacaoRemoteDatasource {
         throw const ServerException('Resposta do servidor sem conteúdo.');
       }
 
+      final distanciaEstimadaKm = _valorDecimal(dados['distanciaEstimadaKm']);
       final duracaoEstimadaMinutos = _valorInteiro(
         dados['duracaoEstimadaMinutos'],
       );
+      final valorEstimado = _valorDecimal(dados['valorEstimado']);
+      final fornecedorId = _valorInteiro(dados['fornecedorId']);
+      final fornecedorNome = dados['fornecedorNome'];
+
+      if (distanciaEstimadaKm == null ||
+          distanciaEstimadaKm < 0 ||
+          duracaoEstimadaMinutos == null ||
+          duracaoEstimadaMinutos < 0 ||
+          valorEstimado == null ||
+          valorEstimado < 0 ||
+          fornecedorId == null ||
+          fornecedorId <= 0 ||
+          fornecedorNome is! String ||
+          fornecedorNome.trim().isEmpty) {
+        throw const ServerException('Resposta de estimativa inválida.');
+      }
+
       final dataChegadaEstimada =
           _dataResposta(dados['dataChegadaEstimada']) ??
           nova.dataCorrida.add(Duration(minutes: duracaoEstimadaMinutos));
 
       return SimulacaoSolicitacao(
-        distanciaEstimadaKm: _valorDecimal(dados['distanciaEstimadaKm']),
+        distanciaEstimadaKm: distanciaEstimadaKm,
         duracaoEstimadaMinutos: duracaoEstimadaMinutos,
         dataChegadaEstimada: dataChegadaEstimada,
-        valorEstimado: _valorDecimal(dados['valorEstimado']),
-        fornecedorId: _valorInteiro(dados['fornecedorId']),
-        fornecedorNome: dados['fornecedorNome'] as String? ?? '',
+        valorEstimado: valorEstimado,
+        fornecedorId: fornecedorId,
+        fornecedorNome: fornecedorNome.trim(),
       );
     } on DioException catch (e) {
       throw mapDioException(e);

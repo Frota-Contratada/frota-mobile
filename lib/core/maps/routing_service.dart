@@ -1,38 +1,37 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import '../network/dio_exception_mapper.dart';
 
-import '../../config/env.dart';
-import '../network/dio_factory.dart';
 import 'map_point.dart';
 import 'map_route.dart';
 
-// Calcula o trajeto recomendado entre os pontos selecionados pelo usuário.
+class BackendRoutingException implements Exception {
+  final String message;
+
+  const BackendRoutingException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 abstract class RoutingService {
-  // Retorna `null` quando não é possível calcular o trajeto, para que a
   Future<MapRoute?> buscarRota(List<MapPoint> pontos);
 }
 
-// Implementação baseada em OSRM.
-
-// O OSRM otimiza por tempo de deslocamento, então a primeira rota devolvida
-// já é o caminho mais rápido entre os pontos, respeitando a ordem informada.
-class OsrmRoutingService implements RoutingService {
+class BackendRoutingService implements RoutingService {
   final Dio _dio;
-  final String _baseUrl;
-
-  // Evita recalcular o mesmo trajeto a cada reconstrução da tela.
+  final String _url;
   final Map<String, MapRoute> _cache = {};
 
   static const _limiteCache = 30;
 
-  OsrmRoutingService({required Dio dio, required String baseUrl})
+  BackendRoutingService({required Dio dio, required String url})
     : _dio = dio,
-      _baseUrl = baseUrl;
+      _url = url;
 
   @override
   Future<MapRoute?> buscarRota(List<MapPoint> pontos) async {
     if (pontos.length < 2) return null;
-    if (_baseUrl.isEmpty) return null;
 
     final chave = _chaveDe(pontos);
     final emCache = _cache[chave];
@@ -40,72 +39,57 @@ class OsrmRoutingService implements RoutingService {
     if (emCache != null) return emCache;
 
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
-        '${_baseUrl.replaceAll(RegExp(r'/+$'), '')}/route/v1/driving/$chave',
-        queryParameters: const {
-          'overview': 'full',
-          'geometries': 'geojson',
-          'alternatives': 'false',
-          'steps': 'false',
+      final response = await _dio.post<Map<String, dynamic>>(
+        _url,
+        data: {
+          'pontos': [
+            for (final ponto in pontos)
+              {'latitude': ponto.latitude, 'longitude': ponto.longitude},
+          ],
         },
       );
 
-      final rota = _paraRota(response.data);
+      final rota = _paraRota(response.data?['response']);
 
-      if (rota != null) {
-        _guardarEmCache(chave, rota);
-      }
+      if (rota != null) _guardarEmCache(chave, rota);
 
       return rota;
-    } catch (_) {
+    } on DioException catch (error) {
+      final status = error.response?.statusCode;
+      if (status == 401 || status == 403 || status == 422) {
+        throw BackendRoutingException(mapDioException(error).message);
+      }
       debugPrint('Falha ao calcular a rota.');
-
       return null;
     }
   }
 
-  MapRoute? _paraRota(Map<String, dynamic>? corpo) {
-    if (corpo == null || corpo['code'] != 'Ok') return null;
+  MapRoute? _paraRota(dynamic corpo) {
+    if (corpo is! Map) return null;
 
-    final rotas = corpo['routes'];
+    final coordenadas = corpo['coordenadas'];
+    if (coordenadas is! List) return null;
 
-    if (rotas is! List || rotas.isEmpty) return null;
-
-    final rota = rotas.first;
-
-    if (rota is! Map) return null;
-
-    final geometria = rota['geometry'];
-
-    if (geometria is! Map) return null;
-
-    final coordenadas = geometria['coordinates'];
-
-    if (coordenadas is! List || coordenadas.length < 2) return null;
-
-    final pontos = <MapPoint>[];
-
-    for (final coordenada in coordenadas) {
-      // O GeoJSON do OSRM usa a ordem [longitude, latitude].
-      if (coordenada is List && coordenada.length >= 2) {
-        final longitude = coordenada[0];
-        final latitude = coordenada[1];
-
-        if (longitude is num && latitude is num) {
-          pontos.add(MapPoint(latitude.toDouble(), longitude.toDouble()));
-        }
-      }
-    }
+    final pontos = <MapPoint>[
+      for (final coordenada in coordenadas)
+        if (coordenada is Map &&
+            coordenada['latitude'] is num &&
+            coordenada['longitude'] is num)
+          MapPoint(
+            (coordenada['latitude'] as num).toDouble(),
+            (coordenada['longitude'] as num).toDouble(),
+          ),
+    ];
 
     if (pontos.length < 2) return null;
 
-    final metros = rota['distance'];
-    final segundos = rota['duration'];
+    final distancia = corpo['distanciaKm'];
+    final minutos = corpo['duracaoMinutos'];
 
     return MapRoute(
       points: pontos,
-      distanceKm: metros is num ? metros.toDouble() / 1000 : 0,
-      duration: Duration(seconds: segundos is num ? segundos.round() : 0),
+      distanceKm: distancia is num ? distancia.toDouble() : 0,
+      duration: Duration(minutes: minutos is num ? minutos.round() : 0),
     );
   }
 
@@ -118,19 +102,18 @@ class OsrmRoutingService implements RoutingService {
   }
 
   String _chaveDe(List<MapPoint> pontos) =>
-      pontos.map((ponto) => '${ponto.longitude},${ponto.latitude}').join(';');
+      pontos.map((ponto) => '${ponto.latitude},${ponto.longitude}').join(';');
 }
 
-RoutingService? _servicoPadrao;
+class _RoteirizacaoIndisponivel implements RoutingService {
+  const _RoteirizacaoIndisponivel();
 
-// Serviço usado pelos widgets de mapa quando nenhum outro é informado.
+  @override
+  Future<MapRoute?> buscarRota(List<MapPoint> pontos) async => null;
+}
 
-// Usa um [Dio] próprio, sem o interceptor de autenticação: o servidor de
-// roteirização não deve receber o token da API.
-RoutingService get mapRoutingService => _servicoPadrao ??= OsrmRoutingService(
-  dio: createDio(),
-  baseUrl: Env.osrmBaseUrl,
-);
+RoutingService _servicoPadrao = const _RoteirizacaoIndisponivel();
 
-@visibleForTesting
+RoutingService get mapRoutingService => _servicoPadrao;
+
 set mapRoutingService(RoutingService service) => _servicoPadrao = service;

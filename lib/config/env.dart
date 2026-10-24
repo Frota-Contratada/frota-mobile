@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 
 class Env {
   static const _definedBaseUrl = String.fromEnvironment('BASE_URL');
-  static const _definedOsrmBaseUrl = String.fromEnvironment('OSRM_BASE_URL');
   static const _definedTripWebAppUrl = String.fromEnvironment(
     'TRIP_WEBAPP_URL',
   );
@@ -38,22 +37,9 @@ class Env {
 
   static String get centrosCustoBaseUrl => '$baseUrl/centro-de-custo';
 
-  /// Servidor de roteirização usado para traçar o caminho mais rápido.
-  ///
-  /// Em release, somente um OSRM corporativo HTTPS configurado é aceito.
-  /// Sem ele, o cálculo de rota por ruas fica indisponível.
-  static String get osrmBaseUrl {
-    final configured = _definedOsrmBaseUrl.isNotEmpty
-        ? _definedOsrmBaseUrl
-        : dotenv.env['OSRM_BASE_URL'] ?? '';
-    // HML/release must never send trip coordinates to the public demo server.
-    if (!kDebugMode &&
-        (!configured.startsWith('https://') ||
-            Uri.tryParse(configured)?.host == 'router.project-osrm.org')) {
-      return '';
-    }
-    return configured;
-  }
+  static String get rotaSolicitacaoUrl => '$solicitacoesBaseUrl/rota';
+  static String get sugestoesEnderecoUrl =>
+      '$solicitacoesBaseUrl/enderecos/sugestoes';
 
   static void validateRelease() {
     if (kDebugMode) return;

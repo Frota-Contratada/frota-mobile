@@ -101,14 +101,31 @@ class _SolicitacaoCentrosCustoPickerWidgetState
               : const SizedBox(width: double.infinity),
         ),
         if (!widget.carregando && widget.disponiveis.isEmpty)
-          const Padding(
-            padding: EdgeInsets.only(top: 6, left: 4),
-            child: Text(
-              'Nenhum centro de custo com aprovador disponível na sua filial.',
-              style: TextStyle(fontSize: 11, color: AppColors.textGrey),
-            ),
+          const _Aviso(
+            'Nenhum centro de custo com aprovador disponível na sua filial.',
+          )
+        else if (!widget.carregando && opcoes.isEmpty)
+          const _Aviso(
+            'Todos os centros de custo com aprovador da sua filial já foram selecionados.',
           ),
       ],
+    );
+  }
+}
+
+class _Aviso extends StatelessWidget {
+  final String mensagem;
+
+  const _Aviso(this.mensagem);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, left: 4),
+      child: Text(
+        mensagem,
+        style: const TextStyle(fontSize: 11, color: AppColors.textGrey),
+      ),
     );
   }
 }
