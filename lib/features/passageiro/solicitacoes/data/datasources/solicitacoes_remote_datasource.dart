@@ -58,7 +58,7 @@ class SolicitacoesRemoteDatasourceImpl implements SolicitacoesRemoteDatasource {
             'dataInicio': dataInicio.toUtc().toIso8601String(),
           if (dataFim != null) 'dataFim': dataFim.toUtc().toIso8601String(),
           if (historico) 'historico': 'true',
-          if (incluirAnteriores) 'incluirAnteriores': 'true',
+          'incluirAnteriores': incluirAnteriores ? 'true' : 'false',
         },
       );
 

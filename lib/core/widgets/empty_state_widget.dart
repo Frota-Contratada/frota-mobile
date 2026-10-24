@@ -9,6 +9,8 @@ class EmptyStateWidget extends StatelessWidget {
   final String mensagem;
   final String? submensagem;
   final double iconSize;
+  final String? acaoLabel;
+  final VoidCallback? onAcao;
 
   const EmptyStateWidget({
     super.key,
@@ -16,6 +18,8 @@ class EmptyStateWidget extends StatelessWidget {
     required this.mensagem,
     this.submensagem,
     this.iconSize = 48,
+    this.acaoLabel,
+    this.onAcao,
   });
 
   @override
@@ -56,6 +60,14 @@ class EmptyStateWidget extends StatelessWidget {
                 color: AppColors.textMediumGrey,
                 height: 1.4,
               ),
+            ),
+          ],
+          if (acaoLabel != null && onAcao != null) ...[
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: onAcao,
+              icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+              label: Text(acaoLabel!),
             ),
           ],
         ],

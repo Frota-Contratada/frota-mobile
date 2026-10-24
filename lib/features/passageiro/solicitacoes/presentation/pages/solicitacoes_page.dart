@@ -5,6 +5,7 @@ import '../../../../../core/navigation/app_route_observer.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../core/widgets/historico_filtro.dart';
+import '../../../../../core/widgets/solicitacoes_empty_state.dart';
 import '../../../../../core/widgets/icone_configuracoes_button.dart';
 import '../../../shared/presentation/widgets/filtro_historico_bottom_sheet.dart';
 import '../../../../../injection_container/injection_container.dart';
@@ -25,9 +26,22 @@ class SolicitacoesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const filtroInicial = HistoricoFiltro(
+      ordenacao: HistoricoOrdenacao.maisAntiga,
+      periodo: HistoricoPeriodo.proximos7,
+    );
+
     return BlocProvider(
-      create: (_) =>
-          sl<SolicitacoesBloc>()..add(const SolicitacoesCarregadas()),
+      create: (_) {
+        final intervalo = filtroInicial.intervalo;
+        return sl<SolicitacoesBloc>()..add(
+          SolicitacoesCarregadas(
+            dataInicio: intervalo?.start,
+            dataFim: intervalo?.end,
+            incluirAnteriores: false,
+          ),
+        );
+      },
       child: _SolicitacoesView(usuario: usuario),
     );
   }
@@ -46,6 +60,7 @@ class _SolicitacoesViewState extends State<_SolicitacoesView> with RouteAware {
   ModalRoute<dynamic>? _observedRoute;
   HistoricoFiltro _filtro = const HistoricoFiltro(
     ordenacao: HistoricoOrdenacao.maisAntiga,
+    periodo: HistoricoPeriodo.proximos7,
   );
 
   @override
@@ -169,6 +184,26 @@ class _SolicitacoesViewState extends State<_SolicitacoesView> with RouteAware {
                 final carregada = state as SolicitacoesCarregada;
                 final grupos = _agruparSolicitacoes(carregada.solicitacoes);
 
+                if (grupos.isEmpty) {
+                  final emptyState = SolicitacoesEmptyStateInfo.operacional(
+                    _filtro,
+                  );
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: EmptyStateWidget(
+                      icon: Icons.calendar_month_outlined,
+                      mensagem: emptyState.mensagem,
+                      submensagem: emptyState.submensagem,
+                      acaoLabel: emptyState.mostrarLimparFiltros
+                          ? 'Limpar filtros'
+                          : null,
+                      onAcao: emptyState.mostrarLimparFiltros
+                          ? () => _limparFiltros(context)
+                          : null,
+                    ),
+                  );
+                }
+
                 final entradas = grupos.entries.toList();
 
                 return SliverPadding(
@@ -224,7 +259,7 @@ class _SolicitacoesViewState extends State<_SolicitacoesView> with RouteAware {
 
     return {
       for (final status in statusVisiveis)
-        status: grupos[status] ?? const <Solicitacao>[],
+        if (grupos[status]?.isNotEmpty ?? false) status: grupos[status]!,
     };
   }
 
@@ -234,6 +269,7 @@ class _SolicitacoesViewState extends State<_SolicitacoesView> with RouteAware {
       context,
       inicial: _filtro,
       mostrarStatus: true,
+      mostrarPeriodosFuturos: true,
       statusOpcoes: const [
         FiltroStatusOpcao(codigo: 'A', label: 'Aprovadas'),
         FiltroStatusOpcao(codigo: 'P', label: 'Pendentes'),
@@ -250,8 +286,18 @@ class _SolicitacoesViewState extends State<_SolicitacoesView> with RouteAware {
         status: _statusSelecionado,
         dataInicio: _filtro.dataInicio,
         dataFim: _filtro.dataFim,
+        incluirAnteriores: false,
       ),
     );
+  }
+
+  void _limparFiltros(BuildContext context) {
+    setState(
+      () => _filtro = const HistoricoFiltro(
+        ordenacao: HistoricoOrdenacao.maisAntiga,
+      ),
+    );
+    _carregar(context);
   }
 
   void _carregar(BuildContext context) {
@@ -260,6 +306,7 @@ class _SolicitacoesViewState extends State<_SolicitacoesView> with RouteAware {
         status: _statusSelecionado,
         dataInicio: _filtro.dataInicio,
         dataFim: _filtro.dataFim,
+        incluirAnteriores: false,
       ),
     );
   }

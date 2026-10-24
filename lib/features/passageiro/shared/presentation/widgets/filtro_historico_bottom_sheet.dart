@@ -16,6 +16,7 @@ class FiltroStatusOpcao {
 class FiltroHistoricoBottomSheet extends StatefulWidget {
   final HistoricoFiltro inicial;
   final bool mostrarStatus;
+  final bool mostrarPeriodosFuturos;
   final List<FiltroStatusOpcao> statusOpcoes;
   final String titulo;
 
@@ -23,6 +24,7 @@ class FiltroHistoricoBottomSheet extends StatefulWidget {
     super.key,
     this.inicial = const HistoricoFiltro(),
     this.mostrarStatus = false,
+    this.mostrarPeriodosFuturos = false,
     this.statusOpcoes = const [],
     this.titulo = 'Filtrar registros no histórico',
   });
@@ -35,6 +37,7 @@ class FiltroHistoricoBottomSheet extends StatefulWidget {
     BuildContext context, {
     HistoricoFiltro inicial = const HistoricoFiltro(),
     bool mostrarStatus = false,
+    bool mostrarPeriodosFuturos = false,
     List<FiltroStatusOpcao> statusOpcoes = const [],
     String titulo = 'Filtrar registros no histórico',
   }) {
@@ -46,6 +49,7 @@ class FiltroHistoricoBottomSheet extends StatefulWidget {
       builder: (_) => FiltroHistoricoBottomSheet(
         inicial: inicial,
         mostrarStatus: mostrarStatus,
+        mostrarPeriodosFuturos: mostrarPeriodosFuturos,
         statusOpcoes: statusOpcoes,
         titulo: titulo,
       ),
@@ -138,28 +142,47 @@ class _FiltroHistoricoBottomSheetState
               _tituloSecao('Período'),
               const SizedBox(height: 12),
               _buildChipGroup(
-                options: const [
-                  _FiltroOpcao<HistoricoPeriodo>(
-                    label: 'Hoje',
-                    value: HistoricoPeriodo.hoje,
-                  ),
-                  _FiltroOpcao<HistoricoPeriodo>(
-                    label: 'Ontem',
-                    value: HistoricoPeriodo.ontem,
-                  ),
-                  _FiltroOpcao<HistoricoPeriodo>(
-                    label: 'Últimos 7 dias',
-                    value: HistoricoPeriodo.ultimos7,
-                  ),
-                  _FiltroOpcao<HistoricoPeriodo>(
-                    label: 'Últimos 15 dias',
-                    value: HistoricoPeriodo.ultimos15,
-                  ),
-                  _FiltroOpcao<HistoricoPeriodo>(
-                    label: 'Últimos 30 dias',
-                    value: HistoricoPeriodo.ultimos30,
-                  ),
-                ],
+                options: widget.mostrarPeriodosFuturos
+                    ? const [
+                        _FiltroOpcao<HistoricoPeriodo>(
+                          label: 'Hoje',
+                          value: HistoricoPeriodo.hoje,
+                        ),
+                        _FiltroOpcao<HistoricoPeriodo>(
+                          label: 'Próximos 7 dias',
+                          value: HistoricoPeriodo.proximos7,
+                        ),
+                        _FiltroOpcao<HistoricoPeriodo>(
+                          label: 'Próximos 15 dias',
+                          value: HistoricoPeriodo.proximos15,
+                        ),
+                        _FiltroOpcao<HistoricoPeriodo>(
+                          label: 'Próximos 30 dias',
+                          value: HistoricoPeriodo.proximos30,
+                        ),
+                      ]
+                    : const [
+                        _FiltroOpcao<HistoricoPeriodo>(
+                          label: 'Hoje',
+                          value: HistoricoPeriodo.hoje,
+                        ),
+                        _FiltroOpcao<HistoricoPeriodo>(
+                          label: 'Ontem',
+                          value: HistoricoPeriodo.ontem,
+                        ),
+                        _FiltroOpcao<HistoricoPeriodo>(
+                          label: 'Últimos 7 dias',
+                          value: HistoricoPeriodo.ultimos7,
+                        ),
+                        _FiltroOpcao<HistoricoPeriodo>(
+                          label: 'Últimos 15 dias',
+                          value: HistoricoPeriodo.ultimos15,
+                        ),
+                        _FiltroOpcao<HistoricoPeriodo>(
+                          label: 'Últimos 30 dias',
+                          value: HistoricoPeriodo.ultimos30,
+                        ),
+                      ],
                 selected: _periodo,
                 onSelected: (valor) => setState(
                   () => _periodo = _periodo == valor
