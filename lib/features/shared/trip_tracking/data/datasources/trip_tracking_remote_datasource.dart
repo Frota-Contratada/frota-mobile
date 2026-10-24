@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import '../../../../../core/error/exceptions.dart';
+import '../../../../../core/network/dio_exception_mapper.dart';
 import '../../domain/entities/canonical_route.dart';
 import '../../domain/entities/tracked_position.dart';
 import '../../domain/entities/trip_tracking_snapshot.dart';
@@ -34,11 +36,19 @@ class TripTrackingRemoteDatasourceImpl implements TripTrackingRemoteDatasource {
     String tripId,
     TripRole role,
   ) async {
-    final response = await dio.get<Map<String, dynamic>>(
-      '${_trip(tripId)}/tracking',
-    );
-    final data = _responseMap(response.data);
-    return TripTrackingSnapshot.fromJson(data, tripId: tripId, role: role);
+    try {
+      final response = await dio.get<Map<String, dynamic>>(
+        '${_trip(tripId)}/tracking',
+      );
+      final data = _responseMap(response.data);
+      return TripTrackingSnapshot.fromJson(data, tripId: tripId, role: role);
+    } on DioException catch (error) {
+      throw mapDioException(error);
+    } on ServerException {
+      rethrow;
+    } on Object {
+      throw const ServerException('Resposta inválida do servidor.');
+    }
   }
 
   @override
@@ -47,18 +57,30 @@ class TripTrackingRemoteDatasourceImpl implements TripTrackingRemoteDatasource {
     List<TrackedPosition> positions,
   ) async {
     if (positions.isEmpty) return;
-    await dio.post<void>(
-      '${_trip(tripId)}/tracking/positions/batch',
-      data: {'positions': positions.map((item) => item.toJson()).toList()},
-    );
+    try {
+      await dio.post<void>(
+        '${_trip(tripId)}/tracking/positions/batch',
+        data: {'positions': positions.map((item) => item.toJson()).toList()},
+      );
+    } on DioException catch (error) {
+      throw mapDioException(error);
+    }
   }
 
   @override
-  Future<void> sendPassengerPosition(String tripId, TrackedPosition position) =>
-      dio.post<void>(
+  Future<void> sendPassengerPosition(
+    String tripId,
+    TrackedPosition position,
+  ) async {
+    try {
+      await dio.post<void>(
         '${_trip(tripId)}/tracking/passenger-position',
         data: position.toJson(),
       );
+    } on DioException catch (error) {
+      throw mapDioException(error);
+    }
+  }
 
   @override
   Future<CanonicalRoute> requestReroute(
@@ -66,12 +88,20 @@ class TripTrackingRemoteDatasourceImpl implements TripTrackingRemoteDatasource {
     TrackedPosition position,
     String commandEventId,
   ) async {
-    final response = await dio.post<Map<String, dynamic>>(
-      '${_trip(tripId)}/route/reroute',
-      data: {'position': position.toJson()},
-      options: _commandOptions(commandEventId),
-    );
-    return CanonicalRoute.fromJson(_responseMap(response.data));
+    try {
+      final response = await dio.post<Map<String, dynamic>>(
+        '${_trip(tripId)}/route/reroute',
+        data: {'position': position.toJson()},
+        options: _commandOptions(commandEventId),
+      );
+      return CanonicalRoute.fromJson(_responseMap(response.data));
+    } on DioException catch (error) {
+      throw mapDioException(error);
+    } on ServerException {
+      rethrow;
+    } on Object {
+      throw const ServerException('Resposta inválida do servidor.');
+    }
   }
 
   @override
@@ -79,11 +109,19 @@ class TripTrackingRemoteDatasourceImpl implements TripTrackingRemoteDatasource {
     String tripId,
     String commandEventId,
   ) async {
-    final response = await dio.post<Map<String, dynamic>>(
-      '${_trip(tripId)}/waiting/start',
-      options: _commandOptions(commandEventId),
-    );
-    return TripWaitingState.fromJson(_responseMap(response.data));
+    try {
+      final response = await dio.post<Map<String, dynamic>>(
+        '${_trip(tripId)}/waiting/start',
+        options: _commandOptions(commandEventId),
+      );
+      return TripWaitingState.fromJson(_responseMap(response.data));
+    } on DioException catch (error) {
+      throw mapDioException(error);
+    } on ServerException {
+      rethrow;
+    } on Object {
+      throw const ServerException('Resposta inválida do servidor.');
+    }
   }
 
   @override
@@ -91,24 +129,37 @@ class TripTrackingRemoteDatasourceImpl implements TripTrackingRemoteDatasource {
     String tripId,
     String commandEventId,
   ) async {
-    final response = await dio.post<Map<String, dynamic>>(
-      '${_trip(tripId)}/waiting/resume',
-      options: _commandOptions(commandEventId),
-    );
-    return TripWaitingState.fromJson(_responseMap(response.data));
+    try {
+      final response = await dio.post<Map<String, dynamic>>(
+        '${_trip(tripId)}/waiting/resume',
+        options: _commandOptions(commandEventId),
+      );
+      return TripWaitingState.fromJson(_responseMap(response.data));
+    } on DioException catch (error) {
+      throw mapDioException(error);
+    } on ServerException {
+      rethrow;
+    } on Object {
+      throw const ServerException('Resposta inválida do servidor.');
+    }
   }
 
   @override
-  Future<void> finishTrip(String tripId, String commandEventId) =>
-      dio.post<void>(
+  Future<void> finishTrip(String tripId, String commandEventId) async {
+    try {
+      await dio.post<void>(
         '${_trip(tripId)}/finish',
         options: _commandOptions(commandEventId),
       );
+    } on DioException catch (error) {
+      throw mapDioException(error);
+    }
+  }
 
   Map<String, dynamic> _responseMap(Map<String, dynamic>? body) {
     final response = body?['response'];
-    if (response is Map<String, dynamic>) return response;
-    if (body != null) return body;
-    throw const FormatException('Resposta de tracking sem conteúdo.');
+    if (response is Map) return Map<String, dynamic>.from(response);
+    if (body != null && body.isNotEmpty) return body;
+    throw const ServerException('Resposta inválida do servidor.');
   }
 }

@@ -1,10 +1,18 @@
 import 'package:dio/dio.dart';
 
+import '../network/dio_exception_mapper.dart';
 import 'endereco_sugestao.dart';
 import 'map_point.dart';
 
 class BuscaEnderecoIndisponivelException implements Exception {
-  const BuscaEnderecoIndisponivelException();
+  final String message;
+
+  const BuscaEnderecoIndisponivelException([
+    this.message = 'Não foi possível buscar endereços agora. Tente novamente.',
+  ]);
+
+  @override
+  String toString() => message;
 }
 
 abstract class EnderecoAutocompleteService {
@@ -53,8 +61,8 @@ class BackendEnderecoAutocompleteService
               item['longitude'] is num)
             EnderecoSugestao.fromJson(item),
       ].where((sugestao) => sugestao.descricao.isNotEmpty).toList();
-    } on DioException {
-      throw const BuscaEnderecoIndisponivelException();
+    } on DioException catch (error) {
+      throw BuscaEnderecoIndisponivelException(mapDioException(error).message);
     }
   }
 }

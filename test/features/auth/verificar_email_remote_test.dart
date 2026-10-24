@@ -84,4 +84,46 @@ void main() {
 
     expect(resultado.precisaCadastroSenha, isFalse);
   });
+
+  test(
+    '404 sem message usa o fallback amigável e não expõe Not Found',
+    () async {
+      final datasource = _datasource(404, {
+        'error': 'Not Found',
+        'statusCode': 404,
+      });
+
+      await expectLater(
+        datasource.verificarEmail('naoexiste@empresa.com'),
+        throwsA(
+          isA<ServerException>().having(
+            (erro) => erro.message,
+            'message',
+            'Não encontramos o recurso solicitado.',
+          ),
+        ),
+      );
+    },
+  );
+
+  test(
+    'payload de verificação malformado vira ServerException amigável',
+    () async {
+      final datasource = _datasource(200, {'response': 'não é um objeto'});
+
+      await expectLater(
+        datasource.verificarEmail('malformado@empresa.com'),
+        throwsA(
+          isA<ServerException>().having(
+            (erro) => erro.message,
+            'message',
+            'Resposta inválida do servidor.',
+          ),
+        ),
+      );
+    },
+  );
+
+  // A resposta 200 com primeiroAcesso:false não distingue e-mail inexistente;
+  // essa distinção depende do backend retornar HTTP 404.
 }

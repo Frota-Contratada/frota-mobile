@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frota_mobile/core/error/failures.dart';
 import 'package:frota_mobile/features/auth/domain/entities/usuario.dart';
+import 'package:frota_mobile/features/auth/domain/entities/verificacao_email_result.dart';
 import 'package:frota_mobile/features/auth/domain/repositories/auth_repository.dart';
 import 'package:frota_mobile/features/auth/domain/usecases/confirmar_pin_usecase.dart';
 import 'package:frota_mobile/features/auth/domain/usecases/enviar_pin_email_usecase.dart';
@@ -12,6 +14,19 @@ import 'package:frota_mobile/features/auth/presentation/bloc/auth.bloc.dart';
 
 class _AuthRepositoryEspiao implements AuthRepository {
   final chamadas = <String>[];
+  Failure? falhaVerificarEmail;
+  Failure? falhaLogin;
+
+  @override
+  Future<VerificacaoEmailResult> verificarEmail(String email) async {
+    chamadas.add('verificarEmail');
+    final falha = falhaVerificarEmail;
+    if (falha != null) throw falha;
+    return VerificacaoEmailResult(
+      usuario: Usuario(nome: email, email: email),
+      precisaCadastroSenha: false,
+    );
+  }
 
   @override
   Future<void> signUp({required String senha}) async {
@@ -21,6 +36,8 @@ class _AuthRepositoryEspiao implements AuthRepository {
   @override
   Future<Usuario> login({required String email, required String senha}) async {
     chamadas.add('login');
+    final falha = falhaLogin;
+    if (falha != null) throw falha;
     return Usuario(nome: 'Teste', email: email);
   }
 
@@ -78,6 +95,40 @@ void main() {
     expect(repository.chamadas, isEmpty);
   });
 
+  test('cadastro valida senha vazia antes da confirmação', () async {
+    final estado = await _proximoEstado(
+      bloc,
+      const AuthCadastrarSenhaRequested(
+        email: 'novo@empresa.com',
+        senha: '',
+        confirmacaoSenha: '',
+      ),
+    );
+
+    expect(
+      estado,
+      const AuthCadastroSenha('novo@empresa.com', erro: 'Informe a senha.'),
+    );
+    expect(repository.chamadas, isEmpty);
+  });
+
+  test('cadastro exige confirmação preenchida', () async {
+    final estado = await _proximoEstado(
+      bloc,
+      const AuthCadastrarSenhaRequested(
+        email: 'novo@empresa.com',
+        senha: 'senha123',
+        confirmacaoSenha: '',
+      ),
+    );
+
+    expect(
+      estado,
+      const AuthCadastroSenha('novo@empresa.com', erro: 'Confirme a senha.'),
+    );
+    expect(repository.chamadas, isEmpty);
+  });
+
   test('primeiro acesso rejeita senha com menos de 6 caracteres', () async {
     final estado = await _proximoEstado(
       bloc,
@@ -97,6 +148,104 @@ void main() {
     );
     expect(repository.chamadas, isEmpty);
   });
+
+  test(
+    'redefinição aplica mensagens de senha vazia e confirmação vazia',
+    () async {
+      final senhaVazia = await _proximoEstado(
+        bloc,
+        const AuthRedefinirSenhaRequested(
+          email: 'user@empresa.com',
+          senha: '',
+          confirmacaoSenha: '',
+        ),
+      );
+      expect(
+        senhaVazia,
+        const AuthRedefinirSenhaNovaSenha(
+          'user@empresa.com',
+          erro: 'Informe a senha.',
+        ),
+      );
+
+      final confirmacaoVazia = await _proximoEstado(
+        bloc,
+        const AuthRedefinirSenhaRequested(
+          email: 'user@empresa.com',
+          senha: 'senha123',
+          confirmacaoSenha: '',
+        ),
+      );
+      expect(
+        confirmacaoVazia,
+        const AuthRedefinirSenhaNovaSenha(
+          'user@empresa.com',
+          erro: 'Confirme a senha.',
+        ),
+      );
+
+      final senhaCurta = await _proximoEstado(
+        bloc,
+        const AuthRedefinirSenhaRequested(
+          email: 'user@empresa.com',
+          senha: '123',
+          confirmacaoSenha: '123',
+        ),
+      );
+      expect(
+        senhaCurta,
+        const AuthRedefinirSenhaNovaSenha(
+          'user@empresa.com',
+          erro: 'A senha deve ter no mínimo 6 caracteres.',
+        ),
+      );
+    },
+  );
+
+  test(
+    'PIN inválido não chama a API no primeiro acesso nem na redefinição',
+    () async {
+      final vazio = await _proximoEstado(
+        bloc,
+        const AuthPinSubmitted(email: 'novo@empresa.com', pin: ''),
+      );
+      expect(
+        vazio,
+        const AuthPrimeiroAcesso(
+          'novo@empresa.com',
+          erro: 'Informe o código PIN.',
+        ),
+      );
+
+      final primeiroAcesso = await _proximoEstado(
+        bloc,
+        const AuthPinSubmitted(email: 'novo@empresa.com', pin: '12345a'),
+      );
+      expect(
+        primeiroAcesso,
+        const AuthPrimeiroAcesso(
+          'novo@empresa.com',
+          erro: 'O código PIN deve ter 6 dígitos.',
+        ),
+      );
+
+      final redefinicao = await _proximoEstado(
+        bloc,
+        const AuthRedefinirSenhaPinSubmitted(
+          email: 'user@empresa.com',
+          pin: '12345',
+        ),
+      );
+      expect(
+        redefinicao,
+        const AuthRedefinirSenhaPin(
+          'user@empresa.com',
+          erro: 'O código PIN deve ter 6 dígitos.',
+        ),
+      );
+      expect(repository.chamadas, isEmpty);
+    },
+  );
 
   test('primeiro acesso cadastra a senha e autentica quando válida', () async {
     final estados = <AuthState>[];
@@ -145,4 +294,41 @@ void main() {
     );
     expect(repository.chamadas, isEmpty);
   });
+
+  test('login rejeita senha curta com mensagem específica', () async {
+    final estado = await _proximoEstado(
+      bloc,
+      const AuthLoginRequested(email: 'user@empresa.com', senha: '12345'),
+    );
+
+    expect(
+      estado,
+      const AuthEmailValidado('user@empresa.com', erro: 'Senha inválida.'),
+    );
+    expect(repository.chamadas, isEmpty);
+  });
+
+  test(
+    'falha ao verificar e-mail permanece fora de AuthEmailValidado',
+    () async {
+      final erro = const ServerFailure(
+        'Não encontramos uma conta com este e-mail.',
+      );
+      final failingRepository = _AuthRepositoryEspiao()
+        ..falhaVerificarEmail = erro;
+      final failingBloc = _criarBloc(failingRepository);
+      addTearDown(failingBloc.close);
+
+      failingBloc.add(const AuthEmailSubmitted('naoexiste@empresa.com'));
+      final estado = await failingBloc.stream.firstWhere(
+        (item) => item is AuthErro,
+      );
+
+      expect(
+        estado,
+        const AuthErro('Não encontramos uma conta com este e-mail.'),
+      );
+      expect(estado, isNot(isA<AuthEmailValidado>()));
+    },
+  );
 }

@@ -238,7 +238,18 @@ class _AppMapWidgetState extends State<AppMapWidget> {
 
     _loadingRoute = true;
 
-    final rota = await _routingService.buscarRota(pontos);
+    MapRoute? rota;
+    try {
+      rota = await _routingService.buscarRota(pontos);
+    } on BackendRoutingException catch (error) {
+      if (!mounted || requestId != _routeRequestId) return;
+      _setLocationMessage(error.message);
+      setState(() {
+        _loadingRoute = false;
+        _resolvedRoutePoints = null;
+      });
+      return;
+    }
 
     if (!mounted || requestId != _routeRequestId) return;
 

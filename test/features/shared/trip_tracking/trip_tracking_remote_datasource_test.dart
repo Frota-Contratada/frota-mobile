@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frota_mobile/core/error/exceptions.dart';
 import 'package:frota_mobile/features/shared/trip_tracking/data/datasources/trip_tracking_remote_datasource.dart';
 import 'package:frota_mobile/features/shared/trip_tracking/domain/entities/tracked_position.dart';
 
@@ -47,6 +48,40 @@ void main() {
       'event-resume',
       'event-finish',
     ]);
+  });
+
+  test('mapeia erro HTTP do comando para mensagem funcional', () async {
+    final dio = Dio();
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) => handler.reject(
+          DioException(
+            requestOptions: options,
+            response: Response<dynamic>(
+              requestOptions: options,
+              statusCode: 422,
+              data: {'message': 'A corrida não pode ser alterada agora.'},
+            ),
+            type: DioExceptionType.badResponse,
+          ),
+        ),
+      ),
+    );
+    final datasource = TripTrackingRemoteDatasourceImpl(
+      dio: dio,
+      baseUrl: 'https://api.example/corridas',
+    );
+
+    await expectLater(
+      datasource.confirmWaiting('123', 'event-wait'),
+      throwsA(
+        isA<ServerException>().having(
+          (error) => error.message,
+          'message',
+          'A corrida não pode ser alterada agora.',
+        ),
+      ),
+    );
   });
 }
 

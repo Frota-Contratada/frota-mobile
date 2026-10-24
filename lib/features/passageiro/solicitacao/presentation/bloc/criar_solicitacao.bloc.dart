@@ -25,7 +25,7 @@ class RascunhoSolicitacao {
   final String destinoDescricao;
   final MapPoint? destinoPoint;
   final List<String> paradasDescricao;
-  final List<MapPoint> paradaPoints;
+  final List<MapPoint?> paradaPoints;
   final bool objeto;
   final bool emergencia;
 
@@ -119,6 +119,7 @@ class SolicitacaoDraft {
   }
 
   RascunhoSolicitacao toRascunho() {
+    final paradaPoints = List<MapPoint?>.of(this.paradaPoints);
     return RascunhoSolicitacao(
       data: data,
       horario: horario,
@@ -131,7 +132,7 @@ class SolicitacaoDraft {
       destinoDescricao: destinoDescricao,
       destinoPoint: destinoPoint,
       paradasDescricao: List<String>.of(paradasDescricao),
-      paradaPoints: paradaPoints.whereType<MapPoint>().toList(),
+      paradaPoints: paradaPoints,
       objeto: objeto,
       emergencia: emergencia,
     );
@@ -448,14 +449,31 @@ class CriarSolicitacaoBloc
 
     final paradas = <EnderecoEstruturado>[];
 
-    for (var indice = 0; indice < rascunho.paradaPoints.length; indice++) {
+    for (var indice = 0; indice < rascunho.paradasDescricao.length; indice++) {
+      final ponto = indice < rascunho.paradaPoints.length
+          ? rascunho.paradaPoints[indice]
+          : null;
+      final descricao = rascunho.paradasDescricao[indice].trim();
+      if (descricao.isNotEmpty && ponto == null) {
+        throw const RascunhoInvalidoException(
+          'Selecione todas as paradas no mapa.',
+        );
+      }
+      if (ponto == null) continue;
       paradas.add(
         await resolverEnderecoEstruturado(
-          rascunho.paradaPoints[indice],
-          descricaoFallback: indice < rascunho.paradasDescricao.length
-              ? rascunho.paradasDescricao[indice]
-              : null,
+          ponto,
+          descricaoFallback: rascunho.paradasDescricao[indice],
         ),
+      );
+    }
+
+    if (rascunho.paradaPoints.length > rascunho.paradasDescricao.length &&
+        rascunho.paradaPoints
+            .skip(rascunho.paradasDescricao.length)
+            .any((ponto) => ponto != null)) {
+      throw const RascunhoInvalidoException(
+        'Selecione todas as paradas no mapa.',
       );
     }
 

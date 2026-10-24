@@ -1,8 +1,18 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import '../network/dio_exception_mapper.dart';
 
 import 'map_point.dart';
 import 'map_route.dart';
+
+class BackendRoutingException implements Exception {
+  final String message;
+
+  const BackendRoutingException(this.message);
+
+  @override
+  String toString() => message;
+}
 
 abstract class RoutingService {
   Future<MapRoute?> buscarRota(List<MapPoint> pontos);
@@ -44,7 +54,11 @@ class BackendRoutingService implements RoutingService {
       if (rota != null) _guardarEmCache(chave, rota);
 
       return rota;
-    } catch (_) {
+    } on DioException catch (error) {
+      final status = error.response?.statusCode;
+      if (status == 401 || status == 403 || status == 422) {
+        throw BackendRoutingException(mapDioException(error).message);
+      }
       debugPrint('Falha ao calcular a rota.');
       return null;
     }

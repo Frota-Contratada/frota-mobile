@@ -7,8 +7,19 @@ class ApiResponseDto<T> {
     Map<String, dynamic> json,
     T Function(Map<String, dynamic>) fromJsonT,
   ) {
-    return ApiResponseDto(
-      response: fromJsonT(json['response'] as Map<String, dynamic>),
-    );
+    final response = json['response'];
+    if (response is! Map) {
+      throw const FormatException('Resposta inválida do servidor.');
+    }
+
+    try {
+      return ApiResponseDto(
+        response: fromJsonT(Map<String, dynamic>.from(response)),
+      );
+    } on FormatException {
+      rethrow;
+    } on Object {
+      throw const FormatException('Resposta inválida do servidor.');
+    }
   }
 }

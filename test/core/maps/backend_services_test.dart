@@ -69,21 +69,24 @@ void main() {
       });
     });
 
-    test('retorna nulo quando a API não traz traçado', () async {
-      final rota = await BackendRoutingService(
+    test('propaga mensagem acionável para erro autorizado', () async {
+      final servico = BackendRoutingService(
         dio: _dio(
-          _RespostaFixa(200, {
-            'response': {
-              'distanciaKm': 6.48,
-              'duracaoMinutos': 16,
-              'coordenadas': <dynamic>[],
-            },
-          }),
+          _RespostaFixa(401, {'error': 'Unauthorized', 'statusCode': 401}),
         ),
         url: 'http://api.teste/solicitacoes/rota',
-      ).buscarRota(pontos);
+      );
 
-      expect(rota, isNull);
+      await expectLater(
+        servico.buscarRota(pontos),
+        throwsA(
+          isA<BackendRoutingException>().having(
+            (erro) => erro.message,
+            'message',
+            'Sua sessão expirou. Entre novamente para continuar.',
+          ),
+        ),
+      );
     });
   });
 
@@ -130,15 +133,26 @@ void main() {
       expect(adapter.ultimaRequisicao, isNull);
     });
 
-    test('sinaliza indisponibilidade quando a API falha', () async {
+    test('preserva mensagem funcional em erro de busca', () async {
       final servico = BackendEnderecoAutocompleteService(
-        dio: _dio(_RespostaFixa(500, {'message': 'erro'})),
+        dio: _dio(
+          _RespostaFixa(422, {
+            'message': 'Informe uma busca mais específica.',
+            'statusCode': 422,
+          }),
+        ),
         url: 'http://api.teste/solicitacoes/enderecos/sugestoes',
       );
 
       await expectLater(
         servico.buscarSugestoes('Higienópolis'),
-        throwsA(isA<BuscaEnderecoIndisponivelException>()),
+        throwsA(
+          isA<BuscaEnderecoIndisponivelException>().having(
+            (erro) => erro.message,
+            'message',
+            'Informe uma busca mais específica.',
+          ),
+        ),
       );
     });
   });
