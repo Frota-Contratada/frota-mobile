@@ -6,17 +6,19 @@ import 'corrida_colors.dart';
 class CorridaMapaWidget extends StatelessWidget {
   final String origem;
   final String destino;
+  final double? altura;
 
   const CorridaMapaWidget({
     super.key,
     required this.origem,
     required this.destino,
+    this.altura = 198,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 198,
+      height: altura,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: CorridaColors.borderGrey),

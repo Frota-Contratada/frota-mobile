@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../config/app_assets.dart';
+import '../../../../../core/responsive/responsive.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../features/auth/domain/usecases/logout_usecase.dart';
 import '../../../../../injection_container/injection_container.dart';
@@ -43,30 +44,35 @@ class _PassageiroConfiguracoesPageState
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const Divider(
-              color: AppColors.borderGrey,
-              height: 1,
-              indent: 25,
-              endIndent: 25,
-            ),
-            const SizedBox(height: 15),
-            const Expanded(
-              child: SingleChildScrollView(
-                child: PreferenciasNotificacaoSection(
-                  perfil: PerfilUsuario.passageiro,
-                  corAtiva: AppColors.accentGreen,
-                  corInativa: Color(0xFFC4C4C4),
+        child: ConteudoResponsivo(
+          larguraMaxima: 640,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const Divider(
+                color: AppColors.borderGrey,
+                height: 1,
+                indent: 25,
+                endIndent: 25,
+              ),
+              const SizedBox(height: 15),
+              const Expanded(
+                child: SingleChildScrollView(
+                  child: PreferenciasNotificacaoSection(
+                    perfil: PerfilUsuario.passageiro,
+                    corAtiva: AppColors.accentGreen,
+                    corInativa: Color(0xFFC4C4C4),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 15),
-            _buildLogoutButton(),
-            const SizedBox(height: 57),
-          ],
+              const SizedBox(height: 15),
+              _buildLogoutButton(),
+              SizedBox(
+                height: AppLayout.of(context).usaPainelLateral ? 24 : 57,
+              ),
+            ],
+          ),
         ),
       ),
     );

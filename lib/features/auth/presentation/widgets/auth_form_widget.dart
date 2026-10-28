@@ -13,19 +13,21 @@ class AuthColors {
 
 // Imagem de fundo do topo
 class AuthHeaderGradient extends StatelessWidget {
-  const AuthHeaderGradient({super.key});
+  final double? altura;
+
+  const AuthHeaderGradient({super.key, this.altura = 300});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 300,
+      height: altura,
       width: double.infinity,
       color: AuthColors.darkBlue,
       child: Image.asset(
         'assets/backgrounds/fundo_jbs.png',
         fit: BoxFit.cover,
         width: double.infinity,
-        height: 300,
+        height: altura,
       ),
     );
   }
@@ -34,17 +36,24 @@ class AuthHeaderGradient extends StatelessWidget {
 // Card com borda arredondada no topo
 class AuthBottomCard extends StatelessWidget {
   final Widget child;
+  final BorderRadiusGeometry borderRadius;
+  final EdgeInsetsGeometry padding;
 
-  const AuthBottomCard({super.key, required this.child});
+  const AuthBottomCard({
+    super.key,
+    required this.child,
+    this.borderRadius = const BorderRadius.vertical(top: Radius.circular(40)),
+    this.padding = const EdgeInsets.fromLTRB(24, 32, 24, 20),
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 32, 24, 20),
-      decoration: const BoxDecoration(
+      padding: padding,
+      decoration: BoxDecoration(
         color: AuthColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
+        borderRadius: borderRadius,
       ),
       clipBehavior: Clip.antiAlias,
       child: child,

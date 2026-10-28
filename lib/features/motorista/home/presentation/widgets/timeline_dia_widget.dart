@@ -22,24 +22,18 @@ class TimelineDiaWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cards = corridas.asMap().entries.map((entry) {
-      final isUltimaCorrida = entry.key == corridas.length - 1;
-      final bottomPadding = isUltimoDia && isUltimaCorrida ? 0.0 : 16.0;
-
-      return Padding(
-        padding: EdgeInsets.only(bottom: bottomPadding),
-        child: CorridaCardWidget(
-          corrida: entry.value,
-          onVerDetalhes: () => Navigator.pushNamed(
-            context,
-            AppRoutes.motoristaCorridaDetalhe,
-            arguments: entry.value.id,
-          ),
-          onIniciarCorrida: () => Navigator.pushNamed(
-            context,
-            AppRoutes.motoristaCorridaDetalhe,
-            arguments: entry.value.id,
-          ),
+    final cards = corridas.map((corrida) {
+      return CorridaCardWidget(
+        corrida: corrida,
+        onVerDetalhes: () => Navigator.pushNamed(
+          context,
+          AppRoutes.motoristaCorridaDetalhe,
+          arguments: corrida.id,
+        ),
+        onIniciarCorrida: () => Navigator.pushNamed(
+          context,
+          AppRoutes.motoristaCorridaDetalhe,
+          arguments: corrida.id,
         ),
       );
     }).toList();

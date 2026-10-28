@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../config/routes.dart';
+import '../../../../core/responsive/app_layout.dart';
 import '../../../../core/widgets/app_colors.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../auth/domain/entities/usuario.dart';
@@ -50,14 +51,27 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
                     novoEstado is NotificacoesErro,
               );
             },
-            child: _buildConteudo(context, state),
+            child: LayoutBuilder(
+              builder: (context, constraints) => _buildConteudo(
+                context,
+                state,
+                AppLayout.margemCentralizada(
+                  constraints.maxWidth,
+                  margemMinima: 20,
+                ),
+              ),
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildConteudo(BuildContext context, NotificacoesState state) {
+  Widget _buildConteudo(
+    BuildContext context,
+    NotificacoesState state,
+    double margemHorizontal,
+  ) {
     if (state is NotificacoesInitial || state is NotificacoesLoading) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -85,11 +99,14 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
             submensagem: state.mensagem,
           ),
           Center(
-            child: ElevatedButton(
-              onPressed: () => context.read<NotificacoesBloc>().add(
-                const NotificacoesCarregadas(),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: ElevatedButton(
+                onPressed: () => context.read<NotificacoesBloc>().add(
+                  const NotificacoesCarregadas(),
+                ),
+                child: const Text('Tentar novamente'),
               ),
-              child: const Text('Tentar novamente'),
             ),
           ),
         ],
@@ -113,7 +130,7 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
 
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      padding: EdgeInsets.fromLTRB(margemHorizontal, 8, margemHorizontal, 24),
       itemCount: carregada.notificacoes.length + 1,
       separatorBuilder: (_, index) => SizedBox(height: index == 0 ? 12 : 10),
       itemBuilder: (context, index) {

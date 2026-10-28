@@ -6,12 +6,14 @@ import 'package:geocoding/geocoding.dart';
 import '../maps/endereco_autocomplete_service.dart';
 import '../maps/endereco_sugestao.dart';
 import '../maps/map_point.dart';
+import '../responsive/responsive.dart';
 import 'app_colors.dart';
 import 'app_map_widget.dart';
 import 'busca_barra_widget.dart';
 import 'endereco_sugestoes_widget.dart';
 
 const _intervaloBuscaSugestoes = Duration(milliseconds: 350);
+const _larguraMaximaControles = 640.0;
 
 /// Seleciona um ponto por toque no mapa ou por busca de endereço.
 class MapPickerPage extends StatefulWidget {
@@ -243,6 +245,8 @@ class _MapPickerPageState extends State<MapPickerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final painelLateral = AppLayout.of(context).usaPainelLateral;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -251,148 +255,217 @@ class _MapPickerPageState extends State<MapPickerPage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
-        children: [
-          Padding(
+      body: painelLateral ? _buildPainelLateral() : _buildEmpilhado(),
+    );
+  }
+
+  Widget _buildEmpilhado() {
+    return Column(
+      children: [
+        ConteudoResponsivo(
+          larguraMaxima: _larguraMaximaControles,
+          child: Padding(
             padding: const EdgeInsets.fromLTRB(25, 10, 25, 8),
-            child: BuscaBarraWidget(
-              controller: _addressController,
-              hintText: 'Rua, número, cidade',
-              onChanged: (texto) {
-                setState(() {
-                  if (_selectedPoint != null) {
-                    _selectedPoint = null;
-                    _selectedAddress = null;
-                  }
-                });
-                _agendarBuscaSugestoes(texto);
-              },
-              onSubmitted: (_) => _searchAddress(),
-              suffixIcon: _buscandoSugestoes
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.primaryBlue,
-                        ),
-                      ),
-                    )
-                  : _addressController.text.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: 'Limpar busca',
-                      icon: const Icon(
-                        Icons.close,
-                        color: AppColors.textGrey,
-                        size: 20,
-                      ),
-                      onPressed: () {
-                        _debounceSugestoes?.cancel();
-                        _buscaSugestoesId++;
-                        setState(() {
-                          _addressController.clear();
-                          _selectedPoint = null;
-                          _selectedAddress = null;
-                          _buscandoSugestoes = false;
-                          _sugestoes = const [];
-                          _mensagemSugestoes = null;
-                        });
-                      },
-                    ),
-              onBotaoAcao: _searchAddress,
-              iconeBotaoAcao: Icons.arrow_forward_rounded,
-            ),
+            child: _buildBarraBusca(),
           ),
-          Expanded(
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: AppMapWidget(
-                    origin:
-                        _isOrigin ||
-                            widget.selectionKind == MapSelectionKind.stop
-                        ? _selectedPoint
-                        : null,
-                    destination:
-                        _isOrigin ||
-                            widget.selectionKind == MapSelectionKind.stop
-                        ? null
-                        : _selectedPoint,
-                    initialCenter: widget.initialPoint,
-                    onTap: _selectPoint,
+        ),
+        Expanded(
+          child: Stack(
+            children: [
+              Positioned.fill(child: _buildMapa()),
+              if (_mostrarSugestoes)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: ConteudoResponsivo(
+                    larguraMaxima: _larguraMaximaControles,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 25),
+                      child: _buildSugestoes(),
+                    ),
                   ),
+                ),
+            ],
+          ),
+        ),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          decoration: const BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
+          ),
+          child: ConteudoResponsivo(
+            larguraMaxima: _larguraMaximaControles,
+            child: _buildConfirmacao(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPainelLateral() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: _buildMapa()),
+        Container(
+          width: AppLayout.of(context).larguraPainelLateral,
+          decoration: const BoxDecoration(
+            color: AppColors.background,
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
+          ),
+          child: SafeArea(
+            top: false,
+            left: false,
+            child: CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                  sliver: SliverToBoxAdapter(child: _buildBarraBusca()),
                 ),
                 if (_mostrarSugestoes)
-                  Positioned(
-                    top: 0,
-                    left: 25,
-                    right: 25,
-                    child: EnderecoSugestoesWidget(
-                      sugestoes: _sugestoes,
-                      mensagem: _mensagemSugestoes,
-                      onSelecionar: _selecionarSugestao,
-                    ),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: SliverToBoxAdapter(child: _buildSugestoes()),
                   ),
-              ],
-            ),
-          ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            decoration: const BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Escolha a $_pointLabel',
-                  style: const TextStyle(
-                    color: AppColors.darkBlue,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _resolvingAddress
-                      ? 'Identificando endereço...'
-                      : _selectedAddress ??
-                            'Toque no mapa ou busque um endereço acima.',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppColors.textMediumGrey),
-                ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _resolvingAddress ? null : _confirm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryBlue,
-                      foregroundColor: AppColors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                    ),
-                    child: Text(
-                      _selectedPoint == null
-                          ? 'Buscar e confirmar'
-                          : 'Confirmar $_pointLabel',
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                      child: _buildConfirmacao(),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBarraBusca() {
+    return BuscaBarraWidget(
+      controller: _addressController,
+      hintText: 'Rua, número, cidade',
+      onChanged: (texto) {
+        setState(() {
+          if (_selectedPoint != null) {
+            _selectedPoint = null;
+            _selectedAddress = null;
+          }
+        });
+        _agendarBuscaSugestoes(texto);
+      },
+      onSubmitted: (_) => _searchAddress(),
+      suffixIcon: _buscandoSugestoes
+          ? const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primaryBlue,
+                ),
+              ),
+            )
+          : _addressController.text.isEmpty
+          ? null
+          : IconButton(
+              tooltip: 'Limpar busca',
+              icon: const Icon(
+                Icons.close,
+                color: AppColors.textGrey,
+                size: 20,
+              ),
+              onPressed: () {
+                _debounceSugestoes?.cancel();
+                _buscaSugestoesId++;
+                setState(() {
+                  _addressController.clear();
+                  _selectedPoint = null;
+                  _selectedAddress = null;
+                  _buscandoSugestoes = false;
+                  _sugestoes = const [];
+                  _mensagemSugestoes = null;
+                });
+              },
+            ),
+      onBotaoAcao: _searchAddress,
+      iconeBotaoAcao: Icons.arrow_forward_rounded,
+    );
+  }
+
+  Widget _buildMapa() {
+    final marcaComoOrigem =
+        _isOrigin || widget.selectionKind == MapSelectionKind.stop;
+
+    return AppMapWidget(
+      origin: marcaComoOrigem ? _selectedPoint : null,
+      destination: marcaComoOrigem ? null : _selectedPoint,
+      initialCenter: widget.initialPoint,
+      onTap: _selectPoint,
+    );
+  }
+
+  Widget _buildSugestoes() {
+    return EnderecoSugestoesWidget(
+      sugestoes: _sugestoes,
+      mensagem: _mensagemSugestoes,
+      onSelecionar: _selecionarSugestao,
+    );
+  }
+
+  Widget _buildConfirmacao() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Escolha a $_pointLabel',
+          style: const TextStyle(
+            color: AppColors.darkBlue,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          _resolvingAddress
+              ? 'Identificando endereço...'
+              : _selectedAddress ??
+                    'Toque no mapa ou busque um endereço acima.',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: AppColors.textMediumGrey),
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            onPressed: _resolvingAddress ? null : _confirm,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryBlue,
+              foregroundColor: AppColors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+            ),
+            child: Text(
+              _selectedPoint == null
+                  ? 'Buscar e confirmar'
+                  : 'Confirmar $_pointLabel',
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

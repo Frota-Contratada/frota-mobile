@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/responsive/responsive.dart';
 import '../../../../injection_container/injection_container.dart';
 import '../../../notificacoes/presentation/sessao/notificacoes_sessao_controller.dart';
 import '../bloc/auth.bloc.dart';
@@ -52,28 +53,88 @@ class _LoginPageState extends State<LoginPage> {
           }
         },
         builder: (context, state) {
-          return Stack(
-            children: [
-              const AuthHeaderGradient(),
-              Column(
-                children: [
-                  const SizedBox(height: 220),
-                  Expanded(
-                    child: AuthBottomCard(
-                      child: SingleChildScrollView(
-                        padding: EdgeInsets.only(
-                          bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
-                        ),
-                        child: _buildContent(context, state),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          final layout = AppLayout.of(context);
+          final conteudo = ConteudoResponsivo(
+            larguraMaxima: _larguraMaximaFormulario,
+            child: _buildContent(context, state),
           );
+
+          if (layout.usaPainelLateral) {
+            return _buildPainelLateral(context, layout, conteudo);
+          }
+
+          return _buildEmpilhado(context, layout, conteudo);
         },
       ),
+    );
+  }
+
+  static const double _larguraMaximaFormulario = 440;
+
+  Widget _buildEmpilhado(
+    BuildContext context,
+    AppLayout layout,
+    Widget conteudo,
+  ) {
+    final alturaHeader = layout.compacto ? 300.0 : layout.altura * 0.38;
+    final inicioCard = alturaHeader - 80;
+
+    return Stack(
+      children: [
+        AuthHeaderGradient(altura: alturaHeader),
+        Column(
+          children: [
+            SizedBox(height: inicioCard),
+            Expanded(
+              child: AuthBottomCard(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
+                  ),
+                  child: conteudo,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPainelLateral(
+    BuildContext context,
+    AppLayout layout,
+    Widget conteudo,
+  ) {
+    return Stack(
+      children: [
+        const Positioned.fill(child: AuthHeaderGradient(altura: null)),
+        Align(
+          alignment: Alignment.centerRight,
+          child: SizedBox(
+            width: layout.larguraPainelLateral,
+            height: double.infinity,
+            child: AuthBottomCard(
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(40),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: SafeArea(
+                left: false,
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      top: 24,
+                      bottom: MediaQuery.viewInsetsOf(context).bottom + 24,
+                    ),
+                    child: conteudo,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

@@ -10,6 +10,7 @@ import '../bloc/criar_solicitacao.bloc.dart';
 import '../utils/solicitacao_formatters.dart';
 import '../widgets/solicitacao_horario_field_widget.dart';
 import '../widgets/solicitacao_input_widget.dart';
+import '../widgets/solicitacao_layout_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import '../widgets/solicitacao_centros_custo_picker_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
@@ -71,70 +72,48 @@ class _SolicitarObjetoPageState extends State<SolicitarObjetoPage> {
       },
       child: Scaffold(
         backgroundColor: AppColors.white,
-        body: Column(
+        body: SolicitacaoLayoutWidget(
+          alturaMapa: 185,
+          sobreposicao: 21,
+          mapa: AppMapWidget(
+            showAttribution: false,
+            origin: _origemPoint,
+            destination: _destinoPoint,
+          ),
           children: [
-            SizedBox(
-              height: 185,
-              width: double.infinity,
-              child: AppMapWidget(
-                showAttribution: false,
-                origin: _origemPoint,
-                destination: _destinoPoint,
+            _buildHeader(),
+            const SizedBox(height: 16),
+            const SolicitacaoModalidadeChipWidget(modalidade: 'Objetos'),
+            const SizedBox(height: 12),
+            _buildSectionTitle('1.', 'Trajeto'),
+            const SizedBox(height: 8),
+            _buildTrajetoSection(),
+            const SizedBox(height: 20),
+            _buildSectionTitle('2.', 'Data e horário'),
+            const SizedBox(height: 8),
+            _buildIconInput(
+              iconAsset: AppAssets.iconData,
+              label: 'data',
+              value: _data,
+              onTap: _selecionarData,
+            ),
+            const SizedBox(height: 10),
+            _buildFieldRow(
+              iconAsset: AppAssets.iconHorario,
+              child: SolicitacaoHorarioFieldWidget(
+                controller: _horarioController,
+                errorText: _horarioErro,
+                onChanged: _aoAlterarHorario,
               ),
             ),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                transform: Matrix4.translationValues(0, -21, 0),
-                decoration: const BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(25, 24, 25, 40),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(),
-                      const SizedBox(height: 16),
-                      const SolicitacaoModalidadeChipWidget(
-                        modalidade: 'Objetos',
-                      ),
-                      const SizedBox(height: 12),
-                      _buildSectionTitle('1.', 'Trajeto'),
-                      const SizedBox(height: 8),
-                      _buildTrajetoSection(),
-                      const SizedBox(height: 20),
-                      _buildSectionTitle('2.', 'Data e horário'),
-                      const SizedBox(height: 8),
-                      _buildIconInput(
-                        iconAsset: AppAssets.iconData,
-                        label: 'data',
-                        value: _data,
-                        onTap: _selecionarData,
-                      ),
-                      const SizedBox(height: 10),
-                      _buildFieldRow(
-                        iconAsset: AppAssets.iconHorario,
-                        child: SolicitacaoHorarioFieldWidget(
-                          controller: _horarioController,
-                          errorText: _horarioErro,
-                          onChanged: _aoAlterarHorario,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      _buildSectionTitle('3.', 'Custos'),
-                      const SizedBox(height: 8),
-                      _buildCentroCustoField(),
-                      const SizedBox(height: 30),
-                      SolicitacaoPrimaryButtonWidget(
-                        label: 'Avançar',
-                        onPressed: _podeAvancar() ? _avancar : null,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            const SizedBox(height: 20),
+            _buildSectionTitle('3.', 'Custos'),
+            const SizedBox(height: 8),
+            _buildCentroCustoField(),
+            const SizedBox(height: 30),
+            SolicitacaoPrimaryButtonWidget(
+              label: 'Avançar',
+              onPressed: _podeAvancar() ? _avancar : null,
             ),
           ],
         ),

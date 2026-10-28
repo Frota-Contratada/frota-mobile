@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../config/routes.dart';
 import '../../../../../core/navigation/app_route_observer.dart';
+import '../../../../../core/responsive/responsive.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../core/widgets/historico_filtro.dart';
@@ -56,6 +57,8 @@ class _SolicitacoesView extends StatefulWidget {
   State<_SolicitacoesView> createState() => _SolicitacoesViewState();
 }
 
+const double _larguraMaximaConteudo = 960;
+
 class _SolicitacoesViewState extends State<_SolicitacoesView> with RouteAware {
   ModalRoute<dynamic>? _observedRoute;
   HistoricoFiltro _filtro = const HistoricoFiltro(
@@ -101,59 +104,9 @@ class _SolicitacoesViewState extends State<_SolicitacoesView> with RouteAware {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SolicitacoesHeader(
-                    nome: nome,
-                    onConfiguracoes: () => Navigator.pushNamed(
-                      context,
-                      AppRoutes.passageiroConfiguracoes,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 25),
-                    child: Divider(color: AppColors.borderGrey, height: 1),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 25),
-                    child: Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Minhas solicitações',
-                            style: TextStyle(
-                              fontSize: 21,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.darkBlue,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Material(
-                          color: AppColors.primaryBlue,
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            onTap: () => _abrirFiltros(context),
-                            customBorder: const CircleBorder(),
-                            child: const SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: Icon(
-                                Icons.tune,
-                                color: AppColors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+              child: ConteudoResponsivo(
+                larguraMaxima: _larguraMaximaConteudo,
+                child: _buildCabecalho(context, nome),
               ),
             ),
             BlocBuilder<SolicitacoesBloc, SolicitacoesState>(
@@ -207,14 +160,20 @@ class _SolicitacoesViewState extends State<_SolicitacoesView> with RouteAware {
                 final entradas = grupos.entries.toList();
 
                 return SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(25, 0, 25, 24),
+                  padding: const EdgeInsets.only(bottom: 24),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final entrada = entradas[index];
 
-                      return _GrupoSolicitacoes(
-                        status: SolicitacaoStatus.deDominio(entrada.key),
-                        solicitacoes: entrada.value,
+                      return ConteudoResponsivo(
+                        larguraMaxima: _larguraMaximaConteudo,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 25),
+                          child: _GrupoSolicitacoes(
+                            status: SolicitacaoStatus.deDominio(entrada.key),
+                            solicitacoes: entrada.value,
+                          ),
+                        ),
                       );
                     }, childCount: entradas.length),
                   ),
@@ -224,6 +183,57 @@ class _SolicitacoesViewState extends State<_SolicitacoesView> with RouteAware {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCabecalho(BuildContext context, String nome) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SolicitacoesHeader(
+          nome: nome,
+          onConfiguracoes: () =>
+              Navigator.pushNamed(context, AppRoutes.passageiroConfiguracoes),
+        ),
+        const SizedBox(height: 16),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 25),
+          child: Divider(color: AppColors.borderGrey, height: 1),
+        ),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 25),
+          child: Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Minhas solicitações',
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.darkBlue,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Material(
+                color: AppColors.primaryBlue,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  onTap: () => _abrirFiltros(context),
+                  customBorder: const CircleBorder(),
+                  child: const SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: Icon(Icons.tune, color: AppColors.white, size: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 
@@ -448,21 +458,23 @@ class _GrupoSolicitacoes extends StatelessWidget {
               ],
             ),
           )
-        else
-          ...solicitacoes.map(
-            (solicitacao) => Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: SolicitacaoCardWidget(
-                destino: solicitacao.destino.descricao,
-                status: status,
-                data: _dataCurta(solicitacao.dataCorrida),
-                horarioPartida: formatarHorarioSolicitacao(
-                  solicitacao.dataCorrida,
+        else ...[
+          GradeResponsiva(
+            children: [
+              for (final solicitacao in solicitacoes)
+                SolicitacaoCardWidget(
+                  destino: solicitacao.destino.descricao,
+                  status: status,
+                  data: _dataCurta(solicitacao.dataCorrida),
+                  horarioPartida: formatarHorarioSolicitacao(
+                    solicitacao.dataCorrida,
+                  ),
+                  onVerDetalhes: () => _abrirDetalhe(context, solicitacao),
                 ),
-                onVerDetalhes: () => _abrirDetalhe(context, solicitacao),
-              ),
-            ),
+            ],
           ),
+          const SizedBox(height: 16),
+        ],
       ],
     );
   }

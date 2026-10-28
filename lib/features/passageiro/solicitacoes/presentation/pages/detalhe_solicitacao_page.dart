@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../config/app_assets.dart';
+import '../../../../../core/responsive/responsive.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/app_map_widget.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
@@ -142,253 +143,274 @@ class _Conteudo extends StatelessWidget {
         ? _formatarMoeda(corrida!.valorFinal)
         : _formatarMoeda(solicitacao.valorEstimado);
 
+    final mapa = ClipRRect(
+      borderRadius: BorderRadius.circular(15),
+      child: MapRoutePreview(
+        originAddress: solicitacao.origem.descricao,
+        destinationAddress: solicitacao.destino.descricao,
+        origin: solicitacao.origem.ponto,
+        destination: solicitacao.destino.ponto,
+        viaPoints: solicitacao.paradas.map((parada) => parada.ponto).toList(),
+      ),
+    );
+
+    final detalhes = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (!corridaRealizada) ...[
+          _StatusBadge(status: status),
+          const SizedBox(height: 16),
+        ],
+
+        if (solicitacao.motivoReprovacao != null) ...[
+          _BlocoMotivoRecusa(motivo: solicitacao.motivoReprovacao!),
+        ],
+
+        if (solicitacao.motivoCancelamento != null) ...[
+          _BlocoMotivoRecusa(
+            titulo: 'Motivo do cancelamento',
+            motivo: solicitacao.motivoCancelamento!,
+          ),
+        ],
+
+        _InfoRow(
+          iconWidget: Container(
+            width: 12,
+            height: 12,
+            decoration: const BoxDecoration(
+              color: AppColors.primaryBlue,
+              shape: BoxShape.circle,
+            ),
+          ),
+          label: 'Origem',
+          valor: solicitacao.origem.descricao,
+        ),
+        const _LinhaConectora(),
+
+        ...solicitacao.paradas.map(
+          (parada) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _InfoRow(
+                iconWidget: const Icon(
+                  Icons.adjust_rounded,
+                  size: 12,
+                  color: AppColors.primaryBlue,
+                ),
+                label: 'Parada',
+                valor: parada.descricao,
+              ),
+              const _LinhaConectora(),
+            ],
+          ),
+        ),
+
+        _InfoRow(
+          iconWidget: Image.asset(
+            AppAssets.iconDestino,
+            width: 12,
+            height: 15,
+            fit: BoxFit.contain,
+            color: AppColors.primaryBlue,
+          ),
+          label: 'Destino',
+          valor: solicitacao.destino.descricao,
+        ),
+        const SizedBox(height: 20),
+
+        _InfoRow(
+          iconWidget: Image.asset(
+            AppAssets.iconData,
+            width: 12,
+            height: 14,
+            fit: BoxFit.contain,
+            color: AppColors.primaryBlue,
+          ),
+          label: 'Data',
+          valor: formatarDataSolicitacao(solicitacao.dataCorrida),
+        ),
+        const SizedBox(height: 20),
+
+        _InfoRow(
+          iconWidget: Image.asset(
+            AppAssets.iconHorario,
+            width: 12,
+            height: 12,
+            fit: BoxFit.contain,
+            color: AppColors.primaryBlue,
+          ),
+          label: 'Horário de partida',
+          valor: formatarHorarioSolicitacao(solicitacao.dataCorrida),
+        ),
+        const SizedBox(height: 20),
+
+        if (horarioChegada != null) ...[
+          _InfoRow(
+            iconWidget: Image.asset(
+              AppAssets.iconHorario,
+              width: 12,
+              height: 12,
+              fit: BoxFit.contain,
+              color: AppColors.primaryBlue,
+            ),
+            label: corridaRealizada
+                ? 'Horário de chegada'
+                : 'Horário estimado de chegada',
+            valor: horarioChegada,
+          ),
+          const SizedBox(height: 20),
+        ],
+
+        _InfoRow(
+          iconWidget: Image.asset(
+            AppAssets.iconCusto,
+            width: 12,
+            height: 10,
+            fit: BoxFit.contain,
+            color: AppColors.primaryBlue,
+          ),
+          label: corridaRealizada
+              ? 'Valor da corrida'
+              : 'Valor estimado da corrida',
+          valor: valor,
+        ),
+        const SizedBox(height: 20),
+
+        if (corrida?.motoristaNome != null) ...[
+          _InfoRow(
+            iconWidget: Image.asset(
+              AppAssets.iconFuncionario,
+              width: 12,
+              height: 13,
+              fit: BoxFit.contain,
+              color: AppColors.primaryBlue,
+            ),
+            label: 'Nome do motorista',
+            valor: corrida!.motoristaNome!,
+          ),
+          const SizedBox(height: 20),
+        ],
+
+        if (corrida != null && corrida.placaVeiculo.isNotEmpty) ...[
+          _InfoRow(
+            iconWidget: Image.asset(
+              AppAssets.iconVeiculo,
+              width: 12,
+              height: 10,
+              fit: BoxFit.contain,
+              color: AppColors.primaryBlue,
+            ),
+            label: 'Placa do veículo',
+            valor: corrida.placaVeiculo,
+          ),
+          const SizedBox(height: 20),
+        ],
+
+        _InfoRow(
+          iconWidget: Image.asset(
+            AppAssets.iconMotivo,
+            width: 12,
+            height: 12,
+            fit: BoxFit.contain,
+            color: AppColors.primaryBlue,
+          ),
+          label: corridaRealizada ? 'Motivo' : 'Motivo da viagem',
+          valor: solicitacao.motivoSolicitacao,
+        ),
+        const SizedBox(height: 20),
+
+        if (solicitacao.centrosCusto.isNotEmpty) ...[
+          _InfoRow(
+            iconWidget: const Icon(
+              Icons.account_tree_outlined,
+              size: 12,
+              color: AppColors.primaryBlue,
+            ),
+            label: solicitacao.centrosCusto.length > 1
+                ? 'Centros de custo'
+                : 'Centro de custo',
+            valor: solicitacao.centrosCusto
+                .map(_formatarCentroCusto)
+                .join(', '),
+          ),
+          const SizedBox(height: 20),
+        ],
+
+        if (solicitacao.compartilhada) ...[
+          _InfoRow(
+            iconWidget: const Icon(
+              Icons.people_outline_rounded,
+              size: 12,
+              color: AppColors.primaryBlue,
+            ),
+            label: 'Passageiros',
+            valor: solicitacao.passageiros
+                .map((passageiro) => passageiro.nome ?? passageiro.cpf)
+                .join(', '),
+          ),
+          const SizedBox(height: 20),
+        ],
+
+        if (solicitacao.cancelavel) ...[
+          const SizedBox(height: 20),
+          _BotaoCancelar(
+            cancelando: state.cancelando,
+            motivos: state.motivosCancelamento,
+          ),
+          const SizedBox(height: 24),
+        ],
+      ],
+    );
+
+    final layout = AppLayout.of(context);
+    if (layout.usaPainelLateral) {
+      return Column(
+        children: [
+          const _Header(),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(25, 0, 12, 24),
+                    child: mapa,
+                  ),
+                ),
+                SizedBox(
+                  width: layout.larguraPainelLateral,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 25, 0),
+                    child: detalhes,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       children: [
         const _Header(),
         Expanded(
           child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25),
-                  child: SizedBox(
-                    height: 198,
-                    width: double.infinity,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: MapRoutePreview(
-                        originAddress: solicitacao.origem.descricao,
-                        destinationAddress: solicitacao.destino.descricao,
-                        origin: solicitacao.origem.ponto,
-                        destination: solicitacao.destino.ponto,
-                        viaPoints: solicitacao.paradas
-                            .map((parada) => parada.ponto)
-                            .toList(),
-                      ),
+            child: ConteudoResponsivo(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 25),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(
+                      height: layout.alturaProporcional(198),
+                      child: mapa,
                     ),
-                  ),
+                    const SizedBox(height: 20),
+                    detalhes,
+                  ],
                 ),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (!corridaRealizada) ...[
-                        _StatusBadge(status: status),
-                        const SizedBox(height: 16),
-                      ],
-
-                      if (solicitacao.motivoReprovacao != null) ...[
-                        _BlocoMotivoRecusa(
-                          motivo: solicitacao.motivoReprovacao!,
-                        ),
-                      ],
-
-                      if (solicitacao.motivoCancelamento != null) ...[
-                        _BlocoMotivoRecusa(
-                          titulo: 'Motivo do cancelamento',
-                          motivo: solicitacao.motivoCancelamento!,
-                        ),
-                      ],
-
-                      _InfoRow(
-                        iconWidget: Container(
-                          width: 12,
-                          height: 12,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primaryBlue,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        label: 'Origem',
-                        valor: solicitacao.origem.descricao,
-                      ),
-                      const _LinhaConectora(),
-
-                      ...solicitacao.paradas.map(
-                        (parada) => Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _InfoRow(
-                              iconWidget: const Icon(
-                                Icons.adjust_rounded,
-                                size: 12,
-                                color: AppColors.primaryBlue,
-                              ),
-                              label: 'Parada',
-                              valor: parada.descricao,
-                            ),
-                            const _LinhaConectora(),
-                          ],
-                        ),
-                      ),
-
-                      _InfoRow(
-                        iconWidget: Image.asset(
-                          AppAssets.iconDestino,
-                          width: 12,
-                          height: 15,
-                          fit: BoxFit.contain,
-                          color: AppColors.primaryBlue,
-                        ),
-                        label: 'Destino',
-                        valor: solicitacao.destino.descricao,
-                      ),
-                      const SizedBox(height: 20),
-
-                      _InfoRow(
-                        iconWidget: Image.asset(
-                          AppAssets.iconData,
-                          width: 12,
-                          height: 14,
-                          fit: BoxFit.contain,
-                          color: AppColors.primaryBlue,
-                        ),
-                        label: 'Data',
-                        valor: formatarDataSolicitacao(solicitacao.dataCorrida),
-                      ),
-                      const SizedBox(height: 20),
-
-                      _InfoRow(
-                        iconWidget: Image.asset(
-                          AppAssets.iconHorario,
-                          width: 12,
-                          height: 12,
-                          fit: BoxFit.contain,
-                          color: AppColors.primaryBlue,
-                        ),
-                        label: 'Horário de partida',
-                        valor: formatarHorarioSolicitacao(
-                          solicitacao.dataCorrida,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      if (horarioChegada != null) ...[
-                        _InfoRow(
-                          iconWidget: Image.asset(
-                            AppAssets.iconHorario,
-                            width: 12,
-                            height: 12,
-                            fit: BoxFit.contain,
-                            color: AppColors.primaryBlue,
-                          ),
-                          label: corridaRealizada
-                              ? 'Horário de chegada'
-                              : 'Horário estimado de chegada',
-                          valor: horarioChegada,
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-
-                      _InfoRow(
-                        iconWidget: Image.asset(
-                          AppAssets.iconCusto,
-                          width: 12,
-                          height: 10,
-                          fit: BoxFit.contain,
-                          color: AppColors.primaryBlue,
-                        ),
-                        label: corridaRealizada
-                            ? 'Valor da corrida'
-                            : 'Valor estimado da corrida',
-                        valor: valor,
-                      ),
-                      const SizedBox(height: 20),
-
-                      if (corrida?.motoristaNome != null) ...[
-                        _InfoRow(
-                          iconWidget: Image.asset(
-                            AppAssets.iconFuncionario,
-                            width: 12,
-                            height: 13,
-                            fit: BoxFit.contain,
-                            color: AppColors.primaryBlue,
-                          ),
-                          label: 'Nome do motorista',
-                          valor: corrida!.motoristaNome!,
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-
-                      if (corrida != null &&
-                          corrida.placaVeiculo.isNotEmpty) ...[
-                        _InfoRow(
-                          iconWidget: Image.asset(
-                            AppAssets.iconVeiculo,
-                            width: 12,
-                            height: 10,
-                            fit: BoxFit.contain,
-                            color: AppColors.primaryBlue,
-                          ),
-                          label: 'Placa do veículo',
-                          valor: corrida.placaVeiculo,
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-
-                      _InfoRow(
-                        iconWidget: Image.asset(
-                          AppAssets.iconMotivo,
-                          width: 12,
-                          height: 12,
-                          fit: BoxFit.contain,
-                          color: AppColors.primaryBlue,
-                        ),
-                        label: corridaRealizada ? 'Motivo' : 'Motivo da viagem',
-                        valor: solicitacao.motivoSolicitacao,
-                      ),
-                      const SizedBox(height: 20),
-
-                      if (solicitacao.centrosCusto.isNotEmpty) ...[
-                        _InfoRow(
-                          iconWidget: const Icon(
-                            Icons.account_tree_outlined,
-                            size: 12,
-                            color: AppColors.primaryBlue,
-                          ),
-                          label: solicitacao.centrosCusto.length > 1
-                              ? 'Centros de custo'
-                              : 'Centro de custo',
-                          valor: solicitacao.centrosCusto
-                              .map(_formatarCentroCusto)
-                              .join(', '),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-
-                      if (solicitacao.compartilhada) ...[
-                        _InfoRow(
-                          iconWidget: const Icon(
-                            Icons.people_outline_rounded,
-                            size: 12,
-                            color: AppColors.primaryBlue,
-                          ),
-                          label: 'Passageiros',
-                          valor: solicitacao.passageiros
-                              .map(
-                                (passageiro) =>
-                                    passageiro.nome ?? passageiro.cpf,
-                              )
-                              .join(', '),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-
-                      if (solicitacao.cancelavel) ...[
-                        const SizedBox(height: 20),
-                        _BotaoCancelar(
-                          cancelando: state.cancelando,
-                          motivos: state.motivosCancelamento,
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -405,7 +427,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final header = Padding(
       padding: const EdgeInsets.fromLTRB(25, 16, 25, 16),
       child: Row(
         children: [
@@ -430,6 +452,9 @@ class _Header extends StatelessWidget {
         ],
       ),
     );
+
+    if (AppLayout.of(context).usaPainelLateral) return header;
+    return ConteudoResponsivo(child: header);
   }
 }
 

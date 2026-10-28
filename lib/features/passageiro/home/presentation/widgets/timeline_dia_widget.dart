@@ -25,21 +25,15 @@ class TimelineDiaWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cards = viagens.asMap().entries.map((entry) {
-      final isUltimaViagem = entry.key == viagens.length - 1;
-      final bottomPadding = isUltimoDia && isUltimaViagem ? 0.0 : 16.0;
-
-      return Padding(
-        padding: EdgeInsets.only(bottom: bottomPadding),
-        child: ViagemCardWidget(
-          viagem: entry.value,
-          onVerDetalhes: onVerDetalhes == null
-              ? null
-              : () => onVerDetalhes!(entry.value),
-          onViagemEmAndamento: onViagemEmAndamento == null
-              ? null
-              : () => onViagemEmAndamento!(entry.value),
-        ),
+    final cards = viagens.map((viagem) {
+      return ViagemCardWidget(
+        viagem: viagem,
+        onVerDetalhes: onVerDetalhes == null
+            ? null
+            : () => onVerDetalhes!(viagem),
+        onViagemEmAndamento: onViagemEmAndamento == null
+            ? null
+            : () => onViagemEmAndamento!(viagem),
       );
     }).toList();
 

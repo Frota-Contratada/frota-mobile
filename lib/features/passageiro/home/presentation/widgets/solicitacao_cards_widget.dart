@@ -5,13 +5,21 @@ import '../../../shared/presentation/theme/passageiro_colors.dart';
 class SolicitacaoCardsWidget extends StatelessWidget {
   final VoidCallback? onViagem;
   final VoidCallback? onObjeto;
+  final double altura;
+  final EdgeInsetsGeometry padding;
 
-  const SolicitacaoCardsWidget({super.key, this.onViagem, this.onObjeto});
+  const SolicitacaoCardsWidget({
+    super.key,
+    this.onViagem,
+    this.onObjeto,
+    this.altura = 100,
+    this.padding = const EdgeInsets.symmetric(horizontal: 25),
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 25),
+      padding: padding,
       child: Row(
         children: [
           Expanded(
@@ -23,6 +31,7 @@ class SolicitacaoCardsWidget extends StatelessWidget {
               ilustracaoPath: PassageiroAssets.ilustracaoViagem,
               ilustracaoWidth: 106,
               ilustracaoHeight: 72,
+              altura: altura,
               onTap: onViagem,
             ),
           ),
@@ -36,6 +45,7 @@ class SolicitacaoCardsWidget extends StatelessWidget {
               ilustracaoPath: PassageiroAssets.ilustracaoObjeto,
               ilustracaoWidth: 91,
               ilustracaoHeight: 68,
+              altura: altura,
               onTap: onObjeto,
             ),
           ),
@@ -53,6 +63,7 @@ class _SolicitacaoCard extends StatelessWidget {
   final String ilustracaoPath;
   final double ilustracaoWidth;
   final double ilustracaoHeight;
+  final double altura;
   final VoidCallback? onTap;
 
   const _SolicitacaoCard({
@@ -63,6 +74,7 @@ class _SolicitacaoCard extends StatelessWidget {
     required this.ilustracaoPath,
     required this.ilustracaoWidth,
     required this.ilustracaoHeight,
+    required this.altura,
     this.onTap,
   });
 
@@ -75,7 +87,7 @@ class _SolicitacaoCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: SizedBox(
-          height: 100,
+          height: altura,
           width: double.infinity,
           child: Stack(
             clipBehavior: Clip.none,
