@@ -84,6 +84,8 @@ class _AppMapWidgetState extends State<AppMapWidget> {
   List<MapPoint>? _resolvedRoutePoints;
   bool _loadingRoute = false;
 
+  Timer? _reenquadramentoTimer;
+
   RoutingService get _routingService =>
       widget.routingService ?? mapRoutingService;
 
@@ -269,6 +271,7 @@ class _AppMapWidgetState extends State<AppMapWidget> {
 
   @override
   void dispose() {
+    _reenquadramentoTimer?.cancel();
     _styleReady = false;
     _controller = null;
     _routeRequestId++;
@@ -688,8 +691,29 @@ class _AppMapWidgetState extends State<AppMapWidget> {
     }
   }
 
+  bool _agendarReenquadramento(SizeChangedLayoutNotification notification) {
+    _reenquadramentoTimer?.cancel();
+    _reenquadramentoTimer = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted || !_styleReady || _controller == null) return;
+
+      if (_hasRoute) {
+        unawaited(_fitRoute());
+      } else if (_waypoints.length == 1) {
+        unawaited(_moveToPoint(_waypoints.single));
+      }
+    });
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
+    return NotificationListener<SizeChangedLayoutNotification>(
+      onNotification: _agendarReenquadramento,
+      child: SizeChangedLayoutNotifier(child: _buildMapa()),
+    );
+  }
+
+  Widget _buildMapa() {
     return Stack(
       fit: StackFit.expand,
       children: [
