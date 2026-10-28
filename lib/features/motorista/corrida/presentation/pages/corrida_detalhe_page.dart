@@ -177,9 +177,12 @@ class _CorridaDetalheContentState extends State<_CorridaDetalheContent> {
                         style: const TextStyle(color: CorridaColors.darkBlue),
                       ),
                       const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Voltar'),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 320),
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Voltar'),
+                        ),
                       ),
                     ],
                   ),
