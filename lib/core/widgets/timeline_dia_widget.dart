@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import '../responsive/grade_responsiva.dart';
 import 'app_colors.dart';
 
 /// Widget de listagem por dia, compartilhado entre motorista e passageiro.
 /// Exibe o indicador circular do dia e a lista de cards na mesma largura do seletor de semana.
 class TimelineDiaWidget extends StatelessWidget {
+  static const double espacamentoCards = 16;
+
   final String labelDia;
   final List<Widget> cards;
   final bool isUltimoDia;
@@ -21,37 +24,40 @@ class TimelineDiaWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                color: corIndicador,
-                shape: BoxShape.circle,
-              ),
-            ),
-            Expanded(
-              child: Text(
-                labelDia,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: corLabel,
-                  letterSpacing: -0.16,
-                  height: 1.2,
+    return Padding(
+      padding: EdgeInsets.only(bottom: isUltimoDia ? 0 : espacamentoCards),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: corIndicador,
+                  shape: BoxShape.circle,
                 ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        ...cards,
-      ],
+              Expanded(
+                child: Text(
+                  labelDia,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: corLabel,
+                    letterSpacing: -0.16,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          GradeResponsiva(espacamento: espacamentoCards, children: cards),
+        ],
+      ),
     );
   }
 }

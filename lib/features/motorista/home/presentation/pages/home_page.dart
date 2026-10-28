@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../config/routes.dart';
+import '../../../../../core/responsive/responsive.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../injection_container/injection_container.dart';
 import '../../../../auth/domain/entities/usuario.dart';
@@ -40,6 +41,8 @@ class _HomeContent extends StatefulWidget {
 }
 
 class _HomeContentState extends State<_HomeContent> {
+  static const double _larguraMaximaConteudo = 960;
+
   @override
   void initState() {
     super.initState();
@@ -61,43 +64,57 @@ class _HomeContentState extends State<_HomeContent> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                HomeHeaderWidget(
-                  usuario: usuarioAtual,
-                  onAvatarTap: () =>
-                      Navigator.pushNamed(context, AppRoutes.motoristaPerfil),
-                  onConfiguracoes: () => Navigator.pushNamed(
-                    context,
-                    AppRoutes.motoristaConfiguracoes,
-                  ),
-                  onNotificacoes: () => Navigator.pushNamed(
-                    context,
-                    AppRoutes.notificacoes,
-                    arguments: usuarioAtual,
+                ConteudoResponsivo(
+                  larguraMaxima: _larguraMaximaConteudo,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      HomeHeaderWidget(
+                        usuario: usuarioAtual,
+                        onAvatarTap: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.motoristaPerfil,
+                        ),
+                        onConfiguracoes: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.motoristaConfiguracoes,
+                        ),
+                        onNotificacoes: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.notificacoes,
+                          arguments: usuarioAtual,
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 25),
+                        child: Text(
+                          'Viagens agendadas',
+                          style: TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w500,
+                            color: HomeColors.darkBlue,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      SemanaSeletorWidget(
+                        intervaloSemana: _resolverIntervaloSemana(state),
+                        onSemanaAnterior: state is HomeCarregada
+                            ? () => context.read<HomeBloc>().add(
+                                HomeSemanaAnterior(),
+                              )
+                            : () {},
+                        onSemanaProxima: state is HomeCarregada
+                            ? () => context.read<HomeBloc>().add(
+                                HomeSemanaProxima(),
+                              )
+                            : () {},
+                      ),
+                      const SizedBox(height: 24),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 28),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 25),
-                  child: Text(
-                    'Viagens agendadas',
-                    style: TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w500,
-                      color: HomeColors.darkBlue,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                SemanaSeletorWidget(
-                  intervaloSemana: _resolverIntervaloSemana(state),
-                  onSemanaAnterior: state is HomeCarregada
-                      ? () => context.read<HomeBloc>().add(HomeSemanaAnterior())
-                      : () {},
-                  onSemanaProxima: state is HomeCarregada
-                      ? () => context.read<HomeBloc>().add(HomeSemanaProxima())
-                      : () {},
-                ),
-                const SizedBox(height: 24),
                 Expanded(child: _buildConteudo(context, state)),
               ],
             );
@@ -127,13 +144,16 @@ class _HomeContentState extends State<_HomeContent> {
                 style: const TextStyle(color: HomeColors.darkBlue),
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  context.read<HomeBloc>().add(
-                    HomeIniciada(usuario: state.usuario),
-                  );
-                },
-                child: const Text('Tentar novamente'),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 320),
+                child: ElevatedButton(
+                  onPressed: () {
+                    context.read<HomeBloc>().add(
+                      HomeIniciada(usuario: state.usuario),
+                    );
+                  },
+                  child: const Text('Tentar novamente'),
+                ),
               ),
             ],
           ),
@@ -155,14 +175,20 @@ class _HomeContentState extends State<_HomeContent> {
       }
 
       return ListView.builder(
-        padding: const EdgeInsets.fromLTRB(25, 0, 16, 24),
+        padding: const EdgeInsets.only(bottom: 24),
         itemCount: dias.length,
         itemBuilder: (context, index) {
           final entrada = dias[index];
-          return TimelineDiaWidget(
-            dia: entrada.key,
-            corridas: entrada.value,
-            isUltimoDia: index == dias.length - 1,
+          return ConteudoResponsivo(
+            larguraMaxima: _larguraMaximaConteudo,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(25, 0, 16, 0),
+              child: TimelineDiaWidget(
+                dia: entrada.key,
+                corridas: entrada.value,
+                isUltimoDia: index == dias.length - 1,
+              ),
+            ),
           );
         },
       );

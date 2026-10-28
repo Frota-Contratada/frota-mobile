@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import '../../config/app_assets.dart';
+import '../responsive/responsive.dart';
 import 'app_colors.dart';
 import 'busca_barra_widget.dart';
 
@@ -41,79 +42,143 @@ class PerfilPageBase extends StatelessWidget {
     this.historicoContent = const [],
   });
 
+  static const double _larguraPainelPerfil = 340;
+
   @override
   Widget build(BuildContext context) {
+    final duasColunas = AppLayout.of(context).usaPainelLateral;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
-            if (mostrarBotaoVoltar) ...[
-              _PerfilHeader(onVoltar: onVoltar),
-              if (mostrarLinhaAbaixoDoHeader)
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(25, 15, 25, 0),
-                  child: Divider(color: AppColors.borderGrey, height: 1),
-                ),
-            ],
+            if (mostrarBotaoVoltar) _buildCabecalho(centralizado: !duasColunas),
             Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    _AvatarSection(
-                      nome: nome,
-                      subtitulo: subtitulo,
-                      unidade: unidade,
-                      avatarAssetPath: avatarAssetPath,
-                      avatarDataUrl: avatarDataUrl,
-                    ),
-                    const SizedBox(height: 16),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 25),
-                      child: Divider(color: AppColors.borderGrey, height: 1),
-                    ),
-                    const SizedBox(height: _espacamentoAbaixoDaLinha),
-                    _KpiSection(
-                      viagensFinalizadas: viagensFinalizadas,
-                      transportesDeItens: transportesDeItens,
-                    ),
-                    const SizedBox(height: _espacamentoAbaixoDaLinha),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 25),
-                      child: Text(
-                        'Meu histórico',
-                        style: TextStyle(
-                          fontSize: 21,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.darkBlue,
-                          letterSpacing: -0.21,
+              child: duasColunas
+                  ? _buildDuasColunas()
+                  : SingleChildScrollView(
+                      child: ConteudoResponsivo(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ..._buildResumo(kpisEmColuna: false),
+                            const SizedBox(height: _espacamentoAbaixoDaLinha),
+                            ..._buildHistorico(),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: _espacamentoAbaixoDaLinha),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 25),
-                      child: BuscaBarraWidget(
-                        hintText: 'Buscar por destino',
-                        onChanged: onBuscaChanged,
-                        onBotaoAcao: onFiltroTap,
-                      ),
-                    ),
-                    const SizedBox(height: _espacamentoAbaixoDaLinha),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(25, 0, 25, 24),
-                      child: Column(children: historicoContent),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildCabecalho({required bool centralizado}) {
+    final cabecalho = Column(
+      children: [
+        _PerfilHeader(onVoltar: onVoltar),
+        if (mostrarLinhaAbaixoDoHeader)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(25, 15, 25, 0),
+            child: Divider(color: AppColors.borderGrey, height: 1),
+          ),
+      ],
+    );
+
+    if (!centralizado) return cabecalho;
+    return ConteudoResponsivo(child: cabecalho);
+  }
+
+  Widget _buildDuasColunas() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          width: _larguraPainelPerfil,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _buildResumo(kpisEmColuna: true),
+            ),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: VerticalDivider(
+            color: AppColors.borderGrey,
+            width: 1,
+            thickness: 1,
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [const SizedBox(height: 16), ..._buildHistorico()],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _buildResumo({required bool kpisEmColuna}) {
+    return [
+      const SizedBox(height: 16),
+      _AvatarSection(
+        nome: nome,
+        subtitulo: subtitulo,
+        unidade: unidade,
+        avatarAssetPath: avatarAssetPath,
+        avatarDataUrl: avatarDataUrl,
+      ),
+      const SizedBox(height: 16),
+      const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 25),
+        child: Divider(color: AppColors.borderGrey, height: 1),
+      ),
+      const SizedBox(height: _espacamentoAbaixoDaLinha),
+      _KpiSection(
+        viagensFinalizadas: viagensFinalizadas,
+        transportesDeItens: transportesDeItens,
+        emColuna: kpisEmColuna,
+      ),
+    ];
+  }
+
+  List<Widget> _buildHistorico() {
+    return [
+      const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 25),
+        child: Text(
+          'Meu histórico',
+          style: TextStyle(
+            fontSize: 21,
+            fontWeight: FontWeight.w500,
+            color: AppColors.darkBlue,
+            letterSpacing: -0.21,
+          ),
+        ),
+      ),
+      const SizedBox(height: _espacamentoAbaixoDaLinha),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 25),
+        child: BuscaBarraWidget(
+          hintText: 'Buscar por destino',
+          onChanged: onBuscaChanged,
+          onBotaoAcao: onFiltroTap,
+        ),
+      ),
+      const SizedBox(height: _espacamentoAbaixoDaLinha),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(25, 0, 25, 24),
+        child: Column(children: historicoContent),
+      ),
+    ];
   }
 }
 
@@ -277,14 +342,46 @@ class _AvatarSection extends StatelessWidget {
 class _KpiSection extends StatelessWidget {
   final int viagensFinalizadas;
   final int transportesDeItens;
+  final bool emColuna;
 
   const _KpiSection({
     required this.viagensFinalizadas,
     required this.transportesDeItens,
+    this.emColuna = false,
   });
+
+  _KpiItem get _viagens => _KpiItem(
+    valor: viagensFinalizadas.toString().padLeft(2, '0'),
+    label: 'Viagens finalizadas',
+    bgColor: AppColors.kpiBlueBg,
+    iconAsset: AppAssets.iconViagensFinalizadas,
+  );
+
+  _KpiItem get _transportes => _KpiItem(
+    valor: transportesDeItens.toString().padLeft(2, '0'),
+    label: 'Transportes de itens',
+    bgColor: AppColors.kpiOrangeBg,
+    iconAsset: AppAssets.iconTransporteItens,
+  );
 
   @override
   Widget build(BuildContext context) {
+    if (emColuna) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 25),
+        child: Column(
+          children: [
+            _viagens,
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Divider(color: AppColors.borderGrey, height: 1),
+            ),
+            _transportes,
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25),
       child: IntrinsicHeight(
@@ -295,23 +392,13 @@ class _KpiSection extends StatelessWidget {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(right: 12),
-                    child: _KpiItem(
-                      valor: viagensFinalizadas.toString().padLeft(2, '0'),
-                      label: 'Viagens finalizadas',
-                      bgColor: AppColors.kpiBlueBg,
-                      iconAsset: AppAssets.iconViagensFinalizadas,
-                    ),
+                    child: _viagens,
                   ),
                 ),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(left: 12),
-                    child: _KpiItem(
-                      valor: transportesDeItens.toString().padLeft(2, '0'),
-                      label: 'Transportes de itens',
-                      bgColor: AppColors.kpiOrangeBg,
-                      iconAsset: AppAssets.iconTransporteItens,
-                    ),
+                    child: _transportes,
                   ),
                 ),
               ],

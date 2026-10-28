@@ -116,23 +116,15 @@ class _PerfilViewState extends State<_PerfilView> {
       return TimelineDiaWidget(
         labelDia: SemanaUtil.formatarDiaViagem(dia),
         isUltimoDia: ultimo,
-        cards: solicitacoes.asMap().entries.map((item) {
-          final ultimaDoDia = item.key == solicitacoes.length - 1;
-          final solicitacao = item.value;
-
-          return Padding(
-            padding: EdgeInsets.only(bottom: ultimo && ultimaDoDia ? 0 : 16),
-            child: CorridaCardBaseWidget(
-              origem: solicitacao.origem.descricao,
-              destino: solicitacao.destino.descricao,
-              horarioPartida: SemanaUtil.formatarHorario(
-                solicitacao.dataCorrida,
-              ),
-              onVerDetalhes: () => Navigator.pushNamed(
-                context,
-                AppRoutes.passageiroDetalheSolicitacao,
-                arguments: solicitacao.id,
-              ),
+        cards: solicitacoes.map((solicitacao) {
+          return CorridaCardBaseWidget(
+            origem: solicitacao.origem.descricao,
+            destino: solicitacao.destino.descricao,
+            horarioPartida: SemanaUtil.formatarHorario(solicitacao.dataCorrida),
+            onVerDetalhes: () => Navigator.pushNamed(
+              context,
+              AppRoutes.passageiroDetalheSolicitacao,
+              arguments: solicitacao.id,
             ),
           );
         }).toList(),

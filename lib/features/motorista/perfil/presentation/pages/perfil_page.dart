@@ -122,21 +122,15 @@ class _PerfilViewState extends State<_PerfilView> {
         corIndicador: AppColors.timelineGrey,
         corLabel: AppColors.textMediumGrey,
         isUltimoDia: ultimo,
-        cards: corridas.asMap().entries.map((item) {
-          final ultimaDoDia = item.key == corridas.length - 1;
-          final corrida = item.value;
-
-          return Padding(
-            padding: EdgeInsets.only(bottom: ultimo && ultimaDoDia ? 0 : 16),
-            child: CorridaCardBaseWidget(
-              origem: corrida.origem,
-              destino: corrida.destino,
-              horarioPartida: _formatarHorario(corrida.dataHoraPartida),
-              onVerDetalhes: () => Navigator.pushNamed(
-                context,
-                AppRoutes.motoristaCorridaDetalhe,
-                arguments: corrida.id,
-              ),
+        cards: corridas.map((corrida) {
+          return CorridaCardBaseWidget(
+            origem: corrida.origem,
+            destino: corrida.destino,
+            horarioPartida: _formatarHorario(corrida.dataHoraPartida),
+            onVerDetalhes: () => Navigator.pushNamed(
+              context,
+              AppRoutes.motoristaCorridaDetalhe,
+              arguments: corrida.id,
             ),
           );
         }).toList(),
