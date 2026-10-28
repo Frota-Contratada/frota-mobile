@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../../config/app_assets.dart';
 import '../../../../../core/maps/map_point.dart';
+import '../../../../../core/responsive/conteudo_responsivo.dart';
 import '../../../../../core/widgets/app_colors.dart';
 import '../../../../../core/widgets/app_map_widget.dart';
 
@@ -86,17 +87,20 @@ class CorridaAndamentoPage extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Trajeto
-                  _buildTrajeto(),
-                  const SizedBox(height: 20),
-                  _buildMotoristaInfo(),
-                  const SizedBox(height: 20),
-                  _buildStatusBar(),
-                ],
+              child: ConteudoResponsivo(
+                larguraMaxima: 640,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Trajeto
+                    _buildTrajeto(),
+                    const SizedBox(height: 20),
+                    _buildMotoristaInfo(),
+                    const SizedBox(height: 20),
+                    _buildStatusBar(),
+                  ],
+                ),
               ),
             ),
           ],
