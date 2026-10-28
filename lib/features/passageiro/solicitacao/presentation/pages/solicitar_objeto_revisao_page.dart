@@ -10,6 +10,7 @@ import '../bloc/criar_solicitacao.bloc.dart';
 import '../utils/solicitacao_formatters.dart';
 import '../widgets/solicitacao_confirmacao_dialog.dart';
 import '../widgets/solicitacao_erro_simulacao_widget.dart';
+import '../widgets/solicitacao_layout_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
 import '../widgets/solicitacao_revisao_info_widget.dart';
@@ -42,126 +43,99 @@ class SolicitarObjetoRevisaoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.white,
-      body: Column(
+      body: SolicitacaoLayoutWidget(
+        alturaMapa: 306,
+        sobreposicao: 19,
+        mapa: MapRoutePreview(
+          originAddress: origem,
+          destinationAddress: destino,
+          origin: origemPoint,
+          destination: destinoPoint,
+        ),
         children: [
-          SizedBox(
-            height: 306,
-            width: double.infinity,
-            child: MapRoutePreview(
-              originAddress: origem,
-              destinationAddress: destino,
-              origin: origemPoint,
-              destination: destinoPoint,
+          _buildHeader(context),
+          const SizedBox(height: 16),
+          const SolicitacaoModalidadeChipWidget(modalidade: 'Objetos'),
+          const SizedBox(height: 12),
+          _buildErroSimulacao(),
+          _buildSectionTitle('1.', 'Trajeto'),
+          const SizedBox(height: 8),
+          _buildRouteValue(
+            value: origem,
+            iconAsset: null,
+            isDestination: false,
+          ),
+          SolicitacaoRevisaoInfoWidget.connector(),
+          _buildRouteValue(
+            value: destino,
+            iconAsset: AppAssets.iconDestinoCinza,
+            isDestination: true,
+          ),
+          const SizedBox(height: 16),
+          _buildSectionTitle('2.', 'Data e horário'),
+          const SizedBox(height: 8),
+          _buildSectionValue(
+            iconAsset: AppAssets.iconData,
+            valores: ['Dia $data às $horario'],
+          ),
+          const SizedBox(height: 16),
+          _buildSectionTitle('3.', 'Custos'),
+          const SizedBox(height: 8),
+          _buildSectionValue(
+            iconAsset: AppAssets.iconCusto,
+            valores: _descricoesCentrosCusto(context),
+          ),
+          const SizedBox(height: 16),
+          _buildSectionTitle('4.', 'Objeto'),
+          const SizedBox(height: 8),
+          _buildSectionValue(
+            iconAsset: AppAssets.iconTransporteItens,
+            valores: [objeto],
+          ),
+          const SizedBox(height: 16),
+          _buildSectionTitle('5.', 'Meio de transporte'),
+          const SizedBox(height: 8),
+          _buildSectionValue(
+            iconAsset: AppAssets.iconVeiculo,
+            valores: [veiculo],
+          ),
+          const SizedBox(height: 16),
+          _buildSectionTitle('6.', 'Estimativa'),
+          const SizedBox(height: 8),
+          BlocBuilder<CriarSolicitacaoBloc, CriarSolicitacaoState>(
+            builder: (context, state) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionValue(
+                  iconAsset: AppAssets.iconCusto,
+                  valores: [_valorEstimado(state)],
+                ),
+                const SizedBox(height: 8),
+                _buildSectionValue(
+                  iconAsset: AppAssets.iconHorario,
+                  valores: ['Chegada prevista: ${_chegadaEstimada(state)}'],
+                ),
+              ],
             ),
           ),
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              transform: Matrix4.translationValues(0, -19, 0),
-              decoration: const BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(25, 24, 25, 40),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(context),
-                    const SizedBox(height: 16),
-                    const SolicitacaoModalidadeChipWidget(
-                      modalidade: 'Objetos',
-                    ),
-                    const SizedBox(height: 12),
-                    _buildErroSimulacao(),
-                    _buildSectionTitle('1.', 'Trajeto'),
-                    const SizedBox(height: 8),
-                    _buildRouteValue(
-                      value: origem,
-                      iconAsset: null,
-                      isDestination: false,
-                    ),
-                    SolicitacaoRevisaoInfoWidget.connector(),
-                    _buildRouteValue(
-                      value: destino,
-                      iconAsset: AppAssets.iconDestinoCinza,
-                      isDestination: true,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildSectionTitle('2.', 'Data e horário'),
-                    const SizedBox(height: 8),
-                    _buildSectionValue(
-                      iconAsset: AppAssets.iconData,
-                      valores: ['Dia $data às $horario'],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildSectionTitle('3.', 'Custos'),
-                    const SizedBox(height: 8),
-                    _buildSectionValue(
-                      iconAsset: AppAssets.iconCusto,
-                      valores: _descricoesCentrosCusto(context),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildSectionTitle('4.', 'Objeto'),
-                    const SizedBox(height: 8),
-                    _buildSectionValue(
-                      iconAsset: AppAssets.iconTransporteItens,
-                      valores: [objeto],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildSectionTitle('5.', 'Meio de transporte'),
-                    const SizedBox(height: 8),
-                    _buildSectionValue(
-                      iconAsset: AppAssets.iconVeiculo,
-                      valores: [veiculo],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildSectionTitle('6.', 'Estimativa'),
-                    const SizedBox(height: 8),
-                    BlocBuilder<CriarSolicitacaoBloc, CriarSolicitacaoState>(
-                      builder: (context, state) => Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionValue(
-                            iconAsset: AppAssets.iconCusto,
-                            valores: [_valorEstimado(state)],
-                          ),
-                          const SizedBox(height: 8),
-                          _buildSectionValue(
-                            iconAsset: AppAssets.iconHorario,
-                            valores: [
-                              'Chegada prevista: ${_chegadaEstimada(state)}',
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 26),
-                    BlocConsumer<CriarSolicitacaoBloc, CriarSolicitacaoState>(
-                      listenWhen: (previous, current) =>
-                          (previous.criada == null && current.criada != null) ||
-                          (previous.enviando &&
-                              !current.enviando &&
-                              current.erro != null),
-                      listener: _reagirAoEnvio,
-                      builder: (context, state) =>
-                          SolicitacaoPrimaryButtonWidget(
-                            label: state.enviando
-                                ? 'Enviando...'
-                                : 'Enviar solicitação',
-                            backgroundColor: AppColors.accentGreen,
-                            foregroundColor: AppColors.darkBlue,
-                            width: 194,
-                            height: 48,
-                            fontSize: 14,
-                            onPressed: state.enviando
-                                ? null
-                                : () => _enviarSolicitacao(context),
-                          ),
-                    ),
-                  ],
-                ),
-              ),
+          const SizedBox(height: 26),
+          BlocConsumer<CriarSolicitacaoBloc, CriarSolicitacaoState>(
+            listenWhen: (previous, current) =>
+                (previous.criada == null && current.criada != null) ||
+                (previous.enviando &&
+                    !current.enviando &&
+                    current.erro != null),
+            listener: _reagirAoEnvio,
+            builder: (context, state) => SolicitacaoPrimaryButtonWidget(
+              label: state.enviando ? 'Enviando...' : 'Enviar solicitação',
+              backgroundColor: AppColors.accentGreen,
+              foregroundColor: AppColors.darkBlue,
+              width: 194,
+              height: 48,
+              fontSize: 14,
+              onPressed: state.enviando
+                  ? null
+                  : () => _enviarSolicitacao(context),
             ),
           ),
         ],

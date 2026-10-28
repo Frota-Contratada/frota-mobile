@@ -9,6 +9,7 @@ import '../../../../../core/widgets/app_map_widget.dart';
 import '../bloc/criar_solicitacao.bloc.dart';
 import '../widgets/solicitacao_dropdown_options_widget.dart';
 import '../widgets/solicitacao_input_widget.dart';
+import '../widgets/solicitacao_layout_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import '../widgets/solicitacao_centros_custo_picker_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
@@ -73,67 +74,47 @@ class _SolicitarViagemStep2PageState extends State<SolicitarViagemStep2Page> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.white,
-      body: Column(
+      body: SolicitacaoLayoutWidget(
+        alturaMapa: 306,
+        sobreposicao: 19,
+        mapa: MapRoutePreview(
+          originAddress: widget.origem,
+          destinationAddress: widget.destino,
+          origin: widget.origemPoint,
+          viaPoints: widget.paradaPoints,
+          destination: widget.destinoPoint,
+        ),
         children: [
-          SizedBox(
-            height: 306,
-            width: double.infinity,
-            child: MapRoutePreview(
-              originAddress: widget.origem,
-              destinationAddress: widget.destino,
-              origin: widget.origemPoint,
-              viaPoints: widget.paradaPoints,
-              destination: widget.destinoPoint,
-            ),
+          _buildHeader(),
+          const SizedBox(height: 16),
+          SolicitacaoModalidadeChipWidget(
+            modalidade:
+                context.select<CriarSolicitacaoBloc, bool>(
+                  (bloc) => bloc.state.rascunho.emergencia,
+                )
+                ? 'Emergencial'
+                : 'Táxi',
           ),
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              transform: Matrix4.translationValues(0, -19, 0),
-              decoration: const BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(25, 24, 25, 40),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(),
-                    const SizedBox(height: 16),
-                    SolicitacaoModalidadeChipWidget(
-                      modalidade:
-                          context.select<CriarSolicitacaoBloc, bool>(
-                            (bloc) => bloc.state.rascunho.emergencia,
-                          )
-                          ? 'Emergencial'
-                          : 'Táxi',
-                    ),
-                    const SizedBox(height: 12),
-                    _buildSectionTitle('4.', 'Custos'),
-                    const SizedBox(height: 8),
-                    _buildCentroCustoField(),
-                    const SizedBox(height: 18),
-                    _buildSectionTitle('5.', 'Veículo'),
-                    const SizedBox(height: 8),
-                    _buildVehicleField(),
-                    const SizedBox(height: 10),
-                    _buildViagemCompartilhada(),
-                    if (_viagemCompartilhada == true) ...[
-                      const SizedBox(height: 16),
-                      _buildSectionTitle('6.', 'Viagem compartilhada'),
-                      const SizedBox(height: 8),
-                      _buildAcompanhantes(),
-                    ],
-                    const SizedBox(height: 28),
-                    SolicitacaoPrimaryButtonWidget(
-                      label: 'Avançar',
-                      onPressed: _podeAvancar() ? _avancar : null,
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          const SizedBox(height: 12),
+          _buildSectionTitle('4.', 'Custos'),
+          const SizedBox(height: 8),
+          _buildCentroCustoField(),
+          const SizedBox(height: 18),
+          _buildSectionTitle('5.', 'Veículo'),
+          const SizedBox(height: 8),
+          _buildVehicleField(),
+          const SizedBox(height: 10),
+          _buildViagemCompartilhada(),
+          if (_viagemCompartilhada == true) ...[
+            const SizedBox(height: 16),
+            _buildSectionTitle('6.', 'Viagem compartilhada'),
+            const SizedBox(height: 8),
+            _buildAcompanhantes(),
+          ],
+          const SizedBox(height: 28),
+          SolicitacaoPrimaryButtonWidget(
+            label: 'Avançar',
+            onPressed: _podeAvancar() ? _avancar : null,
           ),
         ],
       ),

@@ -12,6 +12,7 @@ import '../utils/solicitacao_formatters.dart';
 import '../widgets/solicitacao_dropdown_options_widget.dart';
 import '../widgets/solicitacao_input_widget.dart';
 import '../widgets/solicitacao_horario_field_widget.dart';
+import '../widgets/solicitacao_layout_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
 import 'solicitar_viagem_route_args.dart';
@@ -116,68 +117,46 @@ class _SolicitarViagemPageState extends State<SolicitarViagemPage> {
       },
       child: Scaffold(
         backgroundColor: AppColors.white,
-        body: Column(
+        body: SolicitacaoLayoutWidget(
+          alturaMapa: 189,
+          sobreposicao: 21,
+          mapa: AppMapWidget(
+            showAttribution: false,
+            origin: _origemPoint,
+            viaPoints: _paradaPoints.whereType<MapPoint>().toList(),
+            destination: _destinoPoint,
+          ),
           children: [
-            SizedBox(
-              height: 189,
-              width: double.infinity,
-              child: AppMapWidget(
-                showAttribution: false,
-                origin: _origemPoint,
-                viaPoints: _paradaPoints.whereType<MapPoint>().toList(),
-                destination: _destinoPoint,
-              ),
+            _buildHeader(
+              title: 'Solicitar viagem',
+              subtitle: 'Preencha os campos abaixo para prosseguir',
             ),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                transform: Matrix4.translationValues(0, -21, 0),
-                decoration: const BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(25, 24, 25, 40),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(
-                        title: 'Solicitar viagem',
-                        subtitle: 'Preencha os campos abaixo para prosseguir',
-                      ),
-                      const SizedBox(height: 16),
-                      SolicitacaoModalidadeChipWidget(
-                        modalidade: _modalidadeLabel,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildSectionTitle('1.', 'Trajeto'),
-                      const SizedBox(height: 8),
-                      _buildTrajetoSection(),
-                      const SizedBox(height: 20),
-                      _buildSectionTitle('2.', 'Data e horário de partida'),
-                      const SizedBox(height: 8),
-                      _buildIconInput(
-                        iconAsset: AppAssets.iconData,
-                        label: 'data',
-                        value: _dataController.text,
-                        onTap: _selecionarData,
-                      ),
-                      const SizedBox(height: 10),
-                      _buildHorarioInput(),
-                      const SizedBox(height: 20),
-                      _buildSectionTitle('3.', 'Motivo da corrida'),
-                      const SizedBox(height: 8),
-                      _buildMotivoInput(),
-                      _buildEmergenciaToggle(),
-                      const SizedBox(height: 30),
-                      SolicitacaoPrimaryButtonWidget(
-                        label: 'Avançar',
-                        onPressed: _podeAvancar() ? _avancar : null,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            const SizedBox(height: 16),
+            SolicitacaoModalidadeChipWidget(modalidade: _modalidadeLabel),
+            const SizedBox(height: 12),
+            _buildSectionTitle('1.', 'Trajeto'),
+            const SizedBox(height: 8),
+            _buildTrajetoSection(),
+            const SizedBox(height: 20),
+            _buildSectionTitle('2.', 'Data e horário de partida'),
+            const SizedBox(height: 8),
+            _buildIconInput(
+              iconAsset: AppAssets.iconData,
+              label: 'data',
+              value: _dataController.text,
+              onTap: _selecionarData,
+            ),
+            const SizedBox(height: 10),
+            _buildHorarioInput(),
+            const SizedBox(height: 20),
+            _buildSectionTitle('3.', 'Motivo da corrida'),
+            const SizedBox(height: 8),
+            _buildMotivoInput(),
+            _buildEmergenciaToggle(),
+            const SizedBox(height: 30),
+            SolicitacaoPrimaryButtonWidget(
+              label: 'Avançar',
+              onPressed: _podeAvancar() ? _avancar : null,
             ),
           ],
         ),

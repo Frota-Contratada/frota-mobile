@@ -10,6 +10,7 @@ import '../bloc/criar_solicitacao.bloc.dart';
 import '../utils/solicitacao_formatters.dart';
 import '../widgets/solicitacao_confirmacao_dialog.dart';
 import '../widgets/solicitacao_erro_simulacao_widget.dart';
+import '../widgets/solicitacao_layout_widget.dart';
 import '../widgets/solicitacao_modalidade_chip_widget.dart';
 import '../widgets/solicitacao_primary_button_widget.dart';
 import '../widgets/solicitacao_revisao_info_widget.dart';
@@ -52,121 +53,96 @@ class SolicitarViagemRevisaoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.white,
-      body: Column(
+      body: SolicitacaoLayoutWidget(
+        alturaMapa: 306,
+        sobreposicao: 19,
+        mapa: MapRoutePreview(
+          originAddress: origem,
+          destinationAddress: destino,
+          origin: origemPoint,
+          viaPoints: paradaPoints,
+          destination: destinoPoint,
+        ),
         children: [
-          SizedBox(
-            height: 306,
-            width: double.infinity,
-            child: MapRoutePreview(
-              originAddress: origem,
-              destinationAddress: destino,
-              origin: origemPoint,
-              viaPoints: paradaPoints,
-              destination: destinoPoint,
+          _buildHeader(context),
+          const SizedBox(height: 16),
+          SolicitacaoModalidadeChipWidget(
+            modalidade:
+                context.select<CriarSolicitacaoBloc, bool>(
+                  (bloc) => bloc.state.rascunho.emergencia,
+                )
+                ? 'Emergencial'
+                : 'Táxi',
+          ),
+          const SizedBox(height: 12),
+          _buildErroSimulacao(),
+          _buildRouteDetails(),
+          _buildInfoItem(
+            label: 'Data',
+            valores: [data],
+            iconAsset: AppAssets.iconData,
+          ),
+          _buildInfoItem(
+            label: 'Horário de partida',
+            valores: [horario],
+            iconAsset: AppAssets.iconHorario,
+          ),
+          BlocBuilder<CriarSolicitacaoBloc, CriarSolicitacaoState>(
+            builder: (context, state) => Column(
+              children: [
+                _buildInfoItem(
+                  label: 'Horário de chegada',
+                  valores: [_chegadaEstimada(state)],
+                  iconAsset: AppAssets.iconHorario,
+                ),
+                _buildInfoItem(
+                  label: 'Valor da corrida',
+                  valores: [_valorEstimado(state)],
+                  iconAsset: AppAssets.iconCusto,
+                ),
+              ],
             ),
           ),
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              transform: Matrix4.translationValues(0, -19, 0),
-              decoration: const BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(25, 24, 25, 40),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(context),
-                    const SizedBox(height: 16),
-                    SolicitacaoModalidadeChipWidget(
-                      modalidade:
-                          context.select<CriarSolicitacaoBloc, bool>(
-                            (bloc) => bloc.state.rascunho.emergencia,
-                          )
-                          ? 'Emergencial'
-                          : 'Táxi',
-                    ),
-                    const SizedBox(height: 12),
-                    _buildErroSimulacao(),
-                    _buildRouteDetails(),
-                    _buildInfoItem(
-                      label: 'Data',
-                      valores: [data],
-                      iconAsset: AppAssets.iconData,
-                    ),
-                    _buildInfoItem(
-                      label: 'Horário de partida',
-                      valores: [horario],
-                      iconAsset: AppAssets.iconHorario,
-                    ),
-                    BlocBuilder<CriarSolicitacaoBloc, CriarSolicitacaoState>(
-                      builder: (context, state) => Column(
-                        children: [
-                          _buildInfoItem(
-                            label: 'Horário de chegada',
-                            valores: [_chegadaEstimada(state)],
-                            iconAsset: AppAssets.iconHorario,
-                          ),
-                          _buildInfoItem(
-                            label: 'Valor da corrida',
-                            valores: [_valorEstimado(state)],
-                            iconAsset: AppAssets.iconCusto,
-                          ),
-                        ],
-                      ),
-                    ),
-                    _buildInfoItem(
-                      label: 'Motivo da corrida',
-                      valores: [motivo],
-                      iconAsset: AppAssets.iconMotivo,
-                    ),
-                    _buildInfoItem(
-                      label: 'Veículo',
-                      valores: [veiculo],
-                      iconAsset: AppAssets.iconVeiculo,
-                    ),
-                    _buildInfoItem(
-                      label: centrosCusto.length == 1
-                          ? 'Centro de custo'
-                          : 'Centros de custo',
-                      valores: _descricoesCentrosCusto(context),
-                      iconAsset: AppAssets.iconCusto,
-                    ),
-                    _buildInfoItem(
-                      label: acompanhantes.length == 1
-                          ? 'Acompanhante'
-                          : 'Acompanhantes',
-                      valores: _valoresAcompanhantes(),
-                      iconAsset: AppAssets.iconFuncionario,
-                    ),
-                    const SizedBox(height: 26),
-                    BlocConsumer<CriarSolicitacaoBloc, CriarSolicitacaoState>(
-                      listenWhen: (previous, current) =>
-                          (previous.criada == null && current.criada != null) ||
-                          (previous.enviando &&
-                              !current.enviando &&
-                              current.erro != null),
-                      listener: _reagirAoEnvio,
-                      builder: (context, state) =>
-                          SolicitacaoPrimaryButtonWidget(
-                            label: state.enviando
-                                ? 'Enviando...'
-                                : 'Enviar solicitação',
-                            backgroundColor: AppColors.accentGreen,
-                            foregroundColor: AppColors.darkBlue,
-                            width: 175,
-                            height: 45,
-                            fontSize: 14,
-                            onPressed: state.enviando
-                                ? null
-                                : () => _enviarSolicitacao(context),
-                          ),
-                    ),
-                  ],
-                ),
-              ),
+          _buildInfoItem(
+            label: 'Motivo da corrida',
+            valores: [motivo],
+            iconAsset: AppAssets.iconMotivo,
+          ),
+          _buildInfoItem(
+            label: 'Veículo',
+            valores: [veiculo],
+            iconAsset: AppAssets.iconVeiculo,
+          ),
+          _buildInfoItem(
+            label: centrosCusto.length == 1
+                ? 'Centro de custo'
+                : 'Centros de custo',
+            valores: _descricoesCentrosCusto(context),
+            iconAsset: AppAssets.iconCusto,
+          ),
+          _buildInfoItem(
+            label: acompanhantes.length == 1 ? 'Acompanhante' : 'Acompanhantes',
+            valores: _valoresAcompanhantes(),
+            iconAsset: AppAssets.iconFuncionario,
+          ),
+          const SizedBox(height: 26),
+          BlocConsumer<CriarSolicitacaoBloc, CriarSolicitacaoState>(
+            listenWhen: (previous, current) =>
+                (previous.criada == null && current.criada != null) ||
+                (previous.enviando &&
+                    !current.enviando &&
+                    current.erro != null),
+            listener: _reagirAoEnvio,
+            builder: (context, state) => SolicitacaoPrimaryButtonWidget(
+              label: state.enviando ? 'Enviando...' : 'Enviar solicitação',
+              backgroundColor: AppColors.accentGreen,
+              foregroundColor: AppColors.darkBlue,
+              width: 175,
+              height: 45,
+              fontSize: 14,
+              onPressed: state.enviando
+                  ? null
+                  : () => _enviarSolicitacao(context),
             ),
           ),
         ],
