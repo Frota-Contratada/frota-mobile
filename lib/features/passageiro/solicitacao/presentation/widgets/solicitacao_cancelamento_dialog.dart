@@ -17,6 +17,7 @@ class SolicitacaoCancelamentoDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+      constraints: const BoxConstraints(minWidth: 280, maxWidth: 420),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       backgroundColor: AppColors.white,
       child: Padding(

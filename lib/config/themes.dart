@@ -26,6 +26,9 @@ class AppTheme {
       fontFamily: GoogleFonts.poppins().fontFamily,
       textTheme: textTheme,
       primaryTextTheme: textTheme,
+      dialogTheme: const DialogThemeData(
+        constraints: BoxConstraints(minWidth: 280, maxWidth: 560),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: white,
