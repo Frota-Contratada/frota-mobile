@@ -4,15 +4,22 @@ import '../../../../../core/widgets/busca_barra_widget.dart';
 
 class MapaBuscaWidget extends StatelessWidget {
   final VoidCallback? onBuscarLocal;
+  final double altura;
+  final EdgeInsetsGeometry padding;
 
-  const MapaBuscaWidget({super.key, this.onBuscarLocal});
+  const MapaBuscaWidget({
+    super.key,
+    this.onBuscarLocal,
+    this.altura = 185,
+    this.padding = const EdgeInsets.symmetric(horizontal: 25),
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 25),
+      padding: padding,
       child: SizedBox(
-        height: 185,
+        height: altura,
         child: Stack(
           clipBehavior: Clip.none,
           children: [

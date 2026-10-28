@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/responsive/app_layout.dart';
 import '../enums/passageiro_nav_destino.dart';
 import '../theme/passageiro_assets.dart';
 import '../theme/passageiro_colors.dart';
@@ -15,49 +16,73 @@ class PassageiroBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 75,
+    final medidas = _NavMedidas.para(AppLayout.of(context));
+
+    return ColoredBox(
       color: PassageiroColors.white,
       child: SafeArea(
         top: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: _NavItem(
-                label: 'solicitações',
-                iconPath: PassageiroAssets.bottomBarSolicitacoes,
-                iconWidth: 26,
-                iconHeight: 30,
-                ativo: destinoAtivo == PassageiroNavDestino.solicitacoes,
-                onTap: () =>
-                    onDestinoSelecionado(PassageiroNavDestino.solicitacoes),
+        child: SizedBox(
+          height: medidas.altura,
+          child: Row(
+            children: [
+              Expanded(
+                child: _NavItem(
+                  label: 'solicitações',
+                  iconPath: PassageiroAssets.bottomBarSolicitacoes,
+                  iconWidth: 26,
+                  iconHeight: 30,
+                  medidas: medidas,
+                  ativo: destinoAtivo == PassageiroNavDestino.solicitacoes,
+                  onTap: () =>
+                      onDestinoSelecionado(PassageiroNavDestino.solicitacoes),
+                ),
               ),
-            ),
-            Expanded(
-              child: _NavItem(
-                label: 'home',
-                iconPath: PassageiroAssets.bottomBarHome,
-                iconWidth: 30,
-                iconHeight: 30,
-                ativo: destinoAtivo == PassageiroNavDestino.home,
-                onTap: () => onDestinoSelecionado(PassageiroNavDestino.home),
+              Expanded(
+                child: _NavItem(
+                  label: 'home',
+                  iconPath: PassageiroAssets.bottomBarHome,
+                  iconWidth: 30,
+                  iconHeight: 30,
+                  medidas: medidas,
+                  ativo: destinoAtivo == PassageiroNavDestino.home,
+                  onTap: () => onDestinoSelecionado(PassageiroNavDestino.home),
+                ),
               ),
-            ),
-            Expanded(
-              child: _NavItem(
-                label: 'perfil',
-                iconPath: PassageiroAssets.bottomBarPerfil,
-                iconWidth: 28,
-                iconHeight: 30,
-                ativo: destinoAtivo == PassageiroNavDestino.perfil,
-                onTap: () => onDestinoSelecionado(PassageiroNavDestino.perfil),
+              Expanded(
+                child: _NavItem(
+                  label: 'perfil',
+                  iconPath: PassageiroAssets.bottomBarPerfil,
+                  iconWidth: 28,
+                  iconHeight: 30,
+                  medidas: medidas,
+                  ativo: destinoAtivo == PassageiroNavDestino.perfil,
+                  onTap: () =>
+                      onDestinoSelecionado(PassageiroNavDestino.perfil),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _NavMedidas {
+  final double altura;
+  final double topoLabel;
+  final double tamanhoLabel;
+
+  const _NavMedidas({
+    required this.altura,
+    required this.topoLabel,
+    required this.tamanhoLabel,
+  });
+
+  factory _NavMedidas.para(AppLayout layout) => layout.compacto
+      ? const _NavMedidas(altura: 75, topoLabel: 53, tamanhoLabel: 8)
+      : const _NavMedidas(altura: 80, topoLabel: 55, tamanhoLabel: 11);
 }
 
 class _NavItem extends StatelessWidget {
@@ -65,6 +90,7 @@ class _NavItem extends StatelessWidget {
   final String iconPath;
   final double iconWidth;
   final double iconHeight;
+  final _NavMedidas medidas;
   final bool ativo;
   final VoidCallback onTap;
 
@@ -73,6 +99,7 @@ class _NavItem extends StatelessWidget {
     required this.iconPath,
     required this.iconWidth,
     required this.iconHeight,
+    required this.medidas,
     required this.ativo,
     required this.onTap,
   });
@@ -82,7 +109,7 @@ class _NavItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: SizedBox(
-        height: 75,
+        height: medidas.altura,
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -106,11 +133,11 @@ class _NavItem extends StatelessWidget {
               ),
             ),
             Positioned(
-              top: 53,
+              top: medidas.topoLabel,
               child: Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 8,
+                style: TextStyle(
+                  fontSize: medidas.tamanhoLabel,
                   fontWeight: FontWeight.w500,
                   color: PassageiroColors.darkBlue,
                   height: 1,

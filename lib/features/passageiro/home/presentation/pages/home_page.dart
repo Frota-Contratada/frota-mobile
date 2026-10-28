@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../config/routes.dart';
 import '../../../../../core/maps/map_point.dart';
+import '../../../../../core/responsive/responsive.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../core/widgets/map_picker_page.dart';
 import '../../../../../injection_container/injection_container.dart';
@@ -60,97 +61,216 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
     });
   }
 
+  static const double _alturaMinimaColunaSolicitar = 420;
+
   @override
   Widget build(BuildContext context) {
+    final layout = AppLayout.of(context);
+
     return SafeArea(
       bottom: false,
       child: BlocBuilder<PassageiroHomeBloc, PassageiroHomeState>(
         builder: (context, state) {
           final usuarioAtual = _resolverUsuario(state);
-
-          return RefreshIndicator(
-            color: PassageiroColors.primaryBlue,
-            onRefresh: _atualizarViagens,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      HomeHeaderWidget(
-                        usuario: usuarioAtual,
-                        onConfiguracoes: () => Navigator.pushNamed(
-                          context,
-                          AppRoutes.passageiroConfiguracoes,
-                        ),
-                        onNotificacoes: () => Navigator.pushNamed(
-                          context,
-                          AppRoutes.notificacoes,
-                          arguments: usuarioAtual,
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      MapaBuscaWidget(onBuscarLocal: _abrirBuscaLocal),
-                      const SizedBox(height: 30),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 25),
-                        child: Text(
-                          'Solicitar transporte',
-                          style: TextStyle(
-                            fontSize: 21,
-                            fontWeight: FontWeight.w500,
-                            color: PassageiroColors.darkBlue,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      SolicitacaoCardsWidget(
-                        onViagem: () => _abrirSolicitacao(
-                          AppRoutes.passageiroSolicitarViagem,
-                        ),
-                        onObjeto: () => _abrirSolicitacao(
-                          AppRoutes.passageiroSolicitarObjeto,
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 25),
-                        child: Text(
-                          'Viagens agendadas',
-                          style: TextStyle(
-                            fontSize: 21,
-                            fontWeight: FontWeight.w500,
-                            color: PassageiroColors.darkBlue,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      SemanaSeletorWidget(
-                        intervaloSemana: _resolverIntervaloSemana(state),
-                        onSemanaAnterior: state is PassageiroHomeCarregada
-                            ? () => context.read<PassageiroHomeBloc>().add(
-                                PassageiroHomeSemanaAnterior(),
-                              )
-                            : () {},
-                        onSemanaProxima: state is PassageiroHomeCarregada
-                            ? () => context.read<PassageiroHomeBloc>().add(
-                                PassageiroHomeSemanaProxima(),
-                              )
-                            : () {},
-                      ),
-                      const SizedBox(height: 28),
-                    ],
-                  ),
-                ),
-                SliverToBoxAdapter(child: _buildConteudo(context, state)),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
-              ],
+          final header = HomeHeaderWidget(
+            usuario: usuarioAtual,
+            onConfiguracoes: () =>
+                Navigator.pushNamed(context, AppRoutes.passageiroConfiguracoes),
+            onNotificacoes: () => Navigator.pushNamed(
+              context,
+              AppRoutes.notificacoes,
+              arguments: usuarioAtual,
             ),
           );
+
+          if (layout.usaPainelLateral) {
+            return _buildDuasColunas(context, state, header);
+          }
+
+          return _buildColunaUnica(context, state, header, layout);
         },
       ),
     );
+  }
+
+  Widget _buildColunaUnica(
+    BuildContext context,
+    PassageiroHomeState state,
+    Widget header,
+    AppLayout layout,
+  ) {
+    return RefreshIndicator(
+      color: PassageiroColors.primaryBlue,
+      onRefresh: _atualizarViagens,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: ConteudoResponsivo(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  header,
+                  const SizedBox(height: 30),
+                  MapaBuscaWidget(
+                    onBuscarLocal: _abrirBuscaLocal,
+                    altura: layout.alturaProporcional(185),
+                  ),
+                  const SizedBox(height: 30),
+                  ..._buildSecaoSolicitar(
+                    alturaCards: layout.compacto ? 100 : 116,
+                  ),
+                  const SizedBox(height: 30),
+                  ..._buildCabecalhoViagens(context, state),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: ConteudoResponsivo(child: _buildConteudo(context, state)),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDuasColunas(
+    BuildContext context,
+    PassageiroHomeState state,
+    Widget header,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        header,
+        const SizedBox(height: 20),
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(flex: 5, child: _buildColunaSolicitar()),
+              Expanded(
+                flex: 6,
+                child: RefreshIndicator(
+                  color: PassageiroColors.primaryBlue,
+                  onRefresh: _atualizarViagens,
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: _buildCabecalhoViagens(context, state),
+                        ),
+                      ),
+                      SliverToBoxAdapter(child: _buildConteudo(context, state)),
+                      const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildColunaSolicitar() {
+    const paddingColuna = EdgeInsets.only(left: 25);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final altura = constraints.maxHeight < _alturaMinimaColunaSolicitar
+            ? _alturaMinimaColunaSolicitar
+            : constraints.maxHeight;
+
+        return SingleChildScrollView(
+          child: SizedBox(
+            height: altura,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: MapaBuscaWidget(
+                    onBuscarLocal: _abrirBuscaLocal,
+                    altura: double.infinity,
+                    padding: paddingColuna,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ..._buildSecaoSolicitar(
+                  alturaCards: 116,
+                  padding: paddingColuna,
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  List<Widget> _buildSecaoSolicitar({
+    required double alturaCards,
+    EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 25),
+  }) {
+    return [
+      Padding(
+        padding: padding,
+        child: const Text(
+          'Solicitar transporte',
+          style: TextStyle(
+            fontSize: 21,
+            fontWeight: FontWeight.w500,
+            color: PassageiroColors.darkBlue,
+          ),
+        ),
+      ),
+      const SizedBox(height: 15),
+      SolicitacaoCardsWidget(
+        altura: alturaCards,
+        padding: padding,
+        onViagem: () => _abrirSolicitacao(AppRoutes.passageiroSolicitarViagem),
+        onObjeto: () => _abrirSolicitacao(AppRoutes.passageiroSolicitarObjeto),
+      ),
+    ];
+  }
+
+  List<Widget> _buildCabecalhoViagens(
+    BuildContext context,
+    PassageiroHomeState state,
+  ) {
+    return [
+      const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 25),
+        child: Text(
+          'Viagens agendadas',
+          style: TextStyle(
+            fontSize: 21,
+            fontWeight: FontWeight.w500,
+            color: PassageiroColors.darkBlue,
+          ),
+        ),
+      ),
+      const SizedBox(height: 16),
+      SemanaSeletorWidget(
+        intervaloSemana: _resolverIntervaloSemana(state),
+        onSemanaAnterior: state is PassageiroHomeCarregada
+            ? () => context.read<PassageiroHomeBloc>().add(
+                PassageiroHomeSemanaAnterior(),
+              )
+            : () {},
+        onSemanaProxima: state is PassageiroHomeCarregada
+            ? () => context.read<PassageiroHomeBloc>().add(
+                PassageiroHomeSemanaProxima(),
+              )
+            : () {},
+      ),
+      const SizedBox(height: 28),
+    ];
   }
 
   Widget _buildConteudo(BuildContext context, PassageiroHomeState state) {
@@ -174,13 +294,16 @@ class _PassageiroHomeContentState extends State<_PassageiroHomeContent> {
               style: const TextStyle(color: PassageiroColors.darkBlue),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                context.read<PassageiroHomeBloc>().add(
-                  PassageiroHomeIniciada(usuario: state.usuario),
-                );
-              },
-              child: const Text('Tentar novamente'),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: ElevatedButton(
+                onPressed: () {
+                  context.read<PassageiroHomeBloc>().add(
+                    PassageiroHomeIniciada(usuario: state.usuario),
+                  );
+                },
+                child: const Text('Tentar novamente'),
+              ),
             ),
           ],
         ),
