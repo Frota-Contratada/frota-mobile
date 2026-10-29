@@ -148,7 +148,7 @@ class _AppMapWidgetState extends State<AppMapWidget> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _pixelRatio = MediaQuery.devicePixelRatioOf(context);
+    _pixelRatio = View.of(context).devicePixelRatio;
   }
 
   @override

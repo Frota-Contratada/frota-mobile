@@ -8,6 +8,8 @@ class AppLayout {
   static const double larguraConteudo = 720;
   static const double larguraFormulario = 560;
   static const double alturaReferenciaCompacta = 800;
+  static const double menorLadoReferencia = 640;
+  static const double fatorEscalaMaximo = 1.5;
 
   final Size tamanho;
 
@@ -38,6 +40,11 @@ class AppLayout {
     if (compacto) return alturaBase;
     final fator = (altura / alturaReferenciaCompacta).clamp(1.0, fatorMaximo);
     return alturaBase * fator;
+  }
+
+  static double fatorEscalaPara(Size tamanhoTela) {
+    final fator = tamanhoTela.shortestSide / menorLadoReferencia;
+    return fator.clamp(1.0, fatorEscalaMaximo);
   }
 
   static double margemCentralizada(

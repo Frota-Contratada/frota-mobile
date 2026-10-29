@@ -5,6 +5,7 @@ import 'config/env_loader.dart';
 import 'config/env.dart';
 import 'core/navigation/app_navigator.dart';
 import 'core/navigation/app_route_observer.dart';
+import 'core/responsive/escala_tela.dart';
 import 'config/themes.dart';
 import 'config/routes.dart';
 import 'features/auth/presentation/bloc/auth.bloc.dart';
@@ -50,6 +51,7 @@ class FrotaApp extends StatelessWidget {
       themeMode: ThemeMode.light,
       navigatorKey: appNavigatorKey,
       navigatorObservers: [appRouteObserver],
+      builder: (_, child) => EscalaTela(child: child ?? const SizedBox()),
       home: BlocProvider(
         create: (_) => sl<SplashCubit>()..iniciar(),
         child: const SplashPage(),
