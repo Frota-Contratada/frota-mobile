@@ -32,6 +32,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   geocoding_platform_interface: ^5.0.0
   flutter_launcher_icons: 0.14.4
+  flutter_native_splash: 2.4.8
 
 flutter_launcher_icons:
   android: true
@@ -39,6 +40,13 @@ flutter_launcher_icons:
   image_path: assets/images/logo_app.png
   remove_alpha_ios: true
   min_sdk_android: 21
+
+flutter_native_splash:
+  color: "#302C9E"
+  image: assets/images/splash_logo.png
+  android_12:
+    color: "#302C9E"
+  web: false
 
 flutter:
   config:
@@ -52,4 +60,5 @@ flutter:
     - assets/images/passageiro/cards/
     - assets/images/passageiro/mapa_home.png
     - assets/images/passageiro/avatar_placeholder.png
+    - assets/images/splash_logo.png
     - .env.example

@@ -8,11 +8,10 @@ import 'core/navigation/app_route_observer.dart';
 import 'config/themes.dart';
 import 'config/routes.dart';
 import 'features/auth/presentation/bloc/auth.bloc.dart';
-import 'features/auth/data/datasources/auth_local_datasource.dart';
-import 'features/auth/data/datasources/auth_remote_datasource.dart';
+import 'features/auth/presentation/bloc/splash_cubit.dart';
 import 'features/auth/presentation/pages/login_page.dart';
+import 'features/auth/presentation/pages/splash_page.dart';
 import 'features/auth/domain/entities/usuario.dart';
-import 'features/auth/domain/enums/perfil_usuario.dart';
 import 'features/motorista/configuracoes/presentation/pages/configuracoes_page.dart';
 import 'features/motorista/corrida/presentation/pages/corrida_detalhe_page.dart';
 import 'features/motorista/home/presentation/pages/home_page.dart';
@@ -28,7 +27,6 @@ import 'features/passageiro/solicitacoes/presentation/pages/detalhe_solicitacao_
 import 'features/notificacoes/presentation/bloc/notificacoes_bloc.dart';
 import 'features/notificacoes/presentation/bloc/preferencias_notificacao_bloc.dart';
 import 'features/notificacoes/presentation/pages/notificacoes_page.dart';
-import 'features/notificacoes/presentation/sessao/notificacoes_sessao_controller.dart';
 import 'injection_container/injection_container.dart';
 
 Future<void> main() async {
@@ -37,28 +35,11 @@ Future<void> main() async {
   await loadEnvironment();
   Env.validateRelease();
   await initDependencies();
-  Usuario? initialUser;
-  if (await sl<AuthLocalDatasource>().getAuthToken() != null) {
-    try {
-      initialUser = await sl<AuthRemoteDatasource>()
-          .buscarUsuarioAtual()
-          .timeout(const Duration(seconds: 8));
-    } on Object {
-      // Keep the saved token for a later attempt if HML is temporarily offline.
-    }
-  }
-  runApp(FrotaApp(initialUser: initialUser));
-  final usuarioLogado = initialUser;
-  if (usuarioLogado != null) {
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => sl<NotificacoesSessaoController>().iniciarSessao(usuarioLogado),
-    );
-  }
+  runApp(const FrotaApp());
 }
 
 class FrotaApp extends StatelessWidget {
-  final Usuario? initialUser;
-  const FrotaApp({super.key, this.initialUser});
+  const FrotaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -69,14 +50,10 @@ class FrotaApp extends StatelessWidget {
       themeMode: ThemeMode.light,
       navigatorKey: appNavigatorKey,
       navigatorObservers: [appRouteObserver],
-      home: initialUser == null
-          ? BlocProvider(
-              create: (_) => sl<AuthBloc>(),
-              child: const LoginPage(),
-            )
-          : initialUser!.perfil == PerfilUsuario.motorista
-          ? const HomePage()
-          : PassageiroShellPage(usuario: initialUser),
+      home: BlocProvider(
+        create: (_) => sl<SplashCubit>()..iniciar(),
+        child: const SplashPage(),
+      ),
       routes: {
         AppRoutes.login: (_) => BlocProvider(
           create: (_) => sl<AuthBloc>(),

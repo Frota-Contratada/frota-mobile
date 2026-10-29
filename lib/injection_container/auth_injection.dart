@@ -17,6 +17,7 @@ import '../features/auth/domain/usecases/redefinir_senha_usecase.dart';
 import '../features/auth/domain/usecases/sign_up_usecase.dart';
 import '../features/auth/domain/usecases/verificar_email_usecase.dart';
 import '../features/auth/presentation/bloc/auth.bloc.dart';
+import '../features/auth/presentation/bloc/splash_cubit.dart';
 
 void registerAuthDependencies(GetIt sl) {
   sl.registerLazySingleton<AuthLocalDatasource>(
@@ -70,6 +71,12 @@ void registerAuthDependencies(GetIt sl) {
       confirmarPinUsecase: sl(),
       enviarPinEmailUsecase: sl(),
       redefinirSenhaUsecase: sl(),
+    ),
+  );
+  sl.registerFactory(
+    () => SplashCubit(
+      authLocalDatasource: sl(),
+      buscarUsuarioAtualUsecase: sl(),
     ),
   );
 }
