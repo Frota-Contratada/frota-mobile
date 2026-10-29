@@ -176,7 +176,10 @@ class PerfilPageBase extends StatelessWidget {
       const SizedBox(height: _espacamentoAbaixoDaLinha),
       Padding(
         padding: const EdgeInsets.fromLTRB(25, 0, 25, 24),
-        child: Column(children: historicoContent),
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(children: historicoContent),
+        ),
       ),
     ];
   }
